@@ -53,6 +53,29 @@ const report=await page.locator('#printDocument').innerText();
 assert.ok(report.includes('Causa básica'),'Informe debe contener causa básica');
 assert.ok(report.includes('Consecuencia de la causa'),'Informe debe contener consecuencia');
 assert.ok(report.includes('Posible exposición de personas'),'Informe debe contener declaración de seguridad');
+// Una única investigación puede entregarse sucesivamente en tres formatos.
+const originalTitle=await page.locator('#printDocument h1').innerText();
+assert.equal(await page.locator('#reportFormat').inputValue(),'5why','El formato por defecto debe conservarse');
+for(const [value,title,css] of [
+ ['acr','ANÁLISIS CAUSA RAÍZ','reportMode-acr'],
+ ['a3','A3 EJECUTIVO','reportMode-a3'],
+ ['5why','ANÁLISIS 5 PORQUÉS','reportMode-5why']]){
+ await page.locator('#reportFormat').selectOption(value);
+ const panel=page.locator('#printDocument');
+ await panel.evaluate(el=>{if(!el.className.includes('reportMode-'))throw Error('Sin formato')});
+ assert.ok((await panel.getAttribute('class')).includes(css),'Debe cambiar la plantilla '+value);
+ const doc=await panel.innerText();
+ assert.ok(doc.includes(title),'El encabezado debe corresponder al formato '+value);
+ assert.ok(doc.includes('CT-11C')&&doc.includes('Consecuencia de la causa'),'Los datos deben mantenerse en '+value);
+ assert.equal(await panel.locator('h1').innerText(),originalTitle,'El caso no debe duplicarse ni modificarse');
+}
+await page.locator('#reportFormat').selectOption('a3');
+await page.locator('button[data-page="inicio"]').click();
+assert.equal(await page.locator('#casesList .listItem').count(),1,'Cambiar plantilla no debe crear una investigación nueva');
+await page.locator('#casesList .listItem').first().click();
+await page.locator('button[data-page="reporte"]').click();
+assert.equal(await page.locator('#reportFormat').inputValue(),'a3','La preferencia de impresión se conserva al reabrir');
+assert.ok((await page.locator('#printDocument').getAttribute('class')).includes('reportMode-a3'));
 assert.ok(errors.length===0,'Errores de JavaScript en la UI: '+errors.join('; '));
 console.log('OK: registro/acceso, investigación, Sí/No seguridad, redacción, 5 Porqués, causa básica, consecuencia e informe');
 await browser.close();
