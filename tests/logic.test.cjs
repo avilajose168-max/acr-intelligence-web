@@ -94,27 +94,34 @@ assert.equal(dashboardScope.casesInWeek(weeklyCases,'2026-11-09').length,1,'No m
 assert.equal(dashboardScope.weeklyPareto(weeklyCases,'2026-10-19','events','equipment').records.length,0,'Semana sin eventos');
 console.log('OK calendario ISO, Pareto por equipos, frecuencia, duración y archivos semanales');
 
-const kpi=dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','__all__',24);
-assert.equal(kpi.documentedCount,3,'Tres fallas con duración');
-assert.equal(kpi.mttr,6.5/3,'MTTR = detención total / fallas documentadas');
-assert.equal(kpi.operating,17.5,'Horas operativas = base menos detención');
-assert.equal(kpi.mtbf,17.5/3,'MTBF = horas operativas / fallas');
-assert.ok(Math.abs(kpi.availability-100*17.5/24)<1e-9,'Disponibilidad exacta');
-assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','__all__',null).mtbf,null,'No inventar MTBF sin horas base');
-assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-10-19','__all__',24).mtbf,null,'No dividir por cero');
-assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','__all__',4).availability,null,'Horas detenidas superiores a base no validan disponibilidad');
-const byAsset=dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','CT-11C',24);
-assert.equal(byAsset.events,2,'Filtro por equipo evita mezclar detenciones');
-assert.equal(byAsset.downtime,3,'Suma solo horas de ese equipo');
-assert.equal(byAsset.operating,21,'Calcula horas operativas por equipo');
-assert.equal(byAsset.mttr,1.5,'MTTR por equipo');
-assert.equal(byAsset.mtbf,10.5,'MTBF por equipo');
-assert.equal(byAsset.availability,87.5,'Disponibilidad por equipo');
-const one=dashboardScope.weeklyIndicators([{id:'x',equipment:'CT-11C',title:'Falla',datetime:'2026-11-02T10:00',downtime:'4'}],'2026-11-02','CT-11C',24);
-assert.equal(one.mttr,4,'Ejemplo 24 h base 4 h detenidas: MTTR 4');
-assert.equal(one.mtbf,20,'Ejemplo 24 h base 4 h detenidas: MTBF 20');
-assert.ok(Math.abs(one.availability-83.333333333)<0.0001,'Ejemplo disponibilidad 83.33%');
-const incomplete=[{id:'x',equipment:'CT-11C',title:'Falla sin tiempo',datetime:'2026-11-02T10:00',downtime:''}];
-assert.equal(dashboardScope.weeklyIndicators(incomplete,'2026-11-02','__all__',24).mttr,null,'La ausencia de duración no se trata como cero');
-assert.equal(dashboardScope.weeklyIndicators(incomplete,'2026-11-02','__all__',24).mtbf,null,'No calcular MTBF con detenciones incompletas');
-console.log('OK indicadores V28, base/operación, alcance por equipo y disponibilidad');
+const past=new Date(2026,10,9,0,0);
+const weekFull=dashboardScope.weekTimeBounds('2026-11-02',past);
+assert.equal(weekFull.baseHours,168,'Semana completa contabiliza 168 horas');
+const wednesday=new Date(2026,10,4,12,0);
+assert.equal(dashboardScope.weekTimeBounds('2026-11-02',wednesday).baseHours,60,'Miércoles 12:00 acumula 60 horas desde lunes 00:00');
+const twoStops=[
+ {id:'a',equipment:'CT-11C',title:'Falla lunes',stopStart:'2026-11-02T10:00',stopEnd:'2026-11-02T12:00',downtime:'2'},
+ {id:'b',equipment:'CT-11C',title:'Falla martes',stopStart:'2026-11-03T15:00',stopEnd:'2026-11-03T17:00',downtime:'2'}
+];
+const kpi=dashboardScope.weeklyIndicators(twoStops,'2026-11-02','CT-11C',wednesday);
+assert.equal(kpi.events,2,'Dos fallas hasta miércoles');
+assert.equal(kpi.downtime,4,'Acumula las cuatro horas detenidas hasta miércoles');
+assert.equal(kpi.baseHours,60,'Base autocalculada por reloj');
+assert.equal(kpi.operating,56,'Descuenta fallas de la base automáticamente');
+assert.equal(kpi.mttr,2,'MTTR 4h / 2 fallas');
+assert.equal(kpi.mtbf,28,'MTBF 56h / 2 fallas');
+assert.ok(Math.abs(kpi.availability-93.3333333333)<1e-7,'Disponibilidad parcial correcta');
+const one=dashboardScope.weeklyIndicators([{id:'c',equipment:'CT-11C',title:'Falla',stopStart:'2026-11-02T08:00',stopEnd:'2026-11-02T12:00',downtime:'4'}],'2026-11-02','CT-11C',new Date(2026,10,3,0,0));
+assert.equal(one.baseHours,24,'24 horas desde lunes a martes 00:00');
+assert.equal(one.operating,20,'Ejemplo 24 h base menos 4 de falla');
+assert.equal(one.mttr,4,'MTTR del ejemplo');
+assert.equal(one.mtbf,20,'MTBF del ejemplo');
+assert.ok(Math.abs(one.availability-83.3333333)<1e-6,'Disponibilidad ejemplo');
+const unfinished=[{id:'x',equipment:'CT-11C',title:'Sin duración',stopStart:'2026-11-02T10:00',downtime:''}];
+assert.equal(dashboardScope.weeklyIndicators(unfinished,'2026-11-02','CT-11C',wednesday).operating,null,'Falta de detención no se considera cero');
+assert.equal(dashboardScope.weeklyIndicators(unfinished,'2026-11-02','CT-11C',wednesday).mtbf,null,'MTBF pendiente si falta fecha de término');
+const nextWeek=dashboardScope.weeklyIndicators(twoStops,'2026-11-09','CT-11C',wednesday);
+assert.equal(nextWeek.baseHours,0,'Semanas futuras no anticipan horas');
+const carried=[{id:'d',equipment:'CT-11C',title:'Larga',stopStart:'2026-11-02T20:00',stopEnd:'2026-11-03T08:00',downtime:'12'}];
+assert.equal(dashboardScope.weeklyIndicators(carried,'2026-11-02','CT-11C',new Date(2026,10,3,0,0)).downtime,4,'Las paradas abiertas solo se cuentan hasta el corte');
+console.log('OK MTTR/MTBF en tiempo real, cierre semanal, ejemplo 24h/4h y recortes');
