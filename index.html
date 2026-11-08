@@ -240,18 +240,18 @@ function drawPhotos(){const c=current();$('#photos').innerHTML=c.photos.length?c
 
 function drawSafety(){
  const c=current();if(!c)return;
- $('input[name="safetyChoice"]').forEach(input=>input.checked=(input.value===c.safetyCondition));
+ $$('input[name="safetyChoice"]').forEach(input=>input.checked=(input.value===c.safetyCondition));
  const yes=c.safetyCondition==='si',no=c.safetyCondition==='no';
  $('#safetyDetails').classList.toggle('hidden',!yes);
  $('#safetyNone').classList.toggle('hidden',!no);
  $('#safetyPhotos').innerHTML=(c.safetyPhotos||[]).map((p,i)=>'<div class="photo"><img src="'+p.data+'" alt="Condición de seguridad '+(i+1)+'"><label class="field">Descripción fotográfica<input data-safety-caption="'+i+'" value="'+esc(p.caption||'')+'" placeholder="¿Qué peligro se observa?"></label><button class="danger" data-safety-remove="'+i+'">Eliminar</button></div>').join('')||'<p class="muted">Sin fotografías de seguridad.</p>';
- $('[data-safety-caption]').forEach(el=>el.oninput=()=>{c.safetyPhotos[Number(el.dataset.safetyCaption)].caption=el.value;persist()});
- $('[data-safety-remove]').forEach(el=>el.onclick=()=>{
+ $$('[data-safety-caption]').forEach(el=>el.oninput=()=>{c.safetyPhotos[Number(el.dataset.safetyCaption)].caption=el.value;persist()});
+ $$('[data-safety-remove]').forEach(el=>el.onclick=()=>{
    if(!confirm('¿Eliminar esta fotografía de seguridad?'))return;
    c.safetyPhotos.splice(Number(el.dataset.safetyRemove),1);persist();drawSafety();
  });
 }
-$('input[name="safetyChoice"]').forEach(input=>input.addEventListener('change',()=>{
+$$('input[name="safetyChoice"]').forEach(input=>input.addEventListener('change',()=>{
  const c=current();if(!c)return;c.safetyCondition=input.value;persist();drawSafety();
 }));
 $('#safetyPhotoInput').addEventListener('change',async e=>{
