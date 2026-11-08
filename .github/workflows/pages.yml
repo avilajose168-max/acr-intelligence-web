@@ -31,6 +31,15 @@ jobs:
           PY
           node --check /tmp/acr-validate.js
           node tests/logic.test.cjs
+      - name: Preparar navegador para prueba funcional
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Probar flujo completo en navegador
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/acr-http.log 2>&1 &
+          sleep 2
+          node tests/ui-smoke.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
