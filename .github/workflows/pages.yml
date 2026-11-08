@@ -30,6 +30,7 @@ jobs:
           Path("/tmp/acr-validate.js").write_text("\\n".join(scripts), encoding="utf-8")
           PY
           node --check /tmp/acr-validate.js
+          node tests/logic.test.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
