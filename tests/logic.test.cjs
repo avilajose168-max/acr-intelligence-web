@@ -11,12 +11,14 @@ function segment(begin,end){
 }
 const source=[
  'function normalizeText(value){return String(value||"").replace(/\\s+/g," ").trim()}',
- segment('function improvedDescription(c){',"$('#improveDescription').onclick"),
+ segment('function eventFocus(c){', "function improvedDescription(c){"),
+  segment('function improvedDescription(c){',"$('#improveDescription').onclick"),
  segment('function proposeWhys(c){','function generateWhys(){')
 ].join('\n');
 const scope=vm.createContext({});
 vm.runInContext(source,scope,{timeout:1000});
 const examples=[
+ {description:'Siendo las 23:15, equipo detiene de forma automática por señal de relé de protección. Detector de temperatura #8 (posición rodamiento lado libre del motor) indica alta temperatura. Después de relubricar, pruebas en vacío y con carga controlada, más mediciones en terreno, se determina falla definitiva de rodamiento lado libre de motor.', equipment:'CT-11C',area:'Alimentación',downtime:'4'},
  {description:'El chancador se detuvo por fuga de aceite. Se observó que faltaba el tapón del drenaje.',equipment:'MP1000',area:'Chancado terciario',downtime:'1.5'},
  {description:'Se registró una caída de presión en el circuito hidráulico de clamping.',equipment:'CH3 L1'},
  {description:'Se cortó una correa de transmisión del harnero.',equipment:'Harnero banana'},
@@ -31,6 +33,15 @@ for(const [i,c] of examples.entries()){
  assert.ok(improved.length>c.description.length+150,'Debe ampliar la descripción');
  assert.ok(improved.includes('Verificación requerida:'),'Debe distinguir verificación pendiente');
  assert.equal(scope.improvedDescription({...c,description:improved}),improved,'Evitar duplicación en el botón');
- if(i===0){assert.ok(whys[1].includes('tapón'),'Caso de tapón ausente debe aparecer en segundo porqué');}
+ if(i===0){
+    assert.ok(whys[0].includes('sensor de temperatura'),'El caso CT-11C debe tratar la señal térmica');
+    assert.ok(whys[1].includes('temperatura'),'El segundo porqué debe relacionarse con la señal de temperatura');
+    assert.ok(whys.join(' ').includes('sensor'),'Los porqués deben conservar el dispositivo involucrado');
+    assert.ok(!/harnero|correa|polea/.test(whys.join(' ').toLowerCase()),'No introducir equipos ajenos al evento');
+    assert.ok(improved.startsWith('Siendo las 23:15'),'Conservar el inicio literal de la descripción');
+    assert.ok(!/según el relato|según el investigador/i.test(improved),'No atribuir el texto a un relator');
+    assert.ok(improved.includes('Detector de temperatura #8'),'Conservar canal identificado');
+ }
+ if(i===1){assert.ok(whys[1].includes('tapón'),'Caso de tapón ausente en segundo porqué')}
  console.log('OK caso',i+1,whys.map(x=>x.slice(0,35)));
 }
