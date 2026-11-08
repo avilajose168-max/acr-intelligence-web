@@ -416,12 +416,12 @@ function dashboardGroupKey(c,group){
  return name || (group==='failure'?'Falla sin título':'Equipo sin identificar');
 }
 function sumDashboardHours(c){const value=Number(c.downtime);return Number.isFinite(value)&&value>=0?value:0}
-function weeklyPareto(cases,monday,metric,group){
+function weeklyPareto(cases,monday,metric,group,now=new Date()){
  const records=casesInWeek(cases,monday),map=new Map();
  for(const c of records){
    const key=dashboardGroupKey(c,group);
    const entry=map.get(key)||{label:key,events:0,hours:0};
-   entry.events++;entry.hours+=(investigationDowntime(c,weekTimeBounds(monday))?.hours??sumDashboardHours(c));map.set(key,entry);
+   entry.events++;entry.hours+=(investigationDowntime(c,weekTimeBounds(monday,now))?.hours??sumDashboardHours(c));map.set(key,entry);
  }
  const sorted=[...map.values()].map(x=>({...x,value:metric==='hours'?x.hours:x.events}))
    .filter(x=>x.value>0).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
