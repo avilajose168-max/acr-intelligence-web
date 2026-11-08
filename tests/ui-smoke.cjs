@@ -144,7 +144,7 @@ assert.equal(await page.locator('#weekEvents').innerText(),'1','Una falla regist
 assert.ok((await page.locator('#paretoTable').innerText()).includes('CT-11C'),'Pareto muestra caso');
 await page.locator('#reliabilityAsset').selectOption('CT-11C');
 const fromClock=await page.locator('#weekBaseAuto').innerText();
-assert.match(fromClock,/\\d+,\\d+ h/,'Horas base automáticas por reloj');
+assert.match(fromClock,/\d+,\d+ h/,'Horas base automáticas por reloj');
 const baseValue=Number(fromClock.replace(' h','').replaceAll('.','').replace(',','.'));
 assert.ok(baseValue>0&&baseValue<=168,'Semana actual solo cuenta horas transcurridas');
 assert.equal(await page.locator('#weekMttr').innerText(),'2,00 h','MTTR usa tiempo registrado');
