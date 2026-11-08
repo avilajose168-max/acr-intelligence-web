@@ -196,8 +196,8 @@ function normalizeText(value){return String(value||'').replace(/\s+/g,' ').trim(
 function improvedDescription(c){let original=normalizeText(c.description);if(!original)return '';original=original.charAt(0).toUpperCase()+original.slice(1);if(!/[.!?]$/.test(original))original+='.';const extras=[];if(c.equipment && !original.toLowerCase().includes(c.equipment.toLowerCase()))extras.push('Equipo involucrado: '+c.equipment+'.');if(c.area && !original.toLowerCase().includes(c.area.toLowerCase()))extras.push('Área: '+c.area+'.');if(c.downtime && Number(c.downtime)>0 && !/detenci[oó]n de \d|horas? de detenci[oó]n/i.test(original))extras.push('Tiempo de detención registrado: '+c.downtime+' horas.');return [original,...extras].join(' ')}
 $('#improveDescription').onclick=()=>{const c=current();if(!c)return;if(!normalizeText(c.description)){alert('Describe primero qué ocurrió.');return}const revised=improvedDescription(c);const output=$('#descriptionFeedback');output.innerHTML='<b>Propuesta de redacción técnica (revisable):</b><p id="rewritePreview" style="white-space:pre-wrap">'+esc(revised)+'</p><div class="toolbar"><button type="button" class="primary" id="acceptRewrite">Usar esta redacción</button><button type="button" class="secondary" id="cancelRewrite">Descartar</button></div>';output.classList.remove('hidden');$('#acceptRewrite').onclick=()=>{c.description=revised;const field=$('[data-k="description"]');field.value=revised;persist();output.innerHTML='<b>Redacción aplicada.</b> Puedes editarla en el campo del evento.'};$('#cancelRewrite').onclick=()=>output.classList.add('hidden')};
 function proposeWhys(c){
- const description=normalizeText(c.description||'').replace(/\\s+/g,' ').trim();
- const short=description.length>190?description.slice(0,187).replace(/\\s+\\S*$/,'')+'…':description;
+ const description=normalizeText(c.description||'').replace(/\s+/g,' ').trim();
+ const short=description.length>190?description.slice(0,187).replace(/\s+\S*$/,'')+'…':description;
  const profile=analysisProfile(c);
  const levels={
    hydraulic:[
@@ -240,7 +240,7 @@ function ensureEvent(){const c=current();if(!c)return null;if(!normalizeText(c.d
 function proposeConclusion(c){
   const label=normalizeText(c.title||c.equipment||'el equipo investigado');
   const event=normalizeText(c.description||'').trim();
-  const eventSummary=event.length>360?event.slice(0,357).replace(/\\s+\\S*$/,'')+'…':event;
+  const eventSummary=event.length>360?event.slice(0,357).replace(/\s+\S*$/,'')+'…':event;
   const profile=analysisProfile(c);
   const focus={
     hydraulic:'La investigación debe contrastar mediciones de presión, comportamiento de bombas, válvulas, fugas y controles del sistema hidráulico.',
