@@ -40,7 +40,8 @@ for(const [i,c] of examples.entries()){
     assert.ok(!/harnero|correa|polea/.test(whys.join(' ').toLowerCase()),'No introducir equipos ajenos al evento');
     assert.ok(improved.startsWith('Siendo las 23:15'),'Conservar el inicio literal de la descripción');
     assert.ok(!/según el relato|según el investigador/i.test(improved),'No atribuir el texto a un relator');
-    assert.ok(improved.includes('Detector de temperatura #8'),'Conservar canal identificado');
+    assert.ok(improved.includes('detector de temperatura N.º 8'),'Conservar canal identificado y mejorar su redacción');
+    assert.ok(improved.includes('se detuvo automáticamente'),'Debe redactar el hecho como informe técnico directo');
  }
  if(i===1){assert.ok(whys[1].includes('tapón'),'Caso de tapón ausente en segundo porqué')}
  console.log('OK caso',i+1,whys.map(x=>x.slice(0,35)));
