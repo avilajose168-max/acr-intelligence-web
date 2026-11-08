@@ -143,6 +143,16 @@ await page.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Debe incluir el evento recién guardado');
 assert.equal(await page.locator('#weekAssets').innerText(),'1','Debe reconocer un equipo afectado');
 assert.ok((await page.locator('#paretoTable').innerText()).includes('CT-11C'),'Pareto por equipo muestra el caso');
+assert.equal(await page.locator('#weekMttr').innerText(),'2,00 h','MTTR usa horas de detención por falla');
+assert.equal(await page.locator('#weekMtbf').innerText(),'—','MTBF no debe inventarse cuando faltan horas operativas');
+await page.locator('#weekOperatingHours').fill('166');
+await page.locator('#weekOperatingHours').dispatchEvent('change');
+assert.equal(await page.locator('#weekMtbf').innerText(),'166,00 h','MTBF usa horas operadas / fallas');
+await page.locator('#weekPrevious').click();
+assert.equal(await page.locator('#weekMtbf').innerText(),'—','Horas operadas no se copian a otra semana');
+await page.locator('#weekNext').click();
+assert.equal(await page.locator('#weekOperatingHours').inputValue(),'166','Se conservan las horas de la semana seleccionada');
+
 await page.locator('#paretoMetric').selectOption('hours');
 assert.ok((await page.locator('#weekHours').innerText()).includes('2,00'),'Debe calcular horas detenidas');
 assert.ok((await page.locator('#paretoChart').innerText()).length>0,'El gráfico de horas debe aparecer');
@@ -168,6 +178,9 @@ await page.locator('#weeklyReportContent').waitFor({state:'visible'});
 const weekReport=await page.locator('#weeklyReportContent').innerText();
 assert.ok(weekReport.includes('CT-11C')&&weekReport.includes('2,00 h'),'El informe de Pareto conserva los datos del caso');
 assert.ok(weekReport.includes('Semana'),'Se identifica el período informado');
+assert.ok(weekReport.includes('MTTR')&&weekReport.includes('MTBF'),'Los indicadores deben figurar en el informe imprimible');
+assert.ok(weekReport.includes('166,00 h'),'Debe utilizar las horas reales registradas');
+
 await page.evaluate(()=>{window.print=()=>{window.__weeklyPrinted=document.body.classList.contains('weekly-print')}});
 await page.locator('#weeklyPrintPreview').click();
 assert.equal(await page.evaluate(()=>window.__weeklyPrinted),true,'Impresión usa el formato semanal');
