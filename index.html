@@ -476,36 +476,67 @@ function renderWeeklyTrend(cases,monday,metric){
  parts.push('<text x="350" y="259" fill="#a9c1d1" text-anchor="middle" font-size="11">Semanas anteriores a la seleccionada, inclusive</text></svg>');
  return parts.join('');
 }
-function getWeeklyOperatingHours(monday){
- const value=db.settings?.weeklyOperatingHours?.[monday];
+const ALL_ASSETS='__all__';
+function dashboardAssets(){return [...new Set(db.cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
+function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
+function baseStorageKey(monday,asset){return monday+'|'+asset}
+function getBaseHours(monday,asset){
+ const value=db.settings?.weeklyBaseHours?.[baseStorageKey(monday,asset)];
  return value===undefined||value===null||value===''?null:Number(value);
 }
-function weeklyReliability(cases,monday,operatingHours){
- const all=casesInWeek(cases,monday);
- const valid=all.filter(c=>String(c.downtime??'').trim()!==''&&Number.isFinite(Number(c.downtime))&&Number(c.downtime)>=0);
- const downtime=valid.reduce((sum,c)=>sum+Number(c.downtime),0);
- const mttr=valid.length?downtime/valid.length:null;
- const hours=operatingHours===null||operatingHours===''?null:Number(operatingHours);
- const mtbf=all.length&&hours!==null&&Number.isFinite(hours)&&hours>=0?hours/all.length:null;
- return {mttr,mtbf,documentedCount:valid.length,eventCount:all.length,operatingHours:hours};
+function weeklyIndicators(cases,monday,asset,baseHours){
+ const all=casesInWeek(scopedCases(cases,asset),monday);
+ const withDuration=all.filter(c=>String(c.downtime??'').trim()!==''&&Number.isFinite(Number(c.downtime))&&Number(c.downtime)>=0);
+ const down=withDuration.reduce((sum,c)=>sum+Number(c.downtime),0);
+ const hours=baseHours===null||baseHours===''?null:Number(baseHours);
+ const base=hours!==null&&Number.isFinite(hours)&&hours>=0?hours:null;
+ const complete=withDuration.length===all.length;
+ const validBase=base!==null&&complete&&down<=base;
+ const operating=validBase?Math.max(0,base-down):null;
+ return {
+  records:all,events:all.length,downtime:down,
+  documentedCount:withDuration.length,baseHours:base,operating,
+  complete,
+  mttr:withDuration.length?down/withDuration.length:null,
+  mtbf:validBase&&all.length?operating/all.length:null,
+  availability:validBase&&base>0?operating/base*100:null,
+  invalidBase:base!==null&&down>base,
+  assets:new Set(all.map(c=>dashboardGroupKey(c,'equipment'))).size
+ };
 }
 function dashboardReliabilityFormat(value){return value===null?'—':dashboardMetricText(value,'hours')+' h'}
+function dashboardAvailabilityFormat(value){return value===null?'—':value.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'}
+function activeDashboardScope(){return $('#reliabilityAsset').value||ALL_ASSETS}
 function drawDashboard(){
- const root=$('#reliabilityDashboard');if(!root)return;
- const metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
- const data=weeklyPareto(db.cases,selectedDashboardWeek,metric,group);
+ if(!$('#reliabilityDashboard'))return;
+ const select=$('#reliabilityAsset'),existing=select.value||ALL_ASSETS,assets=dashboardAssets();
+ select.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
+ select.value=assets.includes(existing)?existing:ALL_ASSETS;
+ const asset=select.value,records=scopedCases(db.cases,asset),metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
+ const data=weeklyPareto(records,selectedDashboardWeek,metric,group);
+ const kpi=weeklyIndicators(db.cases,selectedDashboardWeek,asset,getBaseHours(selectedDashboardWeek,asset));
  $('#weekLabel').textContent=dashboardWeekLabel(selectedDashboardWeek);
- $('#weekEvents').textContent=String(data.records.length);
- $('#weekHours').textContent=dashboardMetricText(data.hours,'hours')+' h';
- $('#weekAssets').textContent=String(data.assets);
- const reliability=weeklyReliability(db.cases,selectedDashboardWeek,getWeeklyOperatingHours(selectedDashboardWeek));
- $('#weekOperatingHours').value=reliability.operatingHours===null?'':String(reliability.operatingHours);
- $('#weekMttr').textContent=dashboardReliabilityFormat(reliability.mttr);
- $('#weekMtbf').textContent=dashboardReliabilityFormat(reliability.mtbf);
- $('#reliabilityMethod').textContent='MTTR: '+reliability.documentedCount+' de '+reliability.eventCount+' fallas tienen duración registrada. MTBF: '+(reliability.mtbf===null?'ingresa las horas reales de operación acumuladas de los equipos para esta semana.':'calculado con '+dashboardMetricText(reliability.operatingHours,'hours')+' h operadas / '+reliability.eventCount+' fallas. No incluye equipos ni detenciones sin registro.');
+ $('#weekEvents').textContent=String(kpi.events);
+ $('#weekHours').textContent=dashboardReliabilityFormat(kpi.downtime);
+ $('#weekOperatingTotal').textContent=dashboardReliabilityFormat(kpi.operating);
+ $('#weekMttr').textContent=dashboardReliabilityFormat(kpi.mttr);
+ $('#weekMtbf').textContent=dashboardReliabilityFormat(kpi.mtbf);
+ $('#weekAvailability').textContent=dashboardAvailabilityFormat(kpi.availability);
+ $('#availabilityFill').style.width=(kpi.availability===null?0:Math.max(0,Math.min(100,kpi.availability)))+'%';
+ $('#weekBaseHours').value=kpi.baseHours===null?'':String(kpi.baseHours);
+ $('#reliabilityBaseNote').textContent=asset===ALL_ASSETS
+  ?'Para Todos los equipos, ingresa la suma de horas base de los activos incluidos. Para un MTBF técnicamente comparable, selecciona un equipo específico.'
+  :'Horas calendario o programadas del equipo '+asset+' para esta semana. Ej.: 24 h en un día, 168 h en siete días.';
+ let warning='';
+ if(kpi.invalidBase)warning='Las horas detenidas superan las horas base. Corrige el período o los tiempos.';
+ else if(!kpi.complete)warning='Hay '+(kpi.events-kpi.documentedCount)+' evento(s) sin duración. Las horas operativas, MTBF y disponibilidad quedan pendientes.';
+ else if(kpi.baseHours===null)warning='Ingresa las horas base reales del período para calcular horas operativas, MTBF y disponibilidad.';
+ else if(!kpi.events)warning='Sin fallas registradas: MTTR y MTBF no son calculables para esta semana.';
+ else warning='Horas operativas = '+dashboardMetricText(kpi.baseHours,'hours')+' − '+dashboardMetricText(kpi.downtime,'hours')+' = '+dashboardMetricText(kpi.operating,'hours')+' h. MTTR = detenciones / '+kpi.documentedCount+' falla(s). MTBF = horas operativas / '+kpi.events+' falla(s).';
+ $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada; evita interpretar este MTBF como el de un único equipo.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
- $('#weeklyTrend').innerHTML=renderWeeklyTrend(db.cases,selectedDashboardWeek,metric);
+ $('#weeklyTrend').innerHTML=renderWeeklyTrend(records,selectedDashboardWeek,metric);
  $('#paretoTable').innerHTML=data.rows.length?data.rows.map((entry,i)=>'<tr><td>'+(i+1)+'. '+esc(entry.label)+'</td><td>'+dashboardMetricText(entry.value,metric)+'</td><td>'+entry.cumulative.toFixed(1).replace('.',',')+'%</td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;color:#a8bfd0">Sin registros para esta semana</td></tr>';
 }
 $('#weekPrevious').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,-7);drawDashboard()};
@@ -513,23 +544,25 @@ $('#weekNext').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,
 $('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday());drawDashboard()};
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
-$('#weekOperatingHours').onchange=e=>{
+$('#reliabilityAsset').onchange=drawDashboard;
+$('#weekBaseHours').onchange=e=>{
  const raw=String(e.target.value||'').trim();
  if(raw!==''&&(!Number.isFinite(Number(raw))||Number(raw)<0||Number(raw)>10000000)){
-   alert('Ingresa horas reales de operación entre 0 y 10.000.000.');drawDashboard();return;
+  alert('Ingresa horas base del período entre 0 y 10.000.000.');drawDashboard();return;
  }
+ const asset=activeDashboardScope(),key=baseStorageKey(selectedDashboardWeek,asset);
  db.settings ||= {};
- db.settings.weeklyOperatingHours ||= {};
- if(raw==='')delete db.settings.weeklyOperatingHours[selectedDashboardWeek];
- else db.settings.weeklyOperatingHours[selectedDashboardWeek]=Number(raw);
+ db.settings.weeklyBaseHours ||= {};
+ if(raw==='')delete db.settings.weeklyBaseHours[key];
+ else db.settings.weeklyBaseHours[key]=Number(raw);
  if(persist())drawDashboard();
 };
-
 function weeklyReportData(){
- const metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
- const monday=selectedDashboardWeek;
- const result=weeklyPareto(db.cases,monday,metric,group);
- return {monday,metric,group,period:dashboardWeekLabel(monday),...result,reliability:weeklyReliability(db.cases,monday,getWeeklyOperatingHours(monday))};
+ const metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=selectedDashboardWeek,asset=activeDashboardScope();
+ const cases=scopedCases(db.cases,asset);
+ const result=weeklyPareto(cases,monday,metric,group);
+ const reliability=weeklyIndicators(db.cases,monday,asset,getBaseHours(monday,asset));
+ return {monday,metric,group,asset,period:dashboardWeekLabel(monday),...result,reliability};
 }
 function weekExportName(data,ext){
  const week=isoWeekNumber(data.monday);
