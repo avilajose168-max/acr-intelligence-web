@@ -88,7 +88,7 @@ assert.equal(weeklyResult.rows[0].label,'CT-11C','Ordena Pareto por frecuencia')
 assert.equal(weeklyResult.rows[0].events,2,'Agrupa fallas repetidas');
 assert.equal(weeklyResult.rows[0].cumulative,200/3,'Pareto muestra porcentaje acumulado');
 assert.equal(weeklyResult.hours,6.5,'Acumula horas detenidas');
-const hourPareto=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','hours','equipment');
+const hourPareto=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','hours','equipment',new Date(2026,10,9));
 assert.equal(hourPareto.rows[0].label,'MP1000','Pareto por horas usa los tiempos de detención');
 assert.equal(dashboardScope.casesInWeek(weeklyCases,'2026-11-09').length,1,'No mezcla semanas distintas');
 assert.equal(dashboardScope.weeklyPareto(weeklyCases,'2026-10-19','events','equipment').records.length,0,'Semana sin eventos');
