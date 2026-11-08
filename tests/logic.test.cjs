@@ -65,3 +65,31 @@ assert.ok(/t[eé]rmica|temperatura|rodamiento/.test(basic),'Causa básica ligada
 const consequence=scope.proposeCauseConsequence({...incident,downtime:'4.03'});
 assert.ok(consequence.includes('temperatura')&&consequence.includes('4,03'),'La consecuencia debe vincularse al evento y horas');
 console.log('OK seguridad, causa básica, consecuencia y selectores múltiples');
+
+
+const dashboardSource=segment('function dateKeyUTC(date){','function drawDashboard(){');
+const dashboardScope=vm.createContext({normalizeText(value){return String(value||'').replace(/\s+/g,' ').trim()},Date,Map,Set,Number,String,Math,Array});
+vm.runInContext(dashboardSource,dashboardScope,{timeout:1000});
+assert.equal(dashboardScope.isoWeekStart('2026-11-08'),'2026-11-02','La semana del domingo comienza el lunes');
+assert.equal(dashboardScope.isoWeekStart('2026-11-09'),'2026-11-09','La semana siguiente inicia el lunes');
+assert.equal(dashboardScope.isoWeekStart('2027-01-01'),'2026-12-28','Cambio de año conserva semana ISO');
+assert.equal(dashboardScope.isoWeekNumber('2026-12-28').week,53,'La semana de fin de año es ISO 53');
+const weeklyCases=[
+ {id:'a',equipment:'CT-11C',title:'Rodamiento motor',datetime:'2026-11-02T08:00',stopStart:'2026-11-02T08:00',downtime:'2'},
+ {id:'b',equipment:'CT-11C',title:'Rodamiento motor',datetime:'2026-11-04T08:00',stopStart:'2026-11-04T08:00',downtime:'1'},
+ {id:'c',equipment:'MP1000',title:'Fuga de aceite',datetime:'2026-11-08T22:00',downtime:'3.5'},
+ {id:'d',equipment:'MP1000',title:'Fuga de aceite',datetime:'2026-11-09T01:00',downtime:'4'},
+ {id:'empty',datetime:'2026-11-08T10:00',equipment:'',title:'',description:''}
+];
+const weeklyResult=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','events','equipment');
+assert.equal(weeklyResult.records.length,3,'Solo eventos de lunes a domingo, ignorando borradores vacíos');
+assert.equal(weeklyResult.rows.length,2,'Agrupa por equipo');
+assert.equal(weeklyResult.rows[0].label,'CT-11C','Ordena Pareto por frecuencia');
+assert.equal(weeklyResult.rows[0].events,2,'Agrupa fallas repetidas');
+assert.equal(weeklyResult.rows[0].cumulative,200/3,'Pareto muestra porcentaje acumulado');
+assert.equal(weeklyResult.hours,6.5,'Acumula horas detenidas');
+const hourPareto=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','hours','equipment');
+assert.equal(hourPareto.rows[0].label,'MP1000','Pareto por horas usa los tiempos de detención');
+assert.equal(dashboardScope.casesInWeek(weeklyCases,'2026-11-09').length,1,'No mezcla semanas distintas');
+assert.equal(dashboardScope.weeklyPareto(weeklyCases,'2026-10-19','events','equipment').records.length,0,'Semana sin eventos');
+console.log('OK calendario ISO, Pareto por equipos, frecuencia, duración y archivos semanales');
