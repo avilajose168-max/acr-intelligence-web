@@ -47,7 +47,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .dashboard-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:12px 0 17px}
 .dashboard-kpis>div{background:#102337;border:1px solid #36566d;padding:14px;border-radius:12px;display:flex;flex-direction:column;gap:5px}
 .dashboard-kpis span{font-size:11px;color:#afc5da}
-.dashboard-kpis strong{font-size:23px;color:#e5c080}
+.dashboard-kpis strong{font-size:23px;color:#e5c080}.dashboard-hours-field label{font-size:11px;color:#afc5da}.dashboard-hours-field input{max-width:100%;padding:7px 9px;background:#0c1e30;color:#f1e0b9;border:1px solid #537289;border-radius:7px}.dashboard-hours-field span{font-size:10px;color:#a3b6c9}
 .dashboard-charts{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:13px}
 .dashboard-chart{min-width:0;background:#102236;border:1px solid #31516b;border-radius:14px;padding:14px}
 .dashboard-chart svg{width:100%;height:auto;display:block}
@@ -159,7 +159,11 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <div><span>Eventos registrados</span><strong id="weekEvents">0</strong></div>
   <div><span>Horas detenidas</span><strong id="weekHours">0,00 h</strong></div>
   <div><span>Equipos afectados</span><strong id="weekAssets">0</strong></div>
+  <div><span>MTTR · reparación promedio</span><strong id="weekMttr">—</strong></div>
+  <div><span>MTBF · entre fallas</span><strong id="weekMtbf">—</strong></div>
+  <div class="dashboard-hours-field"><label for="weekOperatingHours">Horas de operación acumuladas</label><input id="weekOperatingHours" inputmode="decimal" type="number" min="0" max="10000000" step="0.01" placeholder="Ej.: 320"><span>Horas efectivas sumadas de los equipos analizados, sin detenciones</span></div>
 </div>
+<p id="reliabilityMethod" class="help" style="margin:0 0 17px">MTTR = horas de detención / eventos con duración. MTBF = horas operadas / fallas. Indica las horas reales operadas para obtener MTBF.</p>
 <div class="dashboard-charts">
   <div class="dashboard-chart"><h3>Diagrama de Pareto</h3><div id="paretoChart" role="img" aria-label="Gráfico de Pareto semanal"></div><div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Detalle de Pareto"><thead><tr><th>Equipo / falla</th><th id="paretoValueHeading">Eventos</th><th>Acum.</th></tr></thead><tbody id="paretoTable"></tbody></table></div></div>
   <div class="dashboard-chart"><h3 id="weeklyTrendTitle">Tendencia · últimas 8 semanas</h3><div id="weeklyTrend" role="img" aria-label="Comparación de las últimas ocho semanas"></div><p class="help">Historial por semana calendario (ISO 8601). Selecciona semanas anteriores para revisar su Pareto.</p></div>
@@ -449,6 +453,20 @@ function renderWeeklyTrend(cases,monday,metric){
  parts.push('<text x="350" y="259" fill="#a9c1d1" text-anchor="middle" font-size="11">Semanas anteriores a la seleccionada, inclusive</text></svg>');
  return parts.join('');
 }
+function getWeeklyOperatingHours(monday){
+ const value=db.settings?.weeklyOperatingHours?.[monday];
+ return value===undefined||value===null||value===''?null:Number(value);
+}
+function weeklyReliability(cases,monday,operatingHours){
+ const all=casesInWeek(cases,monday);
+ const valid=all.filter(c=>String(c.downtime??'').trim()!==''&&Number.isFinite(Number(c.downtime))&&Number(c.downtime)>=0);
+ const downtime=valid.reduce((sum,c)=>sum+Number(c.downtime),0);
+ const mttr=valid.length?downtime/valid.length:null;
+ const hours=operatingHours===null||operatingHours===''?null:Number(operatingHours);
+ const mtbf=all.length&&hours!==null&&Number.isFinite(hours)&&hours>=0?hours/all.length:null;
+ return {mttr,mtbf,documentedCount:valid.length,eventCount:all.length,operatingHours:hours};
+}
+function dashboardReliabilityFormat(value){return value===null?'—':dashboardMetricText(value,'hours')+' h'}
 function drawDashboard(){
  const root=$('#reliabilityDashboard');if(!root)return;
  const metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
@@ -457,6 +475,11 @@ function drawDashboard(){
  $('#weekEvents').textContent=String(data.records.length);
  $('#weekHours').textContent=dashboardMetricText(data.hours,'hours')+' h';
  $('#weekAssets').textContent=String(data.assets);
+ const reliability=weeklyReliability(db.cases,selectedDashboardWeek,getWeeklyOperatingHours(selectedDashboardWeek));
+ $('#weekOperatingHours').value=reliability.operatingHours===null?'':String(reliability.operatingHours);
+ $('#weekMttr').textContent=dashboardReliabilityFormat(reliability.mttr);
+ $('#weekMtbf').textContent=dashboardReliabilityFormat(reliability.mtbf);
+ $('#reliabilityMethod').textContent='MTTR: '+reliability.documentedCount+' de '+reliability.eventCount+' fallas tienen duración registrada. MTBF: '+(reliability.mtbf===null?'ingresa las horas reales de operación acumuladas de los equipos para esta semana.':'calculado con '+dashboardMetricText(reliability.operatingHours,'hours')+' h operadas / '+reliability.eventCount+' fallas. No incluye equipos ni detenciones sin registro.');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
  $('#weeklyTrend').innerHTML=renderWeeklyTrend(db.cases,selectedDashboardWeek,metric);
@@ -467,12 +490,23 @@ $('#weekNext').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,
 $('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday());drawDashboard()};
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
+$('#weekOperatingHours').onchange=e=>{
+ const raw=String(e.target.value||'').trim();
+ if(raw!==''&&(!Number.isFinite(Number(raw))||Number(raw)<0||Number(raw)>10000000)){
+   alert('Ingresa horas reales de operación entre 0 y 10.000.000.');drawDashboard();return;
+ }
+ db.settings ||= {};
+ db.settings.weeklyOperatingHours ||= {};
+ if(raw==='')delete db.settings.weeklyOperatingHours[selectedDashboardWeek];
+ else db.settings.weeklyOperatingHours[selectedDashboardWeek]=Number(raw);
+ if(persist())drawDashboard();
+};
 
 function weeklyReportData(){
  const metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
  const monday=selectedDashboardWeek;
  const result=weeklyPareto(db.cases,monday,metric,group);
- return {monday,metric,group,period:dashboardWeekLabel(monday),...result};
+ return {monday,metric,group,period:dashboardWeekLabel(monday),...result,reliability:weeklyReliability(db.cases,monday,getWeeklyOperatingHours(monday))};
 }
 function weekExportName(data,ext){
  const week=isoWeekNumber(data.monday);
@@ -494,14 +528,17 @@ function weeklyReportHtml(data){
   '<h1>Informe semanal de fallas · Pareto</h1><p>'+esc(data.period)+' · Indicador: '+metricName+' · Agrupación: '+groupName+'</p></div>'+
   '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Eventos de la semana</span></div>'+
   '<div><strong>'+dashboardMetricText(data.hours,'hours')+' h</strong><span>Horas acumuladas</span></div>'+
-  '<div><strong>'+data.assets+'</strong><span>Equipos afectados</span></div></div>'+
+  '<div><strong>'+data.assets+'</strong><span>Equipos afectados</span></div>'+
+  '<div><strong>'+dashboardReliabilityFormat(data.reliability.mttr)+'</strong><span>MTTR · reparación promedio</span></div>'+
+  '<div><strong>'+dashboardReliabilityFormat(data.reliability.mtbf)+'</strong><span>MTBF · entre fallas</span></div>'+
+  '<div><strong>'+(data.reliability.operatingHours===null?'Sin dato':dashboardReliabilityFormat(data.reliability.operatingHours))+'</strong><span>Horas reales de operación acumuladas</span></div></div>'+
   '<h2>01 · Pareto por '+metricName.toLowerCase()+'</h2>'+
   '<div class="weekly-report-grid"><div class="weekly-report-chart">'+renderParetoSvg(data.rows,data.total,data.metric)+'</div>'+
   '<div><table><thead><tr><th>'+esc(groupName)+'</th><th>'+metricName+'</th><th>% acum.</th></tr></thead><tbody>'+
   (rows||'<tr><td colspan="3">No existen eventos registrados para esta semana.</td></tr>')+
   '</tbody></table></div></div>'+
   '<div class="weekly-report-notice">'+(top?'<b>Mayor contribución:</b> '+esc(top.label)+' concentra '+top.cumulative.toFixed(1).replace('.',',')+'% del indicador semanal. ':'No se registraron fallas para el período elegido. ')+
-  'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador.</div>'+
+  'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador. MTTR utiliza solo fallas con duración registrada ('+data.reliability.documentedCount+'). El MTBF se calcula únicamente al registrar horas reales de operación acumuladas de los equipos afectados.</div>'+
   '<h2>02 · Registro de eventos de la semana</h2>'+
   '<table><thead><tr><th>N.º</th><th>Fecha / hora</th><th>Equipo</th><th>Descripción del evento</th><th>Horas</th></tr></thead><tbody>'+
   (events||'<tr><td colspan="5">Sin eventos registrados</td></tr>')+'</tbody></table>'+
@@ -524,7 +561,9 @@ function weeklySummary(data){
  return [
   {label:'Fallas registradas',value:data.records.length},
   {label:'Horas detenidas',value:dashboardMetricText(data.hours,'hours')+' h'},
-  {label:'Equipos afectados',value:data.assets}
+  {label:'Equipos afectados',value:data.assets},
+  {label:'MTTR',value:dashboardReliabilityFormat(data.reliability.mttr)},
+  {label:'MTBF',value:dashboardReliabilityFormat(data.reliability.mtbf)}
  ];
 }
 function loadExportLibrary(name){
