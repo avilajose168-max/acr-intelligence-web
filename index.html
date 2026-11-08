@@ -429,7 +429,7 @@ function weeklyPareto(cases,monday,metric,group,now=new Date()){
  const total=entries.reduce((sum,x)=>sum+x.value,0);
  let running=0;
  const rows=entries.map(x=>{running+=x.value;return {...x,cumulative:total>0?100*running/total:0}});
- return {records,rows,total,hours:records.reduce((n,c)=>n+sumDashboardHours(c),0),assets:new Set(records.map(c=>dashboardGroupKey(c,'equipment'))).size};
+ return {records,rows,total,hours:records.reduce((n,c)=>n+(investigationDowntime(c,weekTimeBounds(monday,now))?.hours??sumDashboardHours(c)),0),assets:new Set(records.map(c=>dashboardGroupKey(c,'equipment'))).size};
 }
 function dashboardMetricText(value,metric){return metric==='hours'?value.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}):String(value)}
 function dashboardWeekLabel(monday){
