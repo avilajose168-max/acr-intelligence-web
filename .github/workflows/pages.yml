@@ -33,7 +33,12 @@ jobs:
           node tests/logic.test.cjs
       - name: Preparar navegador para prueba funcional
         run: |
-          npm install --no-save playwright@1.57.0
+          npm install --no-save playwright@1.57.0 jspdf@2.5.2 pptxgenjs@3.12.0
+          mkdir -p vendor
+          cp node_modules/jspdf/dist/jspdf.umd.min.js vendor/jspdf.umd.min.js
+          cp node_modules/pptxgenjs/dist/pptxgen.bundle.js vendor/pptxgen.bundle.js
+          test -s vendor/jspdf.umd.min.js
+          test -s vendor/pptxgen.bundle.js
           npx playwright install --with-deps chromium
       - name: Probar flujo completo en navegador
         run: |
