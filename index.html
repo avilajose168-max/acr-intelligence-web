@@ -280,6 +280,7 @@ async function enter(sessionData){
   selected=null;
   document.getElementById('accountEmail').textContent=activeUser.email||'Mi cuenta';
   hideAuth();navigate('inicio');
+  void openIncomingShareFromUrl();
 }
 async function validateSession(){
   let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(_){stored=null}
@@ -1221,6 +1222,132 @@ box.className='preview reportMode-'+reportFormat;
 const mode=reportFormat==='a3'?'A3 EJECUTIVO':reportFormat==='acr'?'ANÁLISIS CAUSA RAÍZ':'ANÁLISIS 5 PORQUÉS';const why=c.whys.some(x=>x.trim())?`<ol>${c.whys.filter(x=>x.trim()).map(x=>`<li>${text(x)}</li>`).join('')}</ol>`:'<p>No registrado</p>';const photos=c.photos.length?`<div class="printphotos">${c.photos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>EV-${String(i+1).padStart(2,'0')} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:'<p>No se adjuntaron fotografías.</p>';const actions=c.actions.filter(a=>a.description.trim());paintQuality(c);box.innerHTML=`<div class="report-head"><div class="companyBrand">${db.settings.logo?`<img class="report-logo" alt="Logo corporativo" src="${db.settings.logo}">`:''}<div><div class="report-company-name">${esc(db.settings.companyName||'ACR Intelligence')}</div><div class="report-company">Informe técnico de investigación de fallas</div></div><div class="right"><b style="font-size:11px">${mode}</b></div></div><div class="between"><span class="eyebrow">ACR Intelligence · Informe técnico</span></div><h1>${esc(c.title||'Evento en investigación')}</h1><div class="small" style="color:#55687d">Documento ${esc(c.id.slice(0,8).toUpperCase())} · Generado ${new Date().toLocaleString('es-CL')}</div></div><div class="report-meta"><div>EQUIPO / TAG<b>${esc(c.equipment||'—')}</b></div><div>ÁREA<b>${esc(c.area||'—')}</b></div><div>FECHA / HORA<b>${esc((c.datetime||'—').replace('T',' '))}</b></div><div>SEVERIDAD<b>${esc(c.severity)}</b></div><div>TIEMPO DE DETENCIÓN<b>${esc(c.downtime||'0')} horas</b></div></div><div class="print-grid" style="margin-top:12px">${reportBox('01 · Situación / problema',`<p>${text(c.description)}</p><p><b>OT / Aviso:</b> ${esc(c.workorder||'—')}</p>`)}${reportBox('02 · Detención y seguridad',`<p><b>Duración:</b> ${esc(c.downtime||'0')} horas</p><p><b>Inicio:</b> ${esc((c.stopStart||'No registrado').replace('T',' '))} · <b>Término:</b> ${esc((c.stopEnd||'No registrado').replace('T',' '))}</p><p><b>Condición de seguridad:</b> ${c.safetyCondition==='si'?'Sí':c.safetyCondition==='no'?'No se identificó':'No declarada'}</p>${c.safetyCondition==='si'?`<p><b>Condición identificada:</b> ${text(c.safetyDescription)}</p><p><b>Acción correctiva de seguridad:</b> ${text(c.safetyAction||'No registrada')}</p>${(c.safetyPhotos||[]).length?`<div class="printphotos">${c.safetyPhotos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>SEG-${i+1} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:''}`:''}`)}${reportBox('03 · Cinco Porqués',why)}${reportBox('04 · Causa básica y consecuencia',`<p><b>Causa básica preliminar:</b> ${text(c.basicCause)}</p><p><b>Consecuencia de la causa:</b> ${text(c.causeConsequence)}</p><p><b>Estado:</b> ${esc(c.validationStatus)}</p>`)}${reportBox('05 · Evidencia fotográfica',photos)}${reportBox('06 · Conclusión ejecutiva',`<p>${text(c.conclusion)}</p>`)}${reportBox('07 · Acciones y responsables',actions.length?`<table class="print-table"><thead><tr><th>Acción</th><th>Responsable</th><th>Compromiso</th></tr></thead><tbody>${actions.map(a=>`<tr><td>${text(a.description)}</td><td>${esc(a.owner||'—')}</td><td>${esc(a.due||'—')}</td></tr>`).join('')}</tbody></table>`:'<p>No registradas</p>')}</div><div class="signatures"><span>Investigador: ${esc(c.author||'___________________')}</span><span>Revisión técnica: ${esc(c.reviewer||'___________________')}</span></div><div class="print-footer">Documento de trabajo. Las hipótesis requieren evidencia verificable y aprobación técnica antes de declarar una causa raíz confirmada. Reporte generado en el dispositivo.</div>`}
 function download(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('#export').onclick=()=>download('acr-intelligence-terreno-respaldo.json',JSON.stringify(db,null,2),'application/json');$('#exportCase').onclick=()=>download('acr-'+current().id.slice(0,8)+'.json',JSON.stringify(current(),null,2),'application/json');$('#import').onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data.cases))throw Error('Formato inválido');if(!confirm('Se reemplazarán las investigaciones locales. ¿Continuar?'))return;db=data;selected=null;persist();navigate('inicio')}catch(err){alert('No se pudo importar el respaldo: '+err.message)}e.target.value=''};
 const demo=()=>{const c=makeCase();Object.assign(c,{format,title:'Pérdida de presión de clamping',equipment:'MP1000 · CH3 L1',area:'Chancado terciario',description:'Durante la operación se detectó una caída de presión en el sistema de clamping y se detuvo el equipo para inspección.',timeline:'14:10 · Alarma de baja presión.\n14:15 · Detención controlada.\n14:30 · Revisión inicial de válvula selectora.',severity:'Alta',downtime:'1.5',author:'Ingeniero de Confiabilidad',workorder:'OT-DEMO-001',whys:['¿Por qué se detuvo? — Presión de clamping insuficiente.','¿Por qué bajó la presión? — Se investiga una configuración incorrecta de la válvula selectora.','¿Por qué estaba en esa posición? — Pendiente confirmar secuencia de operación e intervención.','',''],rootCause:'Hipótesis: posición incorrecta de válvula selectora. No validada.',validation:'Pendiente: tendencia de presión, inspección de válvula y revisión de maniobras.',validationStatus:'Hipótesis pendiente',conclusion:'Evento en investigación. Se requiere validar el mecanismo y definir acciones permanentes antes del cierre.',actions:[{description:'Revisar registros de presión y alarmas',owner:'Instrumentación',due:'',status:'Pendiente'},{description:'Inspeccionar posición y señalización de válvula selectora',owner:'Mantenimiento',due:'',status:'Pendiente'},{description:'Evaluar procedimiento y control postintervención',owner:'Confiabilidad',due:'',status:'Pendiente'}]});db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$('#nextAnalysis').onclick=$('#nextAnalysisBottom').onclick=()=>navigate('analisis');$('#nextReport').onclick=$('#nextReportBottom').onclick=()=>navigate('reporte');$('#backHome').onclick=()=>navigate('inicio');$('#backEvent').onclick=()=>navigate('registro');$('#backAnalysis').onclick=()=>navigate('analisis');$('#saveReg').onclick=()=>{persist();alert('Avance guardado en este dispositivo')};
+
+const ACR_SHARE_ENDPOINT=SUPABASE_URL+'/functions/v1/acr-share';
+let currentShareToken='',receivedSnapshot=null,openedSharedToken='';
+async function requestShared(action,params={}){
+ if(!session?.access_token)throw Error('Inicia sesión para acceder al enlace.');
+ const res=await fetch(ACR_SHARE_ENDPOINT,{
+  method:'POST',
+  headers:{'content-type':'application/json','apikey':PUBLIC_KEY,'authorization':'Bearer '+session.access_token},
+  body:JSON.stringify({action,...params})
+ });
+ const obj=await res.json().catch(()=>({}));
+ if(!res.ok)throw Error(obj.error||'No se pudo acceder al enlace compartido.');
+ return obj;
+}
+function shareLink(token){return location.origin+location.pathname+'?share='+encodeURIComponent(token)}
+function showShareResult(token,expires){
+ currentShareToken=token;
+ const link=shareLink(token);
+ $('#shareLinkValue').value=link;
+ $('#shareExpires').textContent=expires?'Enlace válido hasta '+new Date(expires).toLocaleString('es-CL')+'. El destinatario debe tener una cuenta.':'Enlace temporal de investigación.';
+ $('#shareResult').classList.remove('hidden');
+}
+async function createInvestigationShare(){
+ const item=current();if(!item)return alert('Selecciona una investigación.');
+ const button=$('#shareInvestigationLink');
+ if(button.disabled)return;
+ button.disabled=true;const old=button.textContent;button.textContent='Preparando enlace…';
+ try{
+  const result=await requestShared('create',{investigation:item});
+  if(!result.token)throw Error('El servidor no entregó un enlace.');
+  showShareResult(result.token,result.expires_at);
+  $('#shareResult').scrollIntoView({behavior:'smooth',block:'start'});
+ }catch(error){alert('No se pudo compartir el ACR: '+error.message)}
+ finally{button.disabled=false;button.textContent=old}
+}
+['shareInvestigationLink','shareInvestigationLinkBottom'].forEach(id=>$('#'+id).onclick=createInvestigationShare);
+$('#copyInvestigationLink').onclick=async()=>{
+ const value=$('#shareLinkValue').value;if(!value)return;
+ try{await navigator.clipboard.writeText(value);$('#shareExpires').textContent+=' Enlace copiado.'}
+ catch(_){$('#shareLinkValue').focus();$('#shareLinkValue').select();alert('Selecciona y copia el enlace para enviarlo a tu colega.')}
+};
+$('#nativeShareInvestigation').onclick=async()=>{
+ const url=$('#shareLinkValue').value;if(!url)return;
+ if(navigator.share){try{await navigator.share({title:'ACR Intelligence · Investigación compartida',url})}catch(e){if(e.name!=='AbortError')$('#copyInvestigationLink').click()}}
+ else $('#copyInvestigationLink').click();
+};
+$('#revokeInvestigationLink').onclick=async()=>{
+ if(!currentShareToken)return;
+ if(!confirm('¿Revocar este enlace? Tu investigación original permanecerá guardada. Las copias que otras personas hayan importado seguirán siendo independientes.'))return;
+ try{
+  const data=await requestShared('revoke',{token:currentShareToken});
+  if(!data.revoked)throw Error('Solo el autor puede revocar este enlace.');
+  currentShareToken='';$('#shareResult').classList.add('hidden');$('#shareLinkValue').value='';
+ }catch(error){alert('No se pudo revocar el enlace: '+error.message)}
+};
+function closeReceivedShare(){
+ $('#sharedOverlay').classList.add('hidden');
+ receivedSnapshot=null;
+ const url=new URL(location.href);if(url.searchParams.has('share')){url.searchParams.delete('share');history.replaceState({},'',url.pathname+url.search+url.hash)}
+}
+$('#closeShared').onclick=closeReceivedShare;
+$('#dismissShared').onclick=closeReceivedShare;
+function safeSharedPicture(value){return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(String(value||''))?value:''}
+function readOnlyPhotos(items){
+ if(!Array.isArray(items)||!items.length)return '<p>Sin fotografías.</p>';
+ return '<div class="shared-gallery">'+items.map((p,i)=>{
+  const image=safeSharedPicture(p?.data);
+  return '<div class="shared-photo">'+(image?'<img src="'+image+'" alt="Fotografía adjunta '+(i+1)+'">':'<p>Formato de imagen no compatible</p>')+
+   '<p>'+esc(p?.caption||'Fotografía '+(i+1))+'</p></div>'
+ }).join('')+'</div>';
+}
+function sharedBox(title,content){return '<div class="card"><h3>'+esc(title)+'</h3>'+content+'</div>'}
+function sharedParagraph(textValue){return '<p>'+esc(textValue||'No registrado')+'</p>'}
+function displaySharedSnapshot(item,expiry){
+ receivedSnapshot=structuredClone(item);
+ $('#sharedTitle').textContent=item.title||'Investigación sin título';
+ const date=String(item.datetime||'').replace('T',' ');
+ const safety=item.safetyCondition==='si'
+  ?'Sí. '+String(item.safetyDescription||'')+'. Acción correctiva: '+String(item.safetyAction||'No registrada')
+  :item.safetyCondition==='no'?'No se identificó':'No declarada';
+ const why=Array.isArray(item.whys)?item.whys.filter(x=>String(x||'').trim()):[];
+ const actions=Array.isArray(item.actions)?item.actions.filter(x=>String(x?.description||'').trim()):[];
+ const html=[
+  sharedBox('Datos del evento',sharedParagraph('Equipo: '+(item.equipment||'—')+' · Área: '+(item.area||'—')+' · Fecha: '+date+' · Detención: '+(item.downtime||'0')+' horas')),
+  sharedBox('¿Qué ocurrió?',sharedParagraph(item.description)),
+  sharedBox('Condición de seguridad',sharedParagraph(safety)+readOnlyPhotos(item.safetyPhotos)),
+  sharedBox('5 Porqués',why.length?'<ol>'+why.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':sharedParagraph('No registrados')),
+  sharedBox('Causa básica',sharedParagraph(item.basicCause)),
+  sharedBox('Consecuencia de la causa',sharedParagraph(item.causeConsequence)),
+  sharedBox('Conclusión ejecutiva',sharedParagraph(item.conclusion)),
+  sharedBox('Acciones correctivas',actions.length?'<ol>'+actions.map(x=>'<li>'+esc(x.description)+' · '+esc(x.owner||'Sin responsable')+' · '+esc(x.due||'Sin fecha')+'</li>').join('')+'</ol>':sharedParagraph('No registradas')),
+  sharedBox('Evidencia fotográfica',readOnlyPhotos(item.photos)),
+  sharedBox('Datos de revisión',sharedParagraph('Estado: '+(item.validationStatus||'Pendiente')+' · Revisor: '+(item.reviewer||'No asignado')+
+  (expiry?' · Enlace válido hasta '+new Date(expiry).toLocaleString('es-CL'):'')))
+ ].join('');
+ $('#sharedBody').innerHTML=html;
+ $('#sharedOverlay').classList.remove('hidden');
+}
+async function openIncomingShareFromUrl(){
+ const token=new URL(location.href).searchParams.get('share');
+ if(!token||!session?.access_token||token===openedSharedToken)return;
+ openedSharedToken=token;
+ try{
+  const response=await requestShared('read',{token});
+  if(!response.investigation)throw Error('La investigación compartida no está disponible.');
+  displaySharedSnapshot(response.investigation,response.expires_at);
+ }catch(error){
+  openedSharedToken='';
+  alert('No se pudo abrir el enlace compartido: '+error.message);
+ }
+}
+$('#importShared').onclick=()=>{
+ if(!receivedSnapshot)return;
+ const source=structuredClone(receivedSnapshot);
+ if(!confirm('¿Guardar esta investigación como copia independiente en tu cuenta? Tus cambios no afectarán el documento de origen.'))return;
+ const c={...makeCase(),...source};
+ c.id=id();c.created=Date.now();c.title=(String(source.title||'Investigación sin título')+' (copia)').slice(0,220);
+ c.shareSource='Copia recibida el '+new Date().toLocaleString('es-CL');
+ c.photos=Array.isArray(c.photos)?c.photos:[];
+ c.safetyPhotos=Array.isArray(c.safetyPhotos)?c.safetyPhotos:[];
+ c.whys=Array.isArray(c.whys)?c.whys:['','','','',''];
+ c.actions=Array.isArray(c.actions)?c.actions:[];
+ db.cases.unshift(c);
+ if(!persist()){db.cases.shift();return}
+ selected=c.id;closeReceivedShare();navigate('registro');
+};
 function reportPdfFileName(c){
  const format=selectedReportFormat(c),safe=String(c.equipment||'Evento').replace(/[^a-zA-Z0-9_-]+/g,'_').slice(0,35);
  return 'ACR_'+safe+'_'+(format==='5why'?'5_Porques':format==='a3'?'A3_Ejecutivo':'ACR_Completo')+'.pdf';
