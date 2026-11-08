@@ -99,7 +99,7 @@ assert.equal(kpi.documentedCount,3,'Tres fallas con duración');
 assert.equal(kpi.mttr,6.5/3,'MTTR = detención total / fallas documentadas');
 assert.equal(kpi.operating,17.5,'Horas operativas = base menos detención');
 assert.equal(kpi.mtbf,17.5/3,'MTBF = horas operativas / fallas');
-assert.equal(kpi.availability,100*17.5/24,'Disponibilidad exacta');
+assert.ok(Math.abs(kpi.availability-100*17.5/24)<1e-9,'Disponibilidad exacta');
 assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','__all__',null).mtbf,null,'No inventar MTBF sin horas base');
 assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-10-19','__all__',24).mtbf,null,'No dividir por cero');
 assert.equal(dashboardScope.weeklyIndicators(weeklyCases,'2026-11-02','__all__',4).availability,null,'Horas detenidas superiores a base no validan disponibilidad');
