@@ -59,7 +59,7 @@ const incident={description:'Siendo las 23:15, equipo detiene de forma automáti
 const basic=scope.proposeBasicCause(incident);
 assert.ok(basic.length>35&&basic.length<170,'Causa básica breve y descriptiva');
 assert.ok(/t[eé]rmica|temperatura|rodamiento/.test(basic),'Causa básica ligada al sensor de rodamiento');
-const hypotheses=scope.parseHypotheses('1. Causa posible A.\\n2. Causa posible B.\\n3. Causa posible C.');
+const hypotheses=scope.parseHypotheses('1. Causa posible A.\n2. Causa posible B.\n3. Causa posible C.');
 assert.equal(hypotheses.length,3,'Separar tres hipótesis');
 assert.ok(hypotheses[0].startsWith('Causa posible A'),'Eliminar numeración de los inputs');
 console.log('OK seguridad, causa básica y separación de hipótesis');
