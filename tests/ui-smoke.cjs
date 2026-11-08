@@ -83,6 +83,41 @@ for(const [value,title,css] of [
  assert.ok(doc.includes('CT-11C')&&doc.includes('Consecuencia de la causa'),'Los datos deben mantenerse en '+value);
  assert.equal(await panel.locator('h1').innerText(),originalTitle,'El caso no debe duplicarse ni modificarse');
 }
+
+// Prueba móvil: archivos de galería, cámara separada y descarga/compartir PDF.
+await page.setViewportSize({width:390,height:844});
+for(const id of ['photosInput','safetyPhotoInput']){
+ const input=page.locator('#'+id);
+ assert.equal(await input.getAttribute('capture'),null,'La galería '+id+' no debe forzar la cámara');
+ assert.equal(await input.getAttribute('accept'),'image/*','Permitir imágenes existentes');
+}
+for(const id of ['photosCameraInput','safetyCameraInput']){
+ assert.equal(await page.locator('#'+id).getAttribute('capture'),'environment','El control de cámara debe estar disponible');
+}
+const imgBuffer=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/fwwAAAAASUVORK5CYII=','base64');
+await page.locator('#photosInput').setInputFiles({name:'registro-en-galeria.png',mimeType:'image/png',buffer:imgBuffer});
+await page.waitForFunction(()=>document.querySelectorAll('#photos .photo').length===1,{timeout:15000});
+await page.locator('#safetyPhotoInput').setInputFiles({name:'riesgo-en-galeria.png',mimeType:'image/png',buffer:imgBuffer});
+await page.waitForFunction(()=>document.querySelectorAll('#safetyPhotos .photo').length===1,{timeout:15000});
+await page.locator('button[data-page="reporte"]').click();
+const individualPdfTask=page.waitForEvent('download',{timeout:30000});
+await page.locator('#downloadCasePdf').click();
+const individualPdf=await individualPdfTask;
+assert.ok(individualPdf.suggestedFilename().endsWith('.pdf'),'El informe individual debe descargarse en teléfono');
+const pdfBytes=require('node:fs').readFileSync(await individualPdf.path());
+assert.ok(pdfBytes.length>3500&&pdfBytes.subarray(0,4).toString()==='%PDF','El PDF debe contener las secciones y fotos');
+await page.evaluate(()=>{
+  window.__shareCount=0;
+  Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
+  Object.defineProperty(navigator,'share',{configurable:true,value:async ({files})=>{
+    window.__shareCount++;
+    if(files.length!==1 || files[0].type!=='application/pdf')throw Error('PDF inválido para compartir');
+  }});
+});
+await page.locator('#shareCasePdf').click();
+await page.waitForFunction(()=>window.__shareCount===1,{timeout:15000});
+await page.setViewportSize({width:1440,height:900});
+
 await page.locator('#reportFormat').selectOption('a3');
 await page.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Debe incluir el evento recién guardado');
