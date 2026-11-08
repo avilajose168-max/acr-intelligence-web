@@ -18,6 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validar aplicación HTML y JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          assert "<!doctype html>" in html.lower() and "</html>" in html.lower()
+          scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, flags=re.S|re.I)
+          assert scripts, "Falta el código JavaScript"
+          Path("/tmp/acr-validate.js").write_text("\\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/acr-validate.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
