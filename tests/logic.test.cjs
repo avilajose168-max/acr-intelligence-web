@@ -13,7 +13,9 @@ const source=[
  'function normalizeText(value){return String(value||"").replace(/\\s+/g," ").trim()}',
  segment('function eventFocus(c){', "function improvedDescription(c){"),
   segment('function improvedDescription(c){',"$('#improveDescription').onclick"),
- segment('function proposeWhys(c){','function generateWhys(){')
+ segment('function proposeWhys(c){','function generateWhys(){'),
+ segment('function parseHypotheses(value){','function drawHypotheses(){'),
+ segment('function proposeBasicCause(c){','function resizeImage(file){')
 ].join('\n');
 const scope=vm.createContext({});
 vm.runInContext(source,scope,{timeout:1000});
@@ -46,3 +48,18 @@ for(const [i,c] of examples.entries()){
  if(i===1){assert.ok(whys[1].includes('tapón'),'Caso de tapón ausente en segundo porqué')}
  console.log('OK caso',i+1,whys.map(x=>x.slice(0,35)));
 }
+
+const doc=html;
+assert.ok(doc.includes('name="safetyChoice" value="si"')&&doc.includes('name="safetyChoice" value="no"'),'Debe permitir declaración Sí/No de seguridad');
+assert.ok(doc.includes('id="safetyPhotoInput"'),'Debe incluir fotografía específica de seguridad');
+assert.ok(doc.includes('data-k="basicCause"'),'El campo causa básica debe ser editable');
+assert.ok(doc.includes('id="hypothesisFields"'),'Las hipótesis deben estar separadas');
+assert.ok(!doc.includes('Cronología / condiciones de operación (opcional)'),'La cronología antigua no debe mostrarse');
+const incident={description:'Siendo las 23:15, equipo detiene de forma automática por señal de relé de protección. Detector de temperatura #8 (posición rodamiento lado libre del motor) indica alta temperatura.', equipment:'CT-11C'};
+const basic=scope.proposeBasicCause(incident);
+assert.ok(basic.length>35&&basic.length<170,'Causa básica breve y descriptiva');
+assert.ok(/t[eé]rmica|temperatura|rodamiento/.test(basic),'Causa básica ligada al sensor de rodamiento');
+const hypotheses=scope.parseHypotheses('1. Causa posible A.\\n2. Causa posible B.\\n3. Causa posible C.');
+assert.equal(hypotheses.length,3,'Separar tres hipótesis');
+assert.ok(hypotheses[0].startsWith('Causa posible A'),'Eliminar numeración de los inputs');
+console.log('OK seguridad, causa básica y separación de hipótesis');
