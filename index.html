@@ -428,6 +428,252 @@ $('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
 
+function weeklyReportData(){
+ const metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
+ const monday=selectedDashboardWeek;
+ const result=weeklyPareto(db.cases,monday,metric,group);
+ return {monday,metric,group,period:dashboardWeekLabel(monday),...result};
+}
+function weekExportName(data,ext){
+ const week=isoWeekNumber(data.monday);
+ return 'ACR_Pareto_Semana_'+String(week.week).padStart(2,'0')+'_'+week.year+'_'+(data.metric==='hours'?'Horas':'Fallas')+'.'+ext;
+}
+function reportValue(data,number){return dashboardMetricText(number,data.metric)}
+function displayEventDate(c){return (c.stopStart||c.datetime||'').replace('T',' ').slice(0,16)||'Sin fecha'}
+function weeklyReportHtml(data){
+ const metricName=data.metric==='hours'?'Horas de detención':'Cantidad de fallas';
+ const groupName=data.group==='failure'?'nombre de falla':'equipo / TAG';
+ const rows=data.rows.map((row,i)=>
+  '<tr><td>'+(i+1)+'. '+esc(row.label)+'</td><td>'+reportValue(data,row.value)+'</td><td>'+row.cumulative.toFixed(1).replace('.',',')+'%</td></tr>'
+ ).join('');
+ const events=data.records.slice().sort((a,b)=>caseEventDate(a).localeCompare(caseEventDate(b))).map((c,i)=>
+  '<tr><td>'+(i+1)+'</td><td>'+esc(displayEventDate(c))+'</td><td>'+esc(c.equipment||'Sin TAG')+'</td><td>'+esc(c.title||'Sin título')+'</td><td>'+dashboardMetricText(sumDashboardHours(c),'hours')+'</td></tr>'
+ ).join('');
+ const top=data.rows[0];
+ return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTELLIGENCE · RELIABILITY DASHBOARD</div>'+
+  '<h1>Informe semanal de fallas · Pareto</h1><p>'+esc(data.period)+' · Indicador: '+metricName+' · Agrupación: '+groupName+'</p></div>'+
+  '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Eventos de la semana</span></div>'+
+  '<div><strong>'+dashboardMetricText(data.hours,'hours')+' h</strong><span>Horas acumuladas</span></div>'+
+  '<div><strong>'+data.assets+'</strong><span>Equipos afectados</span></div></div>'+
+  '<h2>01 · Pareto por '+metricName.toLowerCase()+'</h2>'+
+  '<div class="weekly-report-grid"><div class="weekly-report-chart">'+renderParetoSvg(data.rows,data.total,data.metric)+'</div>'+
+  '<div><table><thead><tr><th>'+esc(groupName)+'</th><th>'+metricName+'</th><th>% acum.</th></tr></thead><tbody>'+
+  (rows||'<tr><td colspan="3">No existen eventos registrados para esta semana.</td></tr>')+
+  '</tbody></table></div></div>'+
+  '<div class="weekly-report-notice">'+(top?'<b>Mayor contribución:</b> '+esc(top.label)+' concentra '+top.cumulative.toFixed(1).replace('.',',')+'% del indicador semanal. ':'No se registraron fallas para el período elegido. ')+
+  'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador.</div>'+
+  '<h2>02 · Registro de eventos de la semana</h2>'+
+  '<table><thead><tr><th>N.º</th><th>Fecha / hora</th><th>Equipo</th><th>Descripción del evento</th><th>Horas</th></tr></thead><tbody>'+
+  (events||'<tr><td colspan="5">Sin eventos registrados</td></tr>')+'</tbody></table>'+
+  '<div class="weekly-report-foot">Fuente: investigaciones almacenadas localmente en ACR Intelligence. Semana ISO (lunes a domingo), según inicio de detención o fecha del evento. '+
+  'Cada investigación identificada se cuenta como un evento; verifica duplicaciones antes de emitir informes oficiales.</div>';
+}
+function drawWeeklyReport(){
+ const el=$('#weeklyReportContent');if(!el)return;
+ el.innerHTML=weeklyReportHtml(weeklyReportData());
+}
+function showWeeklyReport(){drawWeeklyReport();navigate('weeklyReport')}
+function printWeeklyReport(){
+ drawWeeklyReport();
+ document.body.classList.add('weekly-print');
+ const cleanup=()=>{document.body.classList.remove('weekly-print');window.removeEventListener('afterprint',cleanup)};
+ window.addEventListener('afterprint',cleanup,{once:true});
+ window.print();
+}
+function weeklySummary(data){
+ return [
+  {label:'Fallas registradas',value:data.records.length},
+  {label:'Horas detenidas',value:dashboardMetricText(data.hours,'hours')+' h'},
+  {label:'Equipos afectados',value:data.assets}
+ ];
+}
+function loadExportLibrary(name){
+ if(name==='pdf'&&(!window.jspdf||!window.jspdf.jsPDF))throw Error('La biblioteca PDF no se cargó. Comprueba la conexión y actualiza la página.');
+ if(name==='ppt'&&typeof window.pptxgen!=='function')throw Error('La biblioteca PowerPoint no se cargó. Comprueba la conexión y actualiza la página.');
+}
+function exportPdfWeekly(){
+ const data=weeklyReportData();
+ loadExportLibrary('pdf');
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+ const W=297,H=210;
+ const margin=13;
+ const navy=[13,30,47],gold=[211,169,91],teal=[57,146,154];
+ function rect(x,y,w,h,fill){doc.setFillColor(...fill);doc.rect(x,y,w,h,'F')}
+ function str(text,x,y,size=10,color=navy,bold=false,max=260){
+  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...color);
+  doc.text(String(text),x,y,{maxWidth:max});
+ }
+ function header(title,sub){
+   rect(0,0,W,27,navy);rect(0,27,W,1.8,gold);
+   str('ACR INTELLIGENCE  |  CONFIABILIDAD',margin,12,10,[246,245,241],true);
+   str(title,margin,22,13,[246,245,241],true);
+   str(sub,margin,35,9,[70,88,110]);
+ }
+ header('PARETO SEMANAL DE FALLAS',data.period);
+ const summary=weeklySummary(data);
+ summary.forEach((k,i)=>{
+   const x=margin+i*91,y=42;
+   rect(x,y,86,24,[239,244,248]);str(String(k.value),x+5,y+12,16,[27,59,83],true);
+   str(k.label,x+5,y+20,8,[77,95,112]);
+ });
+ const graph={x:margin+2,y:76,w:161,h:83};
+ str('01  PARETO · '+(data.metric==='hours'?'HORAS':'CANTIDAD'),margin,73,10,navy,true);
+ if(!data.rows.length)str('No hay datos registrados para esta semana.',graph.x+15,graph.y+38,11,[77,95,112]);
+ else{
+   const max=Math.max(...data.rows.map(r=>r.value)),n=data.rows.length,step=(graph.w-15)/n,top=graph.y+5,bottom=graph.y+66,range=bottom-top;
+   for(let z=0;z<=4;z++){const y=bottom-range*z/4;doc.setDrawColor(221,230,238);doc.line(graph.x,y,graph.x+graph.w,y);str(Math.round(100*z/4)+'%',graph.x+graph.w+2,y+1.6,6,teal)}
+   const points=[];
+   data.rows.forEach((r,i)=>{
+     const cx=graph.x+10+(i+.5)*step,bar=Math.max(0.1,range*r.value/max);
+     rect(cx-step*.27,bottom-bar,step*.54,bar,gold);
+     str(String(i+1),cx-1.5,bottom+5,7,navy,true);
+     points.push([cx,bottom-range*r.cumulative/100]);
+   });
+   doc.setDrawColor(...teal);doc.setLineWidth(0.6);
+   for(let i=1;i<points.length;i++)doc.line(points[i-1][0],points[i-1][1],points[i][0],points[i][1]);
+   points.forEach(p=>{doc.setFillColor(...teal);doc.circle(p[0],p[1],1.4,'F')});
+   str('Barras: '+(data.metric==='hours'?'horas':'fallas')+'    Línea: % acumulado',graph.x+4,graph.y+81,7,[77,95,112]);
+ }
+ const tableX=198,tableY=73,colWidth=86;
+ str('02  CONTRIBUCIÓN POR '+(data.group==='failure'?'FALLA':'EQUIPO'),tableX,tableY,10,navy,true);
+ data.rows.slice(0,9).forEach((row,i)=>{
+   const y=tableY+10+i*10;rect(tableX,y-6,colWidth,9,i%2?[247,249,251]:[235,242,247]);
+   const label=row.label.length>28?row.label.slice(0,27)+'…':row.label;
+   str((i+1)+'. '+label,tableX+2,y,7.4,navy,false,56);
+   str(dashboardMetricText(row.value,data.metric),tableX+60,y,7.5,navy,true,16);
+   str(row.cumulative.toFixed(1)+'%',tableX+75,y,7.3,teal,true,13);
+ });
+ str('03  RESUMEN DEL PERÍODO',margin,171,10,navy,true);
+ const main=data.rows[0];
+ const note=main?'Categoría principal: '+main.label+'. Contribución acumulada inicial: '+main.cumulative.toFixed(1)+'%.':'Sin eventos documentados para esta semana.';
+ doc.setFontSize(9);doc.setTextColor(...navy);doc.text(doc.splitTextToSize(note,266),margin,181);
+ doc.setDrawColor(212,222,230);doc.line(margin,194,W-margin,194);
+ str('Fuente: investigaciones guardadas en este navegador. Una investigación = un evento. Verificar registros duplicados.',margin,201,7,[100,113,126]);
+ if(data.records.length){
+   doc.addPage('a4','landscape');
+   header('REGISTRO DETALLADO DE EVENTOS',data.period);
+   const widths=[12,38,38,155,22],xs=[13,25,63,101,256];
+   const items=data.records.slice().sort((a,b)=>caseEventDate(a).localeCompare(caseEventDate(b)));
+   let row=0,page=2;
+   for(const c of items){
+     if(row===0){
+       rect(13,42,270,10,[227,236,244]);
+       ['N.º','Fecha / hora','Equipo / TAG','Evento','Horas'].forEach((title,i)=>str(title,xs[i]+2,48.5,8,navy,true));
+     }
+     const y=57+row*11;
+     rect(13,y-5,270,10,row%2?[247,249,251]:[238,244,248]);
+     const cells=[String(items.indexOf(c)+1),displayEventDate(c),c.equipment||'Sin TAG',c.title||'Sin título',dashboardMetricText(sumDashboardHours(c),'hours')];
+     cells.forEach((cell,i)=>str(String(cell).slice(0,i===3?90:i===2?26:22),xs[i]+2,y+1,7.5,navy,false,widths[i]-3));
+     row++;
+     if(row>=12&&items.indexOf(c)<items.length-1){
+       doc.addPage('a4','landscape');
+       header('REGISTRO DE EVENTOS (CONT.)',data.period);
+       row=0;page++;
+     }
+   }
+ }
+ doc.save(weekExportName(data,'pdf'));
+}
+function pptBaseSlide(ppt,title,subtitle){
+ const slide=ppt.addSlide();
+ slide.background={color:'0D1F31'};
+ slide.addShape(ppt.ShapeType.rect,{x:0,y:0,w:13.333,h:0.12,line:{color:'D5AB60'},fill:{color:'D5AB60'}});
+ slide.addText('ACR INTELLIGENCE  /  RELIABILITY REPORT',{x:.6,y:.3,w:9,h:.3,fontFace:'Aptos',fontSize:10,bold:true,color:'DDBB7C'});
+ slide.addText(title,{x:.6,y:.85,w:12.1,h:.55,fontFace:'Aptos Display',fontSize:27,bold:true,color:'FFFFFF'});
+ slide.addText(subtitle,{x:.6,y:1.47,w:12,h:.38,fontSize:12,color:'B8CDD9'});
+ slide.addText('ACR Intelligence  |  Fuente: investigaciones registradas localmente',{x:.6,y:7.13,w:11.8,h:.19,fontSize:8,color:'91A5B6'});
+ return slide;
+}
+async function exportPptWeekly(){
+ const data=weeklyReportData();
+ loadExportLibrary('ppt');
+ const ppt=new window.pptxgen();
+ ppt.layout='LAYOUT_WIDE';
+ ppt.author='ACR Intelligence';
+ ppt.subject='Pareto de fallas semanal';
+ ppt.title='Informe Pareto '+data.period;
+ ppt.lang='es-CL';
+ const metric=data.metric==='hours'?'Horas de detención':'Cantidad de fallas';
+ const base={fontFace:'Aptos',color:'E9F1F6'};
+ const slide=pptBaseSlide(ppt,'Informe semanal de fallas',data.period);
+ const kpis=weeklySummary(data);
+ kpis.forEach((k,i)=>{
+  const x=.7+i*4.15;
+  slide.addShape(ppt.ShapeType.roundRect,{x,y:2.45,w:3.85,h:1.38,rectRadius:.14,line:{color:'35536D',width:1},fill:{color:'173047'}});
+  slide.addText(String(k.value),{x:x+.2,y:2.64,w:3.4,h:.55,fontSize:29,bold:true,color:'E9C07A'});
+  slide.addText(k.label,{x:x+.2,y:3.32,w:3.4,h:.26,fontSize:12,color:'B8CDD9'});
+ });
+ slide.addText('Indicador: '+metric+'   |   Agrupación: '+(data.group==='failure'?'tipo de falla':'equipo / TAG'),{x:.7,y:4.5,w:11.9,h:.42,fontSize:16,...base});
+ slide.addText('Prioriza los equipos y modos de falla que concentran la mayor cantidad de eventos o indisponibilidad.',{x:.7,y:5.15,w:11.8,h:.72,fontSize:14,color:'BDCDDA',breakLine:false});
+ const pareto=pptBaseSlide(ppt,'Diagrama de Pareto',metric+'  ·  '+data.period);
+ const graph={x:.9,y:2.35,w:8.2,h:3.85};
+ if(!data.rows.length){
+  pareto.addText('No existen registros para esta semana e indicador.',{x:1,y:3.6,w:10,h:.5,fontSize:19,color:'B8CBD8'});
+ }else{
+  const max=Math.max(...data.rows.map(x=>x.value)),slot=graph.w/data.rows.length,barWidth=Math.min(.62,slot*.65);
+  data.rows.forEach((row,i)=>{
+   const x=graph.x+slot*(i+.5),height=graph.h*row.value/max;
+   pareto.addShape(ppt.ShapeType.rect,{x:x-barWidth/2,y:graph.y+graph.h-height,w:barWidth,h:height,line:{color:'D9B574',transparency:100},fill:{color:'D9B574'}});
+   pareto.addText(String(i+1),{x:x-.13,y:graph.y+graph.h+.12,w:.32,h:.25,fontSize:10,color:'FFFFFF',align:'center'});
+   pareto.addText(dashboardMetricText(row.value,data.metric),{x:x-.32,y:Math.max(2.12,graph.y+graph.h-height-.36),w:.65,h:.28,fontSize:10,color:'EED4A4',align:'center'});
+  });
+  const pts=data.rows.map((row,i)=>({x:graph.x+slot*(i+.5),y:graph.y+graph.h-graph.h*row.cumulative/100}));
+  pts.slice(1).forEach((point,i)=>pareto.addShape(ppt.ShapeType.line,{x:pts[i].x,y:pts[i].y,w:point.x-pts[i].x,h:point.y-pts[i].y,line:{color:'61D4CF',width:2.5}}));
+  pts.forEach(pt=>pareto.addShape(ppt.ShapeType.ellipse,{x:pt.x-.05,y:pt.y-.05,w:.1,h:.1,line:{color:'61D4CF'},fill:{color:'61D4CF'}}));
+ }
+ pareto.addText('DORADO: '+metric.toUpperCase()+'  |  TURQUESA: % ACUMULADO',{x:.8,y:6.68,w:10,h:.28,fontSize:10,color:'C4D9E6'});
+ if(data.rows.length){
+   data.rows.slice(0,9).forEach((row,i)=>{
+     const label=row.label.length>25?row.label.slice(0,24)+'…':row.label;
+     pareto.addText((i+1)+'. '+label,{x:9.4,y:2.2+i*.43,w:2.65,h:.27,fontSize:10,color:'E5F1F5'});
+     pareto.addText(row.cumulative.toFixed(1)+'%',{x:12.13,y:2.2+i*.43,w:.57,h:.27,fontSize:10,color:'74D7D1',align:'right'});
+   });
+ }
+ const list=data.records.slice().sort((a,b)=>caseEventDate(a).localeCompare(caseEventDate(b)));
+ let slideNumber=0;
+ for(let offset=0;offset<Math.max(1,list.length);offset+=10){
+  const detail=pptBaseSlide(ppt,'Detalle de eventos',data.period+' · '+metric);
+  const pageItems=list.slice(offset,offset+10);
+  if(!pageItems.length){detail.addText('Sin eventos documentados para esta semana.',{x:.9,y:2.6,w:11.5,h:.6,fontSize:18,color:'D1E1E9'});break}
+  detail.addShape(ppt.ShapeType.rect,{x:.7,y:2.1,w:11.9,h:.38,line:{transparency:100},fill:{color:'274259'}});
+  detail.addText('FECHA',{x:.88,y:2.16,w:2.35,h:.22,fontSize:10,bold:true,color:'F5F8FC'});
+  detail.addText('EQUIPO',{x:3.3,y:2.16,w:2.15,h:.22,fontSize:10,bold:true,color:'F5F8FC'});
+  detail.addText('EVENTO',{x:5.5,y:2.16,w:5.5,h:.22,fontSize:10,bold:true,color:'F5F8FC'});
+  detail.addText('HORAS',{x:11.65,y:2.16,w:.88,h:.22,fontSize:10,bold:true,color:'F5F8FC'});
+  pageItems.forEach((c,i)=>{
+    const y=2.58+i*.41;
+    if(i%2===0)detail.addShape(ppt.ShapeType.rect,{x:.7,y:y-.06,w:11.9,h:.39,line:{transparency:100},fill:{color:'183349'}});
+    detail.addText(displayEventDate(c),{x:.88,y,w:2.3,h:.24,fontSize:10,color:'E3EFF7'});
+    detail.addText((c.equipment||'Sin TAG').slice(0,24),{x:3.3,y,w:2.05,h:.24,fontSize:10,color:'E3EFF7'});
+    detail.addText((c.title||'Sin título').slice(0,66),{x:5.5,y,w:5.92,h:.24,fontSize:10,color:'E3EFF7'});
+    detail.addText(dashboardMetricText(sumDashboardHours(c),'hours'),{x:11.65,y,w:.85,h:.24,fontSize:10,color:'E9C07A'});
+  });
+  slideNumber++;
+ }
+ await ppt.writeFile({fileName:weekExportName(data,'pptx')});
+}
+function downloadWeekly(action){
+ const control=$('#'+action);
+ if(control?.disabled)return;
+ if(control)control.disabled=true;
+ const finish=()=>{if(control)control.disabled=false};
+ try{
+  if(action==='downloadWeeklyPdf'||action==='weeklyPdfPreview'){exportPdfWeekly();finish()}
+  else if(action==='downloadWeeklyPpt'||action==='weeklyPptPreview'){
+    Promise.resolve(exportPptWeekly()).catch(e=>alert('No fue posible crear el PowerPoint: '+e.message)).finally(finish);
+  }
+ }catch(error){finish();alert('No fue posible exportar el informe: '+error.message)}
+}
+$('#previewWeekly').onclick=showWeeklyReport;
+$('#weeklyBack').onclick=()=>navigate('inicio');
+$('#printWeekly').onclick=()=>{showWeeklyReport();printWeeklyReport()};
+$('#weeklyPrintPreview').onclick=printWeeklyReport;
+$('#downloadWeeklyPdf').onclick=()=>downloadWeekly('downloadWeeklyPdf');
+$('#downloadWeeklyPpt').onclick=()=>downloadWeekly('downloadWeeklyPpt');
+$('#weeklyPdfPreview').onclick=()=>downloadWeekly('weeklyPdfPreview');
+$('#weeklyPptPreview').onclick=()=>downloadWeekly('weeklyPptPreview');
+
 function removeInvestigation(id){
  const item=db.cases.find(c=>c.id===id);
  if(!item)return false;
