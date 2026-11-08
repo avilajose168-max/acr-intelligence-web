@@ -6,6 +6,9 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];
 page.on('pageerror',e=>errors.push(e.message));
+const sharedSnapshots=new Map();
+let latestSharedToken=null;
+
 await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
   const url=route.request().url();
   const headers={'access-control-allow-origin':'*','access-control-allow-methods':'POST, GET, OPTIONS','access-control-allow-headers':'*','content-type':'application/json'};
@@ -14,6 +17,23 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
     access_token:'test-access-token',refresh_token:'test-refresh-token',expires_in:3600,
     user:{id:'11111111-1111-4111-8111-111111111111',email:'test@example.com'}
   })});
+  if(url.includes('/functions/v1/acr-share')){
+    const posted=route.request().postDataJSON();
+    if(posted.action==='create'){
+      const token='11111111-2222-4333-8444-555555555555';
+      latestSharedToken=token;
+      sharedSnapshots.set(token,{...posted.investigation});
+      return route.fulfill({status:200,headers,body:JSON.stringify({token,expires_at:'2026-12-08T00:00:00Z'})});
+    }
+    if(posted.action==='read'){
+      const item=sharedSnapshots.get(posted.token);
+      return route.fulfill({status:item?200:404,headers,body:JSON.stringify(item?{investigation:item,expires_at:'2026-12-08T00:00:00Z'}:{error:'Enlace expirado o revocado'})});
+    }
+    if(posted.action==='revoke'){
+      const deleted=sharedSnapshots.delete(posted.token);
+      return route.fulfill({status:200,headers,body:JSON.stringify({revoked:deleted})});
+    }
+  }
   if(url.includes('/functions/v1/acr-assistant'))return route.fulfill({status:503,headers,body:JSON.stringify({error:'La IA externa todavía no está configurada'})});
   return route.fulfill({status:200,headers,body:'{}'});
 });
@@ -185,6 +205,51 @@ await page.locator('[data-delete-id]').first().click();
 assert.equal(await page.locator('#casesList .listItem').count(),1,'Confirmar borrado elimina solo el registro elegido');
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Borrar un registro vacío no altera el número de fallas');
 assert.ok((await page.locator('#casesList').innerText()).includes('Protección temperatura rodamiento'),'Otra investigación permanece intacta');
+
+// Compartir enlace a cuenta ajena: solo lectura y clonación independiente.
+await page.locator('#casesList .listItem').first().click();
+await page.locator('button[data-page="reporte"]').click();
+await page.locator('#shareInvestigationLink').click();
+await page.locator('#shareResult').waitFor({state:'visible',timeout:15000});
+const shareUrl=await page.locator('#shareLinkValue').inputValue();
+assert.ok(shareUrl.includes('?share=11111111-2222-4333-8444-555555555555'),'Enlace contiene identificador de acceso');
+assert.equal(await page.locator('#casesList .listItem').count(),1,'Compartir no crea ni modifica el caso original');
+const originalDescription=await page.locator('[data-k="description"]').inputValue();
+const other=await browser.newContext({viewport:{width:390,height:844}});
+const recipient=await other.newPage();
+recipient.on('pageerror',e=>errors.push('recipient: '+e.message));
+await recipient.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
+ const url=route.request().url();
+ const headers={'access-control-allow-origin':'*','content-type':'application/json'};
+ if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
+ if(url.includes('/auth/v1/token?grant_type=password'))return route.fulfill({status:200,headers,body:JSON.stringify({
+  access_token:'recipient-token',refresh_token:'recipient-refresh',expires_in:3600,
+  user:{id:'22222222-2222-4222-8222-222222222222',email:'revisor@example.com'}
+ })});
+ if(url.includes('/functions/v1/acr-share')){
+   const input=route.request().postDataJSON(),item=sharedSnapshots.get(input.token);
+   return route.fulfill({status:item?200:404,headers,body:JSON.stringify(item?{investigation:item,expires_at:'2026-12-08T00:00:00Z'}:{error:'Enlace no válido'})});
+ }
+ return route.fulfill({status:200,headers,body:'{}'});
+});
+await recipient.goto(shareUrl.replace('https://avilajose168-max.github.io/acr-intelligence-web/','http://127.0.0.1:8765/index.html'),{waitUntil:'domcontentloaded'});
+assert.equal(await recipient.locator('#sharedOverlay').isVisible(),false,'No puede ver enlace sin iniciar sesión');
+await recipient.locator('#authEmail').fill('revisor@example.com');
+await recipient.locator('#authPassword').fill('password-test-123');
+await recipient.locator('#authSubmit').click();
+await recipient.locator('#sharedOverlay').waitFor({state:'visible'});
+assert.ok((await recipient.locator('#sharedBody').innerText()).includes(originalDescription.slice(0,45)),'El receptor visualiza los datos compartidos');
+assert.equal(await recipient.locator('#casesList .listItem').count(),0,'Ver el enlace no copia ni altera datos');
+recipient.once('dialog',d=>d.accept());
+await recipient.locator('#importShared').click();
+await recipient.locator('#sharedOverlay').waitFor({state:'hidden'});
+assert.equal(await recipient.locator('#casesList .listItem').count(),1,'Receptor guarda copia editable');
+await recipient.locator('[data-k="description"]').fill('Corrección privada de la copia del destinatario');
+await recipient.locator('button[data-page="inicio"]').click();
+assert.equal(await page.locator('[data-k="description"]').inputValue(),originalDescription,'Cambios en copia recibida no alteran el original');
+await recipient.close();await other.close();
+await page.locator('#revokeInvestigationLink').click().catch(()=>{});
+
 console.log('OK informe semanal, PDF válido, PowerPoint válido, impresión y eliminación individual');
 assert.ok(errors.length===0,'Errores de JavaScript en la UI: '+errors.join('; '));
 console.log('OK: registro/acceso, investigación, Sí/No seguridad, redacción, 5 Porqués, causa básica, consecuencia e informe');
