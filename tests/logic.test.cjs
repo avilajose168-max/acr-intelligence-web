@@ -93,3 +93,14 @@ assert.equal(hourPareto.rows[0].label,'MP1000','Pareto por horas usa los tiempos
 assert.equal(dashboardScope.casesInWeek(weeklyCases,'2026-11-09').length,1,'No mezcla semanas distintas');
 assert.equal(dashboardScope.weeklyPareto(weeklyCases,'2026-10-19','events','equipment').records.length,0,'Semana sin eventos');
 console.log('OK calendario ISO, Pareto por equipos, frecuencia, duración y archivos semanales');
+
+const kpi=dashboardScope.weeklyReliability(weeklyCases,'2026-11-02',320);
+assert.equal(kpi.documentedCount,3,'Solo eventos con duración informada calculan MTTR');
+assert.equal(kpi.mttr,6.5/3,'MTTR = detención total / fallas documentadas');
+assert.equal(kpi.mtbf,320/3,'MTBF = horas reales de operación / número de fallas');
+assert.equal(dashboardScope.weeklyReliability(weeklyCases,'2026-11-02',null).mtbf,null,'No inventar MTBF sin horas operativas');
+assert.equal(dashboardScope.weeklyReliability(weeklyCases,'2026-10-19',320).mttr,null,'No inventar MTTR sin fallas');
+assert.equal(dashboardScope.weeklyReliability(weeklyCases,'2026-10-19',320).mtbf,null,'No dividir MTBF por cero');
+const incomplete=[{id:'x',equipment:'CT-11C',title:'Falla sin tiempo',datetime:'2026-11-02T10:00',downtime:''}];
+assert.equal(dashboardScope.weeklyReliability(incomplete,'2026-11-02',100).mttr,null,'Una detención sin tiempo no se interpreta como cero horas');
+console.log('OK indicadores MTTR y MTBF calculados sin horas inventadas ni divisiones por cero');
