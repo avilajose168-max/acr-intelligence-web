@@ -194,7 +194,7 @@ function drawCompany(){const cfg=db.settings;$('#companyName').value=cfg.company
   const prev=normalizeText(c.whys[i-1]||'').toLowerCase();
   if(!prev)return '¿Por qué ocurrió lo indicado en la respuesta '+i+'?';
   if(/fuga|p[eé]rdida de aceite/.test(prev))return '¿Por qué se produjo la fuga de aceite?';
-  if(/tap[oó]n/.test(prev)&&/sin|falt|ausen|no ten|retir|desprend/.test(prev))return '¿Por qué faltaba o se desprendió el tapón?';
+  if(/tap[oó]n/.test(prev)&&/sin|falt|ausen|no ten|no ten[ií]a|retir|desprend/.test(prev))return '¿Por qué faltaba o se desprendió el tapón?';
   if(/presi[oó]n/.test(prev)&&/baj|ca[ií]d|p[eé]rdid|insuficien|sin/.test(prev))return '¿Por qué se perdió presión en el sistema?';
   if(/v[aá]lvula/.test(prev))return '¿Por qué la válvula estaba en esa condición?';
   if(/bomba/.test(prev))return '¿Por qué la bomba presentó esa condición?';
