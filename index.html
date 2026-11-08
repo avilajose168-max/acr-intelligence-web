@@ -181,7 +181,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <div class="kpi-pane"><span>MTBF · ENTRE FALLAS</span><strong id="weekMtbf">—</strong><small>Operación / fallas</small></div>
   <div class="kpi-pane kpi-availability"><span>DISPONIBILIDAD</span><strong id="weekAvailability">—</strong><small>Operación / horas base</small><div class="availability-track"><span id="availabilityFill"></span></div></div>
 </div>
-<div class="reliability-calculation" id="reliabilityMethod" aria-live="polite">Ingresa la base de horas para obtener horas operativas, MTBF y disponibilidad.</div>
+<div class="reliability-calculation" id="reliabilityMethod" aria-live="polite">Horas base calculadas en tiempo real desde el lunes 00:00. Se descuentan las detenciones registradas.</div>
 <div class="dashboard-toolbar" style="margin:16px 0">
   <label class="field dashboard-filter">Indicador de Pareto
     <select id="paretoMetric" aria-label="Indicador de Pareto"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select>
@@ -421,7 +421,7 @@ function weeklyPareto(cases,monday,metric,group){
  for(const c of records){
    const key=dashboardGroupKey(c,group);
    const entry=map.get(key)||{label:key,events:0,hours:0};
-   entry.events++;entry.hours+=sumDashboardHours(c);map.set(key,entry);
+   entry.events++;entry.hours+=(investigationDowntime(c,weekTimeBounds(monday))?.hours??sumDashboardHours(c));map.set(key,entry);
  }
  const sorted=[...map.values()].map(x=>({...x,value:metric==='hours'?x.hours:x.events}))
    .filter(x=>x.value>0).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
@@ -640,21 +640,21 @@ function weeklyReportHtml(data){
  ).join('');
  const top=data.rows[0];
  return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTELLIGENCE · RELIABILITY DASHBOARD</div>'+
-  '<h1>Informe semanal de fallas · Pareto</h1><p>'+esc(data.period)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+'</p></div>'+
+  '<h1>Informe semanal de fallas · Pareto</h1><p>'+esc(data.period)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
   '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Fallas registradas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.downtime)+'</strong><span>Horas detenidas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.operating)+'</strong><span>Horas operativas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.mttr)+'</strong><span>MTTR</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.mtbf)+'</strong><span>MTBF</span></div>'+
   '<div><strong>'+dashboardAvailabilityFormat(data.reliability.availability)+'</strong><span>Disponibilidad</span></div></div>'+
-  '<div class="weekly-report-notice">Horas base: '+(data.reliability.baseHours===null?'No registradas':dashboardReliabilityFormat(data.reliability.baseHours))+'. El cálculo usa los eventos del alcance seleccionado y la semana indicada. '+(data.reliability.complete?'':'Existen eventos sin duración; revisar indicadores.')+'</div>'+
+  '<div class="weekly-report-notice">Horas base: '+(data.reliability.baseHours===null?'No registradas':dashboardReliabilityFormat(data.reliability.baseHours))+'. Base automática desde el lunes 00:00 hasta el corte '+esc(data.cutoff)+', considerando operación 24/7. '+(data.reliability.complete?'':'Existen eventos sin duración; revisar indicadores.')+'</div>'+
   '<h2>01 · Pareto por '+metricName.toLowerCase()+'</h2>'+
   '<div class="weekly-report-grid"><div class="weekly-report-chart">'+renderParetoSvg(data.rows,data.total,data.metric)+'</div>'+
   '<div><table><thead><tr><th>'+esc(groupName)+'</th><th>'+metricName+'</th><th>% acum.</th></tr></thead><tbody>'+
   (rows||'<tr><td colspan="3">No existen eventos registrados para esta semana.</td></tr>')+
   '</tbody></table></div></div>'+
   '<div class="weekly-report-notice">'+(top?'<b>Mayor contribución:</b> '+esc(top.label)+' concentra '+top.cumulative.toFixed(1).replace('.',',')+'% del indicador semanal. ':'No se registraron fallas para el período elegido. ')+
-  'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador. MTTR utiliza solo fallas con duración registrada ('+data.reliability.documentedCount+'). MTBF y disponibilidad requieren horas base registradas del alcance seleccionado y tiempos de detención completos.</div>'+
+  'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador. MTTR utiliza solo fallas con duración registrada ('+data.reliability.documentedCount+'). MTBF y disponibilidad usan horas base automáticas (24/7) y detenciones con fecha/hora de término o duración verificable.</div>'+
   '<h2>02 · Registro de eventos de la semana</h2>'+
   '<table><thead><tr><th>N.º</th><th>Fecha / hora</th><th>Equipo</th><th>Descripción del evento</th><th>Horas</th></tr></thead><tbody>'+
   (events||'<tr><td colspan="5">Sin eventos registrados</td></tr>')+'</tbody></table>'+
@@ -706,7 +706,7 @@ function exportPdfWeekly(){
    str(title,margin,22,13,[246,245,241],true);
    str(sub,margin,35,9,[70,88,110]);
  }
- header('PARETO SEMANAL DE FALLAS',data.period);
+ header('PARETO SEMANAL DE FALLAS',data.period+' | Corte '+data.cutoff);
  const summary=weeklySummary(data);
  summary.slice(0,3).forEach((k,i)=>{
    const x=margin+i*91,y=42;
@@ -795,7 +795,7 @@ async function exportPptWeekly(){
  ppt.lang='es-CL';
  const metric=data.metric==='hours'?'Horas de detención':'Cantidad de fallas';
  const base={fontFace:'Aptos',color:'E9F1F6'};
- const slide=pptBaseSlide(ppt,'Informe semanal de fallas',data.period);
+ const slide=pptBaseSlide(ppt,'Informe semanal de fallas',data.period+' | Corte '+data.cutoff);
  const kpis=weeklySummary(data);
  kpis.slice(0,3).forEach((k,i)=>{
   const x=.7+i*4.15;
