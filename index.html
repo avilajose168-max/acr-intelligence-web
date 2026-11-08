@@ -268,10 +268,20 @@ function eventFocus(c){
  return 'general';
 }
 function observedNarrative(c){
- const raw=String(c.description||'').trim().replace(/\s+/g,' ');
+ let raw=String(c.description||'').trim().replace(/\s+/g,' ');
  if(!raw)return '';
- const text=raw.charAt(0).toUpperCase()+raw.slice(1);
- return /[.!?]$/.test(text)?text:text+'.';
+ const equipment=normalizeText(c.equipment||'');
+ // Correcciones gramaticales circunscritas al texto suministrado.
+ raw=raw.replace(/\bsiendo\s+las\s+(\d{1,2}:\d{2})\s*,?\s*(?:el\s+)?equipo\s+detiene\s+de\s+forma\s+autom[aá]tica/ig,
+   (_,time)=>'Siendo las '+time+', el equipo '+(equipment||'involucrado')+' se detuvo automáticamente');
+ raw=raw.replace(/\b(?:el\s+)?equipo\s+detiene\s+de\s+forma\s+autom[aá]tica\b/ig,
+   'el equipo se detuvo automáticamente');
+ raw=raw.replace(/\bdetector\s+de\s+temperatura\s+#\s*(\d+)/ig,'El detector de temperatura N.º $1');
+ raw=raw.replace(/\bindica\s+alta\s+temperatura\b/ig,'indicó una condición de alta temperatura');
+ raw=raw.replace(/\bdespu[eé]s\s+de\s+relubricar\b/ig,'Posteriormente, tras realizar la relubricación');
+ raw=raw.replace(/\bse\s+determina\s+falla\s+definitiva\s+de\b/ig,'se determinó una falla de');
+ raw=raw.charAt(0).toUpperCase()+raw.slice(1);
+ return /[.!?]$/.test(raw)?raw:raw+'.';
 }
 function improvedDescription(c){
  const observed=observedNarrative(c);
