@@ -22,10 +22,18 @@ await page.locator('#authEmail').fill('test@example.com');
 await page.locator('#authPassword').fill('password-test-123');
 await page.locator('#authSubmit').click();
 await page.locator('#mainApp').waitFor({state:'visible'});
+assert.equal(await page.locator('#weekEvents').innerText(),'0','El tablero comienza sin eventos');
+await page.locator('#weekPrevious').click();
+assert.ok((await page.locator('#weekLabel').innerText()).includes('Semana'),'Permite navegar por semanas históricas');
+await page.locator('#weekCurrent').click();
 await page.locator('#start').click();
 await page.locator('[data-k="equipment"]').fill('CT-11C');
 await page.locator('[data-k="title"]').fill('Protección temperatura rodamiento');
 await page.locator('[data-k="description"]').fill('Siendo las 23:15, equipo detiene de forma automática por señal de relé de protección. Detector de temperatura #8 (posición rodamiento lado libre del motor) indica alta temperatura. Se realizó relubricación y pruebas.');
+const currentDay=await page.evaluate(()=>{const d=new Date();return String(d.getFullYear())+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
+await page.locator('#stopStart').fill(currentDay+'T09:00');
+await page.locator('#stopEnd').fill(currentDay+'T11:00');
+
 await page.locator('input[name="safetyChoice"][value="si"]').check();
 await page.locator('#safetyDetails').waitFor({state:'visible'});
 await page.locator('[data-k="safetyDescription"]').fill('Ausencia de protección en zona de correas expuestas.');
@@ -77,6 +85,19 @@ for(const [value,title,css] of [
 }
 await page.locator('#reportFormat').selectOption('a3');
 await page.locator('button[data-page="inicio"]').click();
+assert.equal(await page.locator('#weekEvents').innerText(),'1','Debe incluir el evento recién guardado');
+assert.equal(await page.locator('#weekAssets').innerText(),'1','Debe reconocer un equipo afectado');
+assert.ok((await page.locator('#paretoTable').innerText()).includes('CT-11C'),'Pareto por equipo muestra el caso');
+await page.locator('#paretoMetric').selectOption('hours');
+assert.ok((await page.locator('#weekHours').innerText()).includes('2,00'),'Debe calcular horas detenidas');
+assert.ok((await page.locator('#paretoChart').innerText()).length>0,'El gráfico de horas debe aparecer');
+await page.locator('#paretoGroup').selectOption('failure');
+assert.ok((await page.locator('#paretoTable').innerText()).includes('Protección temperatura rodamiento'),'Agrupación por tipo de falla');
+await page.locator('#weekPrevious').click();
+assert.equal(await page.locator('#weekEvents').innerText(),'0','La semana anterior no incluye el caso actual');
+await page.locator('#weekNext').click();
+assert.equal(await page.locator('#weekEvents').innerText(),'1','Al regresar reaparece el mismo evento');
+
 assert.equal(await page.locator('#casesList .listItem').count(),1,'Cambiar plantilla no debe crear una investigación nueva');
 await page.locator('#casesList .listItem').first().click();
 await page.locator('button[data-page="reporte"]').click();
