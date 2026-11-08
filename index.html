@@ -107,6 +107,24 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .share-view .shared-photo{border:1px solid #344b60;border-radius:10px;padding:8px;min-width:0}
 .share-view .shared-photo p{font-size:11px;color:#b9c9d7}
 @media(max-width:600px){.share-dialog{padding:14px}.share-dialog .toolbar button{width:100%}}
+
+.reliability-dashboard{background:linear-gradient(140deg,#142b42 0%,#0b1b2d 60%,#0e2439 100%);border:1px solid #426179;box-shadow:0 18px 48px #030d1a4a}
+.reliability-controls{display:grid;grid-template-columns:minmax(170px,235px) minmax(170px,235px) 1fr;align-items:end;gap:13px;margin:17px 0 16px;background:#10263b;border:1px solid #3b5870;border-radius:12px;padding:13px}
+.reliability-controls input,.reliability-controls select{min-height:43px;background:#0a1b2b;border:1px solid #4a6a81;color:#e8f1f8;padding:10px 12px;border-radius:8px}
+.reliability-base-note{font-size:11px;line-height:1.55;color:#a9c0d2;align-self:center}
+.reliability-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 13px}
+.reliability-kpis>.kpi-pane{min-width:0;min-height:122px;background:linear-gradient(155deg,#1b354d,#11263c);border:1px solid #385a74;padding:16px 17px;position:relative;overflow:hidden}
+.reliability-kpis>.kpi-pane::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;background:#d4af70;border-radius:0 4px 4px 0}
+.reliability-kpis .kpi-pane span{font-size:10px;letter-spacing:1.05px;color:#aec5d4;font-weight:800}
+.reliability-kpis .kpi-pane strong{font-size:clamp(20px,2.5vw,31px);color:#f1d195;line-height:1.2;margin-top:8px}
+.reliability-kpis .kpi-pane small{font-size:10px;color:#9eb6c8;line-height:1.35}
+.reliability-kpis .kpi-availability::before{background:#59bfa5}
+.reliability-kpis .kpi-availability strong{color:#93dec7}
+.availability-track{height:5px;width:100%;background:#203c50;border-radius:6px;overflow:hidden;margin-top:9px}
+.availability-track span{height:100%;display:block;width:0;background:#65c9aa;transition:width .25s}
+.reliability-calculation{background:#0c2333;border:1px solid #33516a;border-radius:10px;padding:12px 14px;color:#afc9db;font-size:11px;line-height:1.65}
+@media(max-width:880px){.reliability-controls{grid-template-columns:1fr 1fr}.reliability-base-note{grid-column:1/-1}.reliability-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.reliability-controls{grid-template-columns:1fr}.reliability-base-note{grid-column:auto}.reliability-kpis{gap:8px}.reliability-kpis>.kpi-pane{min-height:105px;padding:12px 11px}.reliability-kpis .kpi-pane strong{font-size:21px}}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
@@ -135,7 +153,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Intelligence</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint"><button class="active" data-page="inicio">Inicio</button><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · PDF</button></nav>
 <section id="inicio" class="section active"><div class="card"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
-  <div><div class="eyebrow">Confiabilidad · Seguimiento semanal</div><h2>📊 Pareto de fallas de la semana</h2><p class="muted" style="margin:4px 0 0">Lunes a domingo · Cada investigación registrada representa un evento.</p></div>
+  <div><div class="eyebrow">ACR INTELLIGENCE · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
   <div class="dashboard-toolbar">
     <button type="button" class="secondary" id="weekPrevious" aria-label="Semana anterior">← Anterior</button>
     <button type="button" class="secondary" id="weekCurrent">Esta semana</button>
@@ -143,27 +161,32 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
 </div>
 <div class="dashboard-week" id="weekLabel" aria-live="polite">Calculando semana…</div>
-<div class="dashboard-toolbar" style="margin:12px 0 15px">
-  <label class="field dashboard-filter">Indicador
-    <select id="paretoMetric" aria-label="Indicador de Pareto">
-      <option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option>
-    </select>
+<div class="reliability-controls">
+  <label class="field dashboard-filter">Alcance del análisis
+    <select id="reliabilityAsset" aria-label="Equipo para indicadores"><option value="__all__">Todos los equipos</option></select>
+  </label>
+  <label class="field dashboard-filter">Horas base del período
+    <input id="weekBaseHours" type="number" inputmode="decimal" min="0" max="10000000" step="0.01" placeholder="Ej.: 168" aria-label="Horas base del período">
+  </label>
+  <div class="reliability-base-note" id="reliabilityBaseNote">Ingresa las horas calendario o programadas del activo para esta semana. El equipo puede operar 24 h/día o 168 h/semana.</div>
+</div>
+<div class="dashboard-kpis reliability-kpis">
+  <div class="kpi-pane"><span>FALLAS REGISTRADAS</span><strong id="weekEvents">0</strong><small>Eventos de la semana</small></div>
+  <div class="kpi-pane"><span>HORAS DETENIDAS</span><strong id="weekHours">0,00 h</strong><small>Tiempo fuera de servicio registrado</small></div>
+  <div class="kpi-pane"><span>HORAS OPERATIVAS</span><strong id="weekOperatingTotal">—</strong><small>Horas base − detenciones</small></div>
+  <div class="kpi-pane"><span>MTTR · TIEMPO MEDIO</span><strong id="weekMttr">—</strong><small>Detención / fallas</small></div>
+  <div class="kpi-pane"><span>MTBF · ENTRE FALLAS</span><strong id="weekMtbf">—</strong><small>Operación / fallas</small></div>
+  <div class="kpi-pane kpi-availability"><span>DISPONIBILIDAD</span><strong id="weekAvailability">—</strong><small>Operación / horas base</small><div class="availability-track"><span id="availabilityFill"></span></div></div>
+</div>
+<div class="reliability-calculation" id="reliabilityMethod" aria-live="polite">Ingresa la base de horas para obtener horas operativas, MTBF y disponibilidad.</div>
+<div class="dashboard-toolbar" style="margin:16px 0">
+  <label class="field dashboard-filter">Indicador de Pareto
+    <select id="paretoMetric" aria-label="Indicador de Pareto"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select>
   </label>
   <label class="field dashboard-filter">Agrupar por
-    <select id="paretoGroup" aria-label="Agrupar Pareto">
-      <option value="equipment">Equipo / TAG</option><option value="failure">Falla / evento</option>
-    </select>
+    <select id="paretoGroup" aria-label="Agrupar Pareto"><option value="equipment">Equipo / TAG</option><option value="failure">Falla / evento</option></select>
   </label>
 </div>
-<div class="dashboard-kpis">
-  <div><span>Eventos registrados</span><strong id="weekEvents">0</strong></div>
-  <div><span>Horas detenidas</span><strong id="weekHours">0,00 h</strong></div>
-  <div><span>Equipos afectados</span><strong id="weekAssets">0</strong></div>
-  <div><span>MTTR · reparación promedio</span><strong id="weekMttr">—</strong></div>
-  <div><span>MTBF · entre fallas</span><strong id="weekMtbf">—</strong></div>
-  <div class="dashboard-hours-field"><label for="weekOperatingHours">Horas de operación acumuladas</label><input id="weekOperatingHours" inputmode="decimal" type="number" min="0" max="10000000" step="0.01" placeholder="Ej.: 320"><span>Horas efectivas sumadas de los equipos analizados, sin detenciones</span></div>
-</div>
-<p id="reliabilityMethod" class="help" style="margin:0 0 17px">MTTR = horas de detención / eventos con duración. MTBF = horas operadas / fallas. Indica las horas reales operadas para obtener MTBF.</p>
 <div class="dashboard-charts">
   <div class="dashboard-chart"><h3>Diagrama de Pareto</h3><div id="paretoChart" role="img" aria-label="Gráfico de Pareto semanal"></div><div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Detalle de Pareto"><thead><tr><th>Equipo / falla</th><th id="paretoValueHeading">Eventos</th><th>Acum.</th></tr></thead><tbody id="paretoTable"></tbody></table></div></div>
   <div class="dashboard-chart"><h3 id="weeklyTrendTitle">Tendencia · últimas 8 semanas</h3><div id="weeklyTrend" role="img" aria-label="Comparación de las últimas ocho semanas"></div><p class="help">Historial por semana calendario (ISO 8601). Selecciona semanas anteriores para revisar su Pareto.</p></div>
