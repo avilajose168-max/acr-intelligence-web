@@ -250,49 +250,74 @@ function withBusy(button,work){
  return Promise.resolve().then(work).finally(()=>{button.disabled=false;button.textContent=old});
 }
 
+function eventFocus(c){
+ const description=normalizeText(c.description||'').toLowerCase();
+ const title=normalizeText(c.title||'').toLowerCase();
+ const t=description+' '+title;
+ if(/(?:sensor|detector|sonda|termocupla|rtd|pt100).{0,85}(?:temperatura|rodamiento)|(?:temperatura|rodamiento).{0,85}(?:sensor|detector|sonda|rtd|pt100)/.test(description)
+   ||(/(?:sensor|detector).{0,35}temperatura/.test(t)&&/rodamiento/.test(t)))return 'bearingSensor';
+ if(/fuga.{0,35}aceite|p[eé]rdida.{0,30}aceite|aceite.{0,20}(?:fug|escap|derram)/.test(description))return 'oilLeak';
+ if(/clamping|hidr[aá]ulic|presi[oó]n|v[aá]lvula selectora/.test(description))return 'hydraulic';
+ if(/(?:cort|rotur|desprend|rompi).{0,35}correa|correa.{0,35}(?:cort|rotur|rompi|desprend)/.test(description))return 'belt';
+ if(/motor|variador|el[eé]ctric|protecci[oó]n/.test(description))return 'electric';
+ if(/harnero|vibraci[oó]n|rodamiento|polea/.test(description))return 'mechanical';
+ return 'general';
+}
+function observedNarrative(c){
+ const raw=String(c.description||'').trim().replace(/\s+/g,' ');
+ if(!raw)return '';
+ const text=raw.charAt(0).toUpperCase()+raw.slice(1);
+ return /[.!?]$/.test(text)?text:text+'.';
+}
 function improvedDescription(c){
- const input=normalizeText(c.description);if(!input)return '';
- // Evita encadenar párrafos introductorios cada vez que se pulsa el botón.
- if(input.includes('Antecedentes técnicos para el análisis:'))return c.description;
- const original=input.charAt(0).toUpperCase()+input.slice(1).replace(/[.!?]+$/,'')+'.';
- const t=input.toLowerCase();
- const equipment=normalizeText(c.equipment||'el equipo investigado');
+ const observed=observedNarrative(c);
+ if(!observed)return '';
+ if(observed.includes('Verificación requerida:'))return c.description;
+ const focus=eventFocus(c);
+ const equipment=normalizeText(c.equipment||'');
  const area=normalizeText(c.area||'');
- const subject=area?'En el área de '+area+', el equipo '+equipment:'El equipo '+equipment;
- let symptom='Se registró una desviación operacional que requiere evaluación técnica.';
- let verification='Se requiere identificar el mecanismo de falla mediante inspecciones y revisión de los parámetros operacionales asociados.';
- if(/fuga|filtraci[oó]n|derrame/.test(t)){
-   symptom='El evento presenta indicios de pérdida de fluido; su ubicación, magnitud y punto de origen deben verificarse mediante inspección y registro fotográfico.';
-   verification='Verificar conexiones, sellos, tapones, puntos de drenaje y componentes del circuito que correspondan, además de registros de nivel, presión y reposición de aceite, si están disponibles.';
- }else if(/presi[oó]n|clamping|hidr[aá]ulic/.test(t)){
-   symptom='El evento involucra una desviación del comportamiento hidráulico respecto de la condición operacional requerida; el mecanismo que la originó aún debe establecerse.';
-   verification='Revisar tendencias de presión y temperatura, estado de bombas y válvulas, posibles pérdidas de fluido y condiciones de enclavamiento, cuando sean aplicables.';
- }else if(/harnero|vibraci[oó]n|rodamiento|correa/.test(t)){
-   symptom='La condición descrita puede comprometer la continuidad del funcionamiento mecánico del equipo y requiere correlacionar el síntoma con las variables de condición y operación.';
-   verification='Contrastar tendencias de vibración, corriente, temperatura, alineación, tensión y condición de componentes según las mediciones disponibles.';
- }else if(/motor|variador|el[eé]ctric|protecci[oó]n/.test(t)){
-   symptom='La condición reportada requiere establecer si se originó en una protección actuada, una variable eléctrica fuera de rango o un componente del sistema.';
-   verification='Contrastar alarmas, corriente, tensión, temperatura, parámetros de protección e historial de intervenciones, según disponibilidad.';
- }
- const duration=Number(c.downtime);
- const impact=Number.isFinite(duration)&&duration>0
-   ?'El tiempo de detención registrado fue de '+duration.toFixed(2).replace('.',',')+' horas.'
-   :'El tiempo de detención debe confirmarse con los registros de inicio y término.';
+ const header=equipment?(equipment+(area?' – '+area:'')):null;
+ const effects={
+  bearingSensor:{
+   paragraph:'La detención quedó asociada a la señal del dispositivo de medición de temperatura del rodamiento señalado. La relación entre la señal recibida por el sistema de protección y la temperatura física del componente requiere evaluación antes de atribuir el evento a una falla mecánica o de instrumentación.',
+   check:'Contrastar el historial y el valor de la señal del sensor con una medición independiente de temperatura; revisar la identificación del canal, su continuidad eléctrica, conexiones, configuración de alarma y disparo, así como los antecedentes de lubricación y las verificaciones posteriores al evento. No asumir que la lubricación ni las pruebas realizadas demostraron por sí solas la causa.'
+  },
+  oilLeak:{
+   paragraph:'La condición descrita corresponde a una pérdida de aceite cuya ubicación y mecanismo deben establecerse a partir de la inspección del circuito afectado. La existencia de una fuga no permite por sí misma atribuirla a un elemento específico.',
+   check:'Confirmar el punto de origen, estado de uniones, tapones, juntas y sellos según corresponda; revisar presiones, niveles, intervenciones previas y evidencias fotográficas.'
+  },
+  hydraulic:{
+   paragraph:'La anomalía compromete el funcionamiento del sistema hidráulico indicado. Para diferenciar una pérdida real de presión de una condición de control o medición, es necesario contrastar las variables disponibles y la secuencia operacional.',
+   check:'Revisar tendencias de presión, funcionamiento de válvulas y bombas, estado del circuito y registros de alarmas o intervenciones, según los componentes efectivamente involucrados.'
+  },
+  belt:{
+   paragraph:'El evento corresponde a una alteración de la transmisión mecánica. La condición de las correas, poleas y parámetros operativos deberá correlacionarse con el mecanismo de daño reportado.',
+   check:'Contrastar estado y alineación de poleas, tensión y condición de correas, registros de carga y antecedentes de inspección.'
+  },
+  electric:{
+   paragraph:'El evento afecta al sistema eléctrico o de protección reportado. La actuación de una protección no establece por sí sola cuál fue la variable iniciadora ni el componente involucrado.',
+   check:'Revisar secuencia de alarmas y disparos, parámetros de protección, tendencias eléctricas y pruebas aplicables al circuito mencionado.'
+  },
+  mechanical:{
+   paragraph:'El comportamiento reportado requiere establecer el mecanismo físico que originó la desviación en el componente o equipo afectado.',
+   check:'Revisar mediciones de condición, inspecciones y antecedentes de operación específicamente asociados al síntoma observado.'
+  },
+  general:{
+   paragraph:'La condición descrita requiere relacionar los síntomas reportados con los antecedentes operacionales disponibles, sin anticipar una causa que aún no esté comprobada.',
+   check:'Revisar la secuencia temporal del evento, inspecciones realizadas, mediciones disponibles y estado de los controles asociados al equipo afectado.'
+  }
+ }[focus];
+ const hours=Number(c.downtime);
+ const duration=Number.isFinite(hours)&&hours>0?'La indisponibilidad registrada fue de '+hours.toFixed(2).replace('.',',')+' horas.':'';
  const chronology=normalizeText(c.timeline||'');
- const chronologyText=chronology?'Cronología consignada: '+chronology.replace(/[.!?]+$/,'')+'.'
-   :'La cronología previa, durante y posterior al evento permanece pendiente de documentación.';
- const consequence=/detuv|detenci[oó]n|parad|enclav|fuera de servicio/.test(t)
-   ?'Se reporta una detención del equipo, cuya secuencia de alarmas y decisiones operacionales debe verificarse.'
-   :'Debe confirmarse si la condición produjo detención, restricción de capacidad o únicamente una anomalía observable.';
- return [
-   'Descripción técnica del evento:',
-   subject+' registró el siguiente comportamiento según el relato del investigador: '+original,
-   symptom,
-   consequence+' '+impact,
-   'Antecedentes técnicos para el análisis: '+chronologyText,
-   'Verificación requerida: '+verification,
-   'La descripción anterior organiza únicamente la información reportada. Los mecanismos causales y las acciones definitivas se establecerán durante el análisis y la validación de evidencias.'
- ].join('\n\n');
+ const timeline=chronology?'Cronología registrada: '+chronology.replace(/[.!?]+$/,'')+'.':'';
+ const parts=[observed];
+ if(header && !observed.toLowerCase().includes(equipment.toLowerCase()))parts.push('Equipo involucrado: '+header+'.');
+ if(duration)parts.push(duration);
+ if(timeline)parts.push(timeline);
+ parts.push(effects.paragraph);
+ parts.push('Verificación requerida: '+effects.check);
+ return parts.join('\n\n');
 }
 $('#improveDescription').onclick=()=>{
  const c=current();if(!c)return;
@@ -315,94 +340,67 @@ $('#improveDescription').onclick=()=>{
  });
 };
 function proposeWhys(c){
- const t=normalizeText([c.description,c.title,c.timeline].join(' ')).toLowerCase();
- const has=(re)=>re.test(t);
- const stopped=has(/detuv|detenci[oó]n|parad|enclav|fuera de servicio/);
- const oilLeak=has(/fuga.{0,25}aceite|p[eé]rdida.{0,20}aceite|aceite.{0,20}(fug|derram|escap)/);
- const hydraulic=has(/presi[oó]n|clamping|hidr[aá]ulic|v[aá]lvula|bomba/);
- const screens=has(/harnero|vibraci[oó]n|rodamiento|correa|polea|desalineaci[oó]n/);
- const electric=has(/motor|el[eé]ctric|variador|corriente|protecci[oó]n/);
- const plug=has(/tap[oó]n|drenaje/);
- const seal=has(/sello|empaquetadura|junta/);
- const valve=has(/v[aá]lvula|selectora/);
- const brokenBelt=has(/correa/) && has(/cort|rotur|rompi|parti[oó]/);
- const notedMissingPlug=has(/sin\s+tap[oó]n|faltaba\s+(?:el\s+)?tap[oó]n|tap[oó]n\s+ausente|tap[oó]n\s+(?:se\s+)?(?:solt[oó]|desprendi[oó])/);
- const notedBadSeal=has(/sello|empaquetadura|junta/)&&has(/dañad|desgast|rot|deterior/);
- let chain;
- if(oilLeak&&plug){
-  chain=[
-   stopped?'El chancador o equipo se detuvo al detectarse una fuga de aceite.':'Se identificó una fuga de aceite durante la operación.',
-   notedMissingPlug?'El punto de fuga se encontraba sin tapón o este se había desprendido.':'La fuga pudo producirse por pérdida de hermeticidad en un tapón o punto de drenaje.',
-   'El cierre o retención del tapón pudo ser insuficiente después de una intervención o por una condición de montaje.',
-   'La condición de cierre pudo no haberse identificado durante la revisión previa a la puesta en servicio.',
-   'La verificación del punto de drenaje pudo no estar contemplada o no haberse ejecutado eficazmente en el control de cierre del mantenimiento.'
-  ];
- }else if(oilLeak&&seal){
-  chain=[
-    stopped?'El equipo se detuvo a raíz de una fuga de aceite.':'Se identificó una fuga de aceite.',
-    notedBadSeal?'El sello o junta presentaba daño o desgaste descrito en el evento.':'La fuga pudo originarse en la pérdida de hermeticidad de un sello o junta.',
-    'El elemento de sellado pudo degradarse por condición de montaje, envejecimiento, presión o temperatura fuera de lo esperado.',
-    'La degradación pudo no haberse identificado oportunamente mediante inspección o tendencia de condición.',
-    'La estrategia de inspección y los criterios de intervención del punto de sellado pudieron no detectar la condición antes del evento.'
-  ];
- }else if(oilLeak){
-  chain=[
-    stopped?'El equipo se detuvo por una fuga de aceite.':'Se observó una fuga de aceite.',
-    'El circuito pudo perder estanqueidad en una unión, sello, manguera, tapón o componente.',
-    'La pérdida de estanqueidad pudo originarse en una condición de montaje, fatiga, desgaste o presión; debe identificarse el punto real.',
-    'La condición pudo no haberse detectado oportunamente durante las verificaciones o inspecciones anteriores.',
-    'La frecuencia, alcance o criterios de las inspecciones del circuito podrían ser insuficientes para detectar esa condición.'
-  ];
- }else if(hydraulic&&valve){
-  chain=[
-    'El equipo presentó una desviación de presión o funcionamiento en el circuito hidráulico descrito.',
-    'La posición, conmutación o funcionamiento de una válvula pudo alterar el suministro o retención de presión.',
-    'La válvula pudo permanecer en una posición no requerida por ajuste, intervención o falla del accionamiento.',
-    'La desviación pudo no haberse identificado en las pruebas funcionales o verificaciones anteriores a la operación.',
-    'El control de configuración y la prueba posterior a intervenciones podrían no haber asegurado la posición y respuesta de la válvula.'
-  ];
- }else if(hydraulic){
-  chain=[
-    'Se registró una condición anormal de presión o funcionamiento del sistema hidráulico.',
-    'El circuito pudo no mantener la presión requerida por fuga, restricción o desempeño insuficiente de un componente.',
-    'La condición pudo producirse por degradación, ajuste incorrecto, contaminación o falla de un elemento hidráulico.',
-    'La desviación pudo no haberse detectado anticipadamente mediante tendencias, alarmas o pruebas funcionales.',
-    'Los criterios de monitoreo, inspección y verificación hidráulica pudieron no haber prevenido la evolución de esa condición.'
-  ];
- }else if(brokenBelt){
-  chain=[
-    'Se reportó el corte o rotura de una correa, con impacto en el funcionamiento del equipo.',
-    'La correa pudo recibir una carga de tensión, desalineación o esfuerzo superior a su condición admisible.',
-    'La condición pudo originarse por ajuste de tensión, desgaste de poleas o variación del régimen de operación.',
-    'La desviación pudo no haberse identificado oportunamente en inspecciones de tensión y alineación.',
-    'La pauta de verificación de transmisión pudo no haber detectado o corregido la condición que precedió al evento.'
-  ];
- }else if(screens){
-  chain=[
-    'Se registró una desviación mecánica o vibratoria en el equipo indicado.',
-    'Una condición de vibración, carga, alineación o lubricación pudo generar el síntoma reportado.',
-    'Esa condición pudo originarse por desgaste, instalación, tensión o cambios del proceso.',
-    'La degradación pudo no haberse identificado oportunamente mediante tendencias o inspecciones de condición.',
-    'Las verificaciones preventivas o límites de intervención podrían no haber anticipado la desviación.'
-  ];
- }else if(electric){
-  chain=[
-    'Se presentó una condición eléctrica anormal o la actuación de una protección del equipo.',
-    'Una variable eléctrica, térmica o de protección pudo alcanzar una condición de disparo o funcionamiento anómalo.',
-    'La desviación pudo relacionarse con carga, conexiones, aislamiento, accionamiento o configuración de protecciones.',
-    'La condición pudo no haberse identificado anticipadamente mediante tendencias, alarmas o pruebas.',
-    'Los controles de monitoreo y verificación del sistema eléctrico podrían no haber anticipado esa desviación.'
-  ];
- }else{
-  chain=[
-    'Se registró el síntoma o la falla descrita por el investigador.',
-    'Un mecanismo de deterioro o desviación funcional del componente pudo originar el síntoma observado.',
-    'Ese mecanismo pudo producirse por condición de operación, montaje, desgaste o interacción con otros componentes.',
-    'La condición pudo no haberse detectado antes de manifestarse mediante los controles o inspecciones aplicables.',
-    'La estrategia de detección o los criterios de intervención podrían no haber anticipado oportunamente la condición.'
-  ];
+ const description=normalizeText(c.description||'').toLowerCase();
+ const focus=eventFocus(c);
+ if(focus==='bearingSensor'){
+   const tempObserved=/alta temperatura|temperatura elevada|sobretemperatura/.test(description);
+   const stopped=/detiene|detuvo|detenci[oó]n|parada|paro|enclav/.test(description);
+   const first=stopped
+     ? 'El equipo se detuvo automáticamente por la actuación de la protección asociada al sensor de temperatura del rodamiento.'
+     : 'La señal del sensor de temperatura del rodamiento activó una condición de protección.';
+   return [
+     first,
+     tempObserved?'La señal del canal de temperatura alcanzó la condición de alarma o disparo por temperatura elevada indicada en el evento.':'El sistema de control recibió una señal del sensor que cumplió la condición configurada para activar el disparo.',
+     'La señal pudo deberse a una temperatura real del rodamiento o a una alteración del sensor, su cableado o la cadena de medición; se debe contrastar con valores independientes.',
+     'La diferencia entre la señal del sistema y la condición física del rodamiento podría no haberse identificado antes del disparo mediante las verificaciones disponibles.',
+     'Los criterios de supervisión, comprobación del sensor o validación de señales de protección podrían no haber permitido distinguir oportunamente una condición térmica real de una anomalía de instrumentación.'
+   ];
  }
- return chain;
+ if(focus==='oilLeak'){
+   const plug=/tap[oó]n/.test(description),missing=/sin tap[oó]n|faltaba.{0,12}tap[oó]n|tap[oó]n.{0,18}(?:ausente|desprend)/.test(description);
+   return [
+     'Se produjo una fuga de aceite asociada al evento que afectó la condición operativa del equipo.',
+     missing?'Se constató que el punto de fuga no tenía instalado el tapón o que este se desprendió.':plug?'La pérdida de estanqueidad pudo localizarse en el tapón o punto de drenaje mencionado.':'La fuga pudo originarse en la pérdida de estanqueidad de una unión o componente del circuito afectado.',
+     'La condición del punto de fuga podría relacionarse con montaje, apriete, integridad del elemento de cierre o deterioro, según lo que revele la inspección.',
+     'La condición podría no haberse detectado durante las comprobaciones del componente o de la intervención anterior al evento.',
+     'La verificación final o el criterio de inspección del punto de fuga podrían haber sido insuficientes para detectar la condición antes de operar.'
+   ];
+ }
+ if(focus==='hydraulic')return [
+   'Se registró la anomalía de presión o funcionamiento del circuito hidráulico que motivó el evento.',
+   'El circuito pudo dejar de mantener la condición hidráulica requerida por una pérdida, restricción o alteración de control.',
+   'La desviación pudo relacionarse con la posición de una válvula, el estado de un componente o una pérdida de estanqueidad, según la evidencia del circuito mencionado.',
+   'La condición podría no haberse identificado durante la comprobación funcional o el monitoreo previo al evento.',
+   'La verificación del estado hidráulico y de las barreras de detección podría no haber sido eficaz para detectar esa desviación.'
+ ];
+ if(focus==='belt')return [
+   'La rotura o desprendimiento de la correa descrita afectó la transmisión del equipo.',
+   'La correa pudo estar sometida a esfuerzos o desalineaciones que excedieron su capacidad de operación.',
+   'La condición pudo originarse en tensión, alineación, desgaste o interacción con las poleas del sistema mencionado.',
+   'La desviación podría no haberse identificado en las inspecciones de transmisión antes del evento.',
+   'La verificación de condición y ajuste de la transmisión podría no haber detectado el mecanismo que precedió a la falla.'
+ ];
+ if(focus==='electric')return [
+   'El equipo presentó la condición eléctrica o actuación de protección reportada.',
+   'Una variable medida por el sistema pudo alcanzar el umbral asociado al evento.',
+   'La condición pudo deberse a una desviación real del circuito o de la cadena de medición/protección, pendiente de contrastar.',
+   'La desviación podría no haberse identificado a tiempo mediante tendencias, pruebas o revisión de alarmas del sistema afectado.',
+   'Los controles de supervisión y verificación del circuito podrían no haber detectado previamente la condición iniciadora.'
+ ];
+ if(focus==='mechanical')return [
+   'Se registró el síntoma mecánico descrito en el componente investigado.',
+   'Una condición física o funcional del componente pudo generar el comportamiento observado.',
+   'Esa condición pudo originarse por carga, desgaste, montaje o interferencia directamente asociados al componente señalado.',
+   'La progresión de la condición podría no haberse identificado en las inspecciones o mediciones de ese componente.',
+   'El método de seguimiento o los criterios de intervención podrían no haber anticipado la desviación reportada.'
+ ];
+ return [
+  'Se presentó la falla o condición operacional descrita en el registro.',
+  'El componente o función afectada pudo desarrollar una desviación que produjo el síntoma observado.',
+  'Esa desviación pudo originarse en una condición de operación o deterioro que debe precisarse con evidencia.',
+  'La condición podría no haberse identificado mediante las verificaciones realizadas antes del evento.',
+  'Los controles específicos del proceso podrían no haber prevenido o detectado esa condición antes de manifestarse.'
+ ];
 }
 function generateWhys(){
  const c=current();if(!c)return;
@@ -426,30 +424,67 @@ function generateWhys(){
 }
 $('#generateWhysAnalysis').onclick=generateWhys;
 // Generador local orientativo: propone factores a INVESTIGAR, no hechos ni causas verificadas.
-function analysisProfile(c){const t=normalizeText([c.description,c.title,c.equipment,c.timeline,c.validation].join(' ')).toLowerCase();if(/presi[oó]n|clamping|hidr[aá]ulic|v[aá]lvula|bomba|aceite/.test(t))return 'hydraulic';if(/harnero|vibraci[oó]n|rodamiento|correa|polea/.test(t))return 'screen';if(/motor|el[eé]ctric|variador|corriente|protecci[oó]n/.test(t))return 'electric';return 'general'}
-function proposeHypotheses(c){const t=normalizeText([c.description,c.title,c.timeline].join(' ')).toLowerCase();const profile=analysisProfile(c);let h=[];if(profile==='hydraulic'){if(/v[aá]lvula|selectora/.test(t))h.push('Posición, conmutación o funcionamiento de válvula: verificar si afectó el circuito y con qué registros se demuestra.');h.push('Pérdida de presión por fuga, restricción, bomba o condición hidráulica: contrastar mediciones y pruebas.','Brecha en verificación de configuración, procedimiento o barrera de control: confirmar mediante OT, secuencia de maniobras y revisión de controles.')}else if(profile==='screen')h=['Condición de vibración, desalineación o tensión anómala: validar con mediciones y condición del equipo.','Degradación de rodamientos, correas o estructura: validar con inspecciones y tendencias.','Brecha de inspección o control del régimen de operación: validar con históricos y procedimientos.'];else if(profile==='electric')h=['Disparo por condición eléctrica real o configuración de protección: verificar registros y curvas.','Deterioro o anomalía del motor, conexiones o variador: verificar pruebas y tendencias.','Brecha en detección o mantenimiento: revisar controles y registros.'];else h=['Condición técnica del componente directamente relacionada con el síntoma: comprobar mediante inspección o prueba.','Cambio operacional o intervención previa asociado temporalmente al evento: contrastar registros y cronología.','Insuficiencia de barreras de detección o prevención: verificar controles aplicables y efectividad.'];return h.map((v,i)=>(i+1)+'. HIPÓTESIS POR VALIDAR: '+v).join('\n')}
+function analysisProfile(c){return eventFocus(c)}
+function proposeHypotheses(c){
+ const focus=eventFocus(c);
+ const causes={
+  bearingSensor:[
+   '1. Desviación térmica real en el rodamiento o su entorno: contrastar tendencia del canal con medición independiente y condición de lubricación.',
+   '2. Señal incorrecta o intermitente del sensor de temperatura: comprobar el elemento de medición, su continuidad, conexiones y estabilidad de lectura.',
+   '3. Configuración, asignación del canal o lógica de protección: revisar umbrales, calibración, registros de eventos y correspondencia del sensor con el rodamiento indicado.'
+  ],
+  oilLeak:[
+   '1. Pérdida de hermeticidad en el punto reportado: inspeccionar sello, unión, tapón o drenaje efectivamente involucrado.',
+   '2. Condición de montaje o integridad del cierre: contrastar inspección física con historial de mantenimiento.',
+   '3. Condiciones de presión o funcionamiento del circuito: revisar tendencias del tramo afectado.'
+  ],
+  hydraulic:[
+   '1. Pérdida real de presión o fuga en el circuito señalado: contrastar mediciones y pruebas de estanqueidad.',
+   '2. Alteración en posición o respuesta de válvulas del circuito: verificar su estado y secuencia de funcionamiento.',
+   '3. Condición de bomba, suministro o medición hidráulica: revisar registros y pruebas del sistema.'
+  ],
+  belt:[
+   '1. Desalineación, tensión inadecuada o condición de poleas: verificar geometría, ajuste y desgaste.',
+   '2. Deterioro previo de la correa: contrastar inspecciones con condición física y régimen de carga.',
+   '3. Carga o interferencia anormal: revisar la secuencia operativa del equipo afectado.'
+  ],
+  electric:[
+   '1. Condición eléctrica real que activó la protección: contrastar variables y registro del disparo.',
+   '2. Alteración de medición o parametrización: comprobar sensores, canales y umbrales pertinentes.',
+   '3. Deterioro del circuito o componente mencionado: verificar con pruebas e inspecciones.'
+  ],
+  mechanical:[
+   '1. Condición física del componente descrito: comprobar daño, holguras, desgaste y mediciones pertinentes.',
+   '2. Variación de carga o estado de montaje: contrastar parámetros y antecedentes de intervención.',
+   '3. Detección tardía de degradación: comparar tendencias con inspecciones anteriores.'
+  ],
+  general:[
+   '1. Mecanismo inmediato que explica el síntoma reportado: validar con inspección del componente afectado.',
+   '2. Condición previa de funcionamiento o intervención relacionada: revisar cronología disponible.',
+   '3. Control de detección aplicable al evento: comprobar alcance y efectividad.'
+  ]
+ }[focus];
+ return causes.join('\n');
+}
 function ensureEvent(){const c=current();if(!c)return null;if(!normalizeText(c.description)){alert('Primero describe el evento (puedes usar el micrófono).');navigate('registro');return null}return c}
 function proposeConclusion(c){
-  const label=normalizeText(c.title||c.equipment||'el equipo investigado');
-  const event=normalizeText(c.description||'').trim();
-  const eventSummary=event.length>360?event.slice(0,357).replace(/\s+\S*$/,'')+'…':event;
-  const profile=analysisProfile(c);
-  const focus={
-    hydraulic:'La investigación debe contrastar mediciones de presión, comportamiento de bombas, válvulas, fugas y controles del sistema hidráulico.',
-    screen:'La investigación debe contrastar vibraciones, condición de componentes, alineación, tensión y antecedentes de inspección.',
-    electric:'La investigación debe contrastar registros de disparo, protecciones y tendencias eléctricas con la condición física de los componentes.',
-    general:'La investigación debe determinar el mecanismo físico u operacional mediante inspecciones, registros y pruebas.'
-  }[profile];
-  const duration=normalizeText(c.downtime||'');
-  const impact=duration?'El evento registró '+duration.replace('.',',')+' horas de detención. ':'El impacto en horas de detención debe cuantificarse. ';
-  const evidence=normalizeText(c.validation||'');
-  const verified=c.validationStatus==='Causa validada por investigador'&&evidence.length>24;
-  const status=verified?
-    'El investigador ha marcado la causa como validada y documentó evidencia; corresponde revisión técnica independiente antes del cierre.':
-    'A la fecha no existe evidencia suficiente en este registro para confirmar una causa raíz. Las causas listadas son hipótesis que deben priorizarse, comprobarse o descartarse.';
-  const evidenceText=evidence?'Evidencia registrada para revisión: '+evidence+'. ':'Se requiere adjuntar tendencias, inspecciones, alarmas, OT y registros de maniobras, según corresponda. ';
-  const plan='Se recomienda asignar responsables y fechas a las verificaciones, corregir las desviaciones confirmadas y evaluar la eficacia de las acciones antes de cerrar el ACR.';
-  return 'CONCLUSIÓN EJECUTIVA PRELIMINAR — '+label+'. '+eventSummary+' '+impact+focus+' '+status+' '+evidenceText+plan;
+ const focus=eventFocus(c);
+ const observed=observedNarrative(c);
+ const hours=Number(c.downtime);
+ const impact=Number.isFinite(hours)&&hours>0?'La detención registrada fue de '+hours.toFixed(2).replace('.',',')+' horas. ':'';
+ const checks={
+  bearingSensor:'El evento quedó asociado a una protección por señal de temperatura del rodamiento. Para establecer si existió una condición térmica real o una desviación de instrumentación, corresponde cotejar el registro de disparo con una medición independiente, examinar la señal del sensor y verificar los parámetros de la protección. Las comprobaciones de lubricación y las pruebas posteriores deben evaluarse como antecedentes, sin atribuirles por sí solas capacidad para demostrar la causa.',
+  oilLeak:'La investigación debe identificar el punto exacto de pérdida de aceite y comprobar su mecanismo, considerando exclusivamente los elementos del circuito que se inspeccionen.',
+  hydraulic:'La investigación debe contrastar presión real, condición de válvulas y elementos del circuito hidráulico señalado, a fin de establecer el mecanismo que originó la desviación.',
+  belt:'La investigación debe verificar la condición de la correa y su sistema de transmisión, relacionando la evidencia física con tensión, alineación y carga.',
+  electric:'La investigación debe correlacionar el registro de protección con las variables eléctricas y la cadena de medición del circuito afectado.',
+  mechanical:'La investigación debe identificar el mecanismo físico específico del componente descrito mediante inspección y tendencias disponibles.',
+  general:'La investigación requiere establecer la secuencia causal mediante registros y mediciones correspondientes al evento descrito.'
+ }[focus];
+ const evidence=normalizeText(c.validation||'');
+ const verified=c.validationStatus==='Causa validada por investigador'&&evidence.length>24;
+ const status=verified?'El investigador consignó evidencia de validación, pendiente de revisión técnica antes del cierre.':'No corresponde declarar una causa raíz confirmada mientras las explicaciones propuestas no cuenten con evidencia suficiente.';
+ return 'Conclusión ejecutiva preliminar.\n\n'+observed+'\n\n'+impact+checks+'\n\n'+(evidence?'Evidencia disponible: '+evidence+'. ':'')+status+' Se recomienda registrar los resultados de las verificaciones, definir las acciones aplicables y evaluar su eficacia.';
 }
 function generateHypotheses(){
  const c=ensureEvent();if(!c)return;
