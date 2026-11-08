@@ -591,7 +591,7 @@ function exportPdfWeekly(){
  }
  header('PARETO SEMANAL DE FALLAS',data.period);
  const summary=weeklySummary(data);
- summary.forEach((k,i)=>{
+ summary.slice(0,3).forEach((k,i)=>{
    const x=margin+i*91,y=42;
    rect(x,y,86,24,[239,244,248]);str(String(k.value),x+5,y+12,16,[27,59,83],true);
    str(k.label,x+5,y+20,8,[77,95,112]);
@@ -626,7 +626,8 @@ function exportPdfWeekly(){
  str('03  RESUMEN DEL PERÍODO',margin,171,10,navy,true);
  const main=data.rows[0];
  const note=main?'Categoría principal: '+main.label+'. Contribución acumulada inicial: '+main.cumulative.toFixed(1)+'%.':'Sin eventos documentados para esta semana.';
- doc.setFontSize(9);doc.setTextColor(...navy);doc.text(doc.splitTextToSize(note,266),margin,181);
+ str('MTTR: '+dashboardReliabilityFormat(data.reliability.mttr)+'  |  MTBF: '+dashboardReliabilityFormat(data.reliability.mtbf)+'  |  Horas operadas: '+(data.reliability.operatingHours===null?'No registradas':dashboardReliabilityFormat(data.reliability.operatingHours)),margin,179,9,navy,true);
+ doc.setFontSize(8);doc.setTextColor(...navy);doc.text(doc.splitTextToSize(note,266),margin,186);
  doc.setDrawColor(212,222,230);doc.line(margin,194,W-margin,194);
  str('Fuente: investigaciones guardadas en este navegador. Una investigación = un evento. Verificar registros duplicados.',margin,201,7,[100,113,126]);
  if(data.records.length){
@@ -678,13 +679,14 @@ async function exportPptWeekly(){
  const base={fontFace:'Aptos',color:'E9F1F6'};
  const slide=pptBaseSlide(ppt,'Informe semanal de fallas',data.period);
  const kpis=weeklySummary(data);
- kpis.forEach((k,i)=>{
+ kpis.slice(0,3).forEach((k,i)=>{
   const x=.7+i*4.15;
   slide.addShape(ppt.ShapeType.roundRect,{x,y:2.45,w:3.85,h:1.38,rectRadius:.14,line:{color:'35536D',width:1},fill:{color:'173047'}});
   slide.addText(String(k.value),{x:x+.2,y:2.64,w:3.4,h:.55,fontSize:29,bold:true,color:'E9C07A'});
   slide.addText(k.label,{x:x+.2,y:3.32,w:3.4,h:.26,fontSize:12,color:'B8CDD9'});
  });
- slide.addText('Indicador: '+metric+'   |   Agrupación: '+(data.group==='failure'?'tipo de falla':'equipo / TAG'),{x:.7,y:4.5,w:11.9,h:.42,fontSize:16,...base});
+ slide.addText('MTTR: '+dashboardReliabilityFormat(data.reliability.mttr)+'     MTBF: '+dashboardReliabilityFormat(data.reliability.mtbf),{x:.7,y:4.05,w:11.8,h:.32,fontSize:16,bold:true,color:'E9C07A'});
+ slide.addText('Indicador: '+metric+'   |   Agrupación: '+(data.group==='failure'?'tipo de falla':'equipo / TAG'),{x:.7,y:4.78,w:11.9,h:.42,fontSize:16,...base});
  slide.addText('Prioriza los equipos y modos de falla que concentran la mayor cantidad de eventos o indisponibilidad.',{x:.7,y:5.15,w:11.8,h:.72,fontSize:14,color:'BDCDDA',breakLine:false});
  const pareto=pptBaseSlide(ppt,'Diagrama de Pareto',metric+'  ·  '+data.period);
  const graph={x:.9,y:2.35,w:8.2,h:3.85};
