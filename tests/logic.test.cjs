@@ -81,15 +81,15 @@ const weeklyCases=[
  {id:'d',equipment:'MP1000',title:'Fuga de aceite',datetime:'2026-11-09T01:00',downtime:'4'},
  {id:'empty',datetime:'2026-11-08T10:00',equipment:'',title:'',description:''}
 ];
-const weeklyResult=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','events','equipment');
+const weeklyResult=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','events','equipment',new Date(2026,10,9));
 assert.equal(weeklyResult.records.length,3,'Solo eventos de lunes a domingo, ignorando borradores vacíos');
 assert.equal(weeklyResult.rows.length,2,'Agrupa por equipo');
 assert.equal(weeklyResult.rows[0].label,'CT-11C','Ordena Pareto por frecuencia');
 assert.equal(weeklyResult.rows[0].events,2,'Agrupa fallas repetidas');
 assert.equal(weeklyResult.rows[0].cumulative,200/3,'Pareto muestra porcentaje acumulado');
-assert.equal(weeklyResult.hours,6.5,'Acumula horas detenidas');
+assert.equal(weeklyResult.hours,5,'Recorta a la semana 2 de 3,5 horas de la falla del domingo');
 const hourPareto=dashboardScope.weeklyPareto(weeklyCases,'2026-11-02','hours','equipment',new Date(2026,10,9));
-assert.equal(hourPareto.rows[0].label,'MP1000','Pareto por horas usa los tiempos de detención');
+assert.equal(hourPareto.rows[0].label,'CT-11C','Pareto por horas cuenta solo la porción dentro de la semana');
 assert.equal(dashboardScope.casesInWeek(weeklyCases,'2026-11-09').length,1,'No mezcla semanas distintas');
 assert.equal(dashboardScope.weeklyPareto(weeklyCases,'2026-10-19','events','equipment').records.length,0,'Semana sin eventos');
 console.log('OK calendario ISO, Pareto por equipos, frecuencia, duración y archivos semanales');
