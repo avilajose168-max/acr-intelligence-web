@@ -1346,7 +1346,7 @@ $('#importShared').onclick=()=>{
  c.actions=Array.isArray(c.actions)?c.actions:[];
  db.cases.unshift(c);
  if(!persist()){db.cases.shift();return}
- selected=c.id;closeReceivedShare();navigate('registro');
+ selected=c.id;closeReceivedShare();drawList();navigate('registro');
 };
 function reportPdfFileName(c){
  const format=selectedReportFormat(c),safe=String(c.equipment||'Evento').replace(/[^a-zA-Z0-9_-]+/g,'_').slice(0,35);
