@@ -482,29 +482,87 @@ function renderWeeklyTrend(cases,monday,metric){
 const ALL_ASSETS='__all__';
 function dashboardAssets(){return [...new Set(db.cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
 function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
-function baseStorageKey(monday,asset){return monday+'|'+asset}
-function getBaseHours(monday,asset){
- const value=db.settings?.weeklyBaseHours?.[baseStorageKey(monday,asset)];
- return value===undefined||value===null||value===''?null:Number(value);
+
+function weekTimeBounds(monday,now=new Date()){
+ const [year,month,day]=monday.split('-').map(Number);
+ const start=new Date(year,month-1,day,0,0,0,0);
+ const end=new Date(year,month-1,day+7,0,0,0,0);
+ const cutoff=new Date(Math.max(start.getTime(),Math.min(end.getTime(),now.getTime())));
+ return {start,end,cutoff,baseHours:Math.max(0,(cutoff-start)/3600000),active:now>=start&&now<end,future:now<start};
 }
-function weeklyIndicators(cases,monday,asset,baseHours){
- const all=casesInWeek(scopedCases(cases,asset),monday);
- const withDuration=all.filter(c=>String(c.downtime??'').trim()!==''&&Number.isFinite(Number(c.downtime))&&Number(c.downtime)>=0);
- const down=withDuration.reduce((sum,c)=>sum+Number(c.downtime),0);
- const hours=baseHours===null||baseHours===''?null:Number(baseHours);
- const base=hours!==null&&Number.isFinite(hours)&&hours>=0?hours:null;
- const complete=withDuration.length===all.length;
- const validBase=base!==null&&complete&&down<=base;
- const operating=validBase?Math.max(0,base-down):null;
+function investigationStart(c){
+ const raw=c.stopStart||c.datetime;
+ if(!raw)return null;
+ const d=new Date(raw);
+ return Number.isFinite(d.getTime())?d:null;
+}
+function investigationDowntime(c,bounds){
+ const start=investigationStart(c);
+ if(!start)return null;
+ const raw=String(c.downtime??'').trim();
+ let end=c.stopEnd?new Date(c.stopEnd):null;
+ if(end&&!Number.isFinite(end.getTime()))end=null;
+ if(!end&&raw!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0)end=new Date(start.getTime()+Number(raw)*3600000);
+ if(!end||end<start)return null;
+ const startMs=Math.max(start.getTime(),bounds.start.getTime());
+ const endMs=Math.min(end.getTime(),bounds.cutoff.getTime());
+ if(endMs<=startMs)return {hours:0,from:startMs,to:startMs};
+ return {hours:(endMs-startMs)/3600000,from:startMs,to:endMs};
+}
+function dashboardAnalysisEvents(cases,monday,asset,now=new Date()){
+ const bounds=weekTimeBounds(monday,now);
+ const records=scopedCases(cases,asset).filter(c=>{
+  if(!validDashboardCase(c))return false;
+  const start=investigationStart(c);
+  return start&&start>=bounds.start&&start<bounds.cutoff;
+ });
+ return {bounds,records};
+}
+function weeklyIndicators(cases,monday,asset,now=new Date()){
+ const {bounds,records}=dashboardAnalysisEvents(cases,monday,asset,now);
+ const assets=asset===ALL_ASSETS
+  ?[...new Set(records.map(c=>normalizeText(c.equipment)||'Equipo sin identificar'))]
+  :[asset];
+ // En vista general, la exposición es la suma del tiempo de los equipos con fallas registradas.
+ // No se inventa el número de equipos sin eventos.
+ const baseHours=bounds.future?0:bounds.baseHours*assets.length;
+ const intervals=new Map();
+ let documented=0,unverified=0,overlapHours=0;
+ const relevant=scopedCases(cases,asset).filter(validDashboardCase);
+ for(const c of relevant){
+  const interval=investigationDowntime(c,bounds);
+  const started=investigationStart(c);
+  if(!started)continue;
+  const active=started>=bounds.start&&started<bounds.cutoff;
+  if(active){if(interval)documented++;else unverified++}
+  if(!interval||interval.to<=interval.from)continue;
+  const key=asset===ALL_ASSETS?(normalizeText(c.equipment)||'Equipo sin identificar'):asset;
+  if(!assets.includes(key))continue;
+  if(!intervals.has(key))intervals.set(key,[]);
+  intervals.get(key).push(interval);
+ }
+ for(const ranges of intervals.values()){
+  ranges.sort((x,y)=>x.from-y.from);
+  let left=null,right=null;
+  for(const range of ranges){
+   if(left===null){left=range.from;right=range.to;continue}
+   if(range.from<=right)right=Math.max(right,range.to);
+   else{overlapHours+=(right-left)/3600000;left=range.from;right=range.to}
+  }
+  if(left!==null)overlapHours+=(right-left)/3600000;
+ }
+ const downtime=overlapHours;
+ const valid=unverified===0&&baseHours>0&&downtime<=baseHours+0.000001;
+ const operating=valid?Math.max(0,baseHours-downtime):null;
  return {
-  records:all,events:all.length,downtime:down,
-  documentedCount:withDuration.length,baseHours:base,operating,
-  complete,
-  mttr:withDuration.length?down/withDuration.length:null,
-  mtbf:validBase&&all.length?operating/all.length:null,
-  availability:validBase&&base>0?operating/base*100:null,
-  invalidBase:base!==null&&down>base,
-  assets:new Set(all.map(c=>dashboardGroupKey(c,'equipment'))).size
+  records,events:records.length,downtime,
+  documentedCount:documented,baseHours,operating,
+  complete:unverified===0,unverified,
+  mttr:documented>0?downtime/documented:null,
+  mtbf:valid&&records.length>0?operating/records.length:null,
+  availability:valid?operating/baseHours*100:null,
+  invalidBase:downtime>baseHours+0.000001,
+  assets:assets.length,bounds
  };
 }
 function dashboardReliabilityFormat(value){return value===null?'—':dashboardMetricText(value,'hours')+' h'}
@@ -515,9 +573,10 @@ function drawDashboard(){
  const select=$('#reliabilityAsset'),existing=select.value||ALL_ASSETS,assets=dashboardAssets();
  select.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
  select.value=assets.includes(existing)?existing:ALL_ASSETS;
- const asset=select.value,records=scopedCases(db.cases,asset),metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
- const data=weeklyPareto(records,selectedDashboardWeek,metric,group);
- const kpi=weeklyIndicators(db.cases,selectedDashboardWeek,asset,getBaseHours(selectedDashboardWeek,asset));
+ const asset=select.value,metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
+ const now=new Date();
+ const kpi=weeklyIndicators(db.cases,selectedDashboardWeek,asset,now);
+ const data=weeklyPareto(kpi.records,selectedDashboardWeek,metric,group);
  $('#weekLabel').textContent=dashboardWeekLabel(selectedDashboardWeek);
  $('#weekEvents').textContent=String(kpi.events);
  $('#weekHours').textContent=dashboardReliabilityFormat(kpi.downtime);
@@ -526,20 +585,21 @@ function drawDashboard(){
  $('#weekMtbf').textContent=dashboardReliabilityFormat(kpi.mtbf);
  $('#weekAvailability').textContent=dashboardAvailabilityFormat(kpi.availability);
  $('#availabilityFill').style.width=(kpi.availability===null?0:Math.max(0,Math.min(100,kpi.availability)))+'%';
- $('#weekBaseHours').value=kpi.baseHours===null?'':String(kpi.baseHours);
+ $('#weekBaseAuto').textContent=dashboardReliabilityFormat(kpi.baseHours);
+ const clock=now.toLocaleString('es-CL',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+ $('#weekClockLabel').textContent=kpi.bounds.future?'Semana aún no iniciada':kpi.bounds.active?'Desde el lunes 00:00 hasta ahora · '+clock:'Semana cerrada · Lunes 00:00 a domingo 24:00';
  $('#reliabilityBaseNote').textContent=asset===ALL_ASSETS
-  ?'Para Todos los equipos, ingresa la suma de horas base de los activos incluidos. Para un MTBF técnicamente comparable, selecciona un equipo específico.'
-  :'Horas calendario o programadas del equipo '+asset+' para esta semana. Ej.: 24 h en un día, 168 h en siete días.';
+  ?'Se calcula una base de 24 h/día por cada uno de los '+kpi.assets+' equipos con fallas en la semana. Selecciona un equipo para el MTBF individual.'
+  :'Equipo '+asset+' · 24 horas continuas por día, acumuladas solo hasta el corte indicado.';
  let warning='';
- if(kpi.invalidBase)warning='Las horas detenidas superan las horas base. Corrige el período o los tiempos.';
- else if(!kpi.complete)warning='Hay '+(kpi.events-kpi.documentedCount)+' evento(s) sin duración. Las horas operativas, MTBF y disponibilidad quedan pendientes.';
- else if(kpi.baseHours===null)warning='Ingresa las horas base reales del período para calcular horas operativas, MTBF y disponibilidad.';
- else if(!kpi.events)warning='Sin fallas registradas: MTTR y MTBF no son calculables para esta semana.';
- else warning='Horas operativas = '+dashboardMetricText(kpi.baseHours,'hours')+' − '+dashboardMetricText(kpi.downtime,'hours')+' = '+dashboardMetricText(kpi.operating,'hours')+' h. MTTR = detenciones / '+kpi.documentedCount+' falla(s). MTBF = horas operativas / '+kpi.events+' falla(s).';
- $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada; evita interpretar este MTBF como el de un único equipo.':'');
+ if(kpi.invalidBase)warning='La detención registrada supera el tiempo base: revisa las fechas de los eventos.';
+ else if(!kpi.complete)warning='Hay '+kpi.unverified+' falla(s) sin duración o término verificable; MTBF y disponibilidad quedan pendientes.';
+ else if(!kpi.events)warning='Sin fallas en esta semana. MTTR y MTBF no se calculan; la disponibilidad solo refleja detenciones conocidas.';
+ else warning='Base '+dashboardMetricText(kpi.baseHours,'hours')+' h − detenciones '+dashboardMetricText(kpi.downtime,'hours')+' h = operación '+dashboardMetricText(kpi.operating,'hours')+' h. MTTR = detención / '+kpi.documentedCount+' falla(s); MTBF = operación / '+kpi.events+' falla(s).';
+ $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
- $('#weeklyTrend').innerHTML=renderWeeklyTrend(records,selectedDashboardWeek,metric);
+ $('#weeklyTrend').innerHTML=renderWeeklyTrend(scopedCases(db.cases,asset),selectedDashboardWeek,metric);
  $('#paretoTable').innerHTML=data.rows.length?data.rows.map((entry,i)=>'<tr><td>'+(i+1)+'. '+esc(entry.label)+'</td><td>'+dashboardMetricText(entry.value,metric)+'</td><td>'+entry.cumulative.toFixed(1).replace('.',',')+'%</td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;color:#a8bfd0">Sin registros para esta semana</td></tr>';
 }
 $('#weekPrevious').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,-7);drawDashboard()};
@@ -548,24 +608,20 @@ $('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
 $('#reliabilityAsset').onchange=drawDashboard;
-$('#weekBaseHours').onchange=e=>{
- const raw=String(e.target.value||'').trim();
- if(raw!==''&&(!Number.isFinite(Number(raw))||Number(raw)<0||Number(raw)>10000000)){
-  alert('Ingresa horas base del período entre 0 y 10.000.000.');drawDashboard();return;
- }
- const asset=activeDashboardScope(),key=baseStorageKey(selectedDashboardWeek,asset);
- db.settings ||= {};
- db.settings.weeklyBaseHours ||= {};
- if(raw==='')delete db.settings.weeklyBaseHours[key];
- else db.settings.weeklyBaseHours[key]=Number(raw);
- if(persist())drawDashboard();
-};
+setInterval(()=>{if(document.visibilityState==='visible'){
+ const nowWeek=isoWeekStart(dashboardToday());
+ if(selectedDashboardWeek===lastDashboardCurrentWeek)selectedDashboardWeek=nowWeek;
+ lastDashboardCurrentWeek=nowWeek;
+ if(document.querySelector('#inicio.section.active'))drawDashboard();
+}},60000);
+let lastDashboardCurrentWeek=isoWeekStart(dashboardToday());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.querySelector('#inicio.section.active'))drawDashboard()});
 function weeklyReportData(){
  const metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=selectedDashboardWeek,asset=activeDashboardScope();
- const cases=scopedCases(db.cases,asset);
- const result=weeklyPareto(cases,monday,metric,group);
- const reliability=weeklyIndicators(db.cases,monday,asset,getBaseHours(monday,asset));
- return {monday,metric,group,asset,period:dashboardWeekLabel(monday),...result,reliability};
+ const now=new Date();
+ const reliability=weeklyIndicators(db.cases,monday,asset,now);
+ const result=weeklyPareto(reliability.records,monday,metric,group);
+ return {monday,metric,group,asset,period:dashboardWeekLabel(monday),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
 }
 function weekExportName(data,ext){
  const week=isoWeekNumber(data.monday);
