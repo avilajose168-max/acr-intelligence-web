@@ -193,6 +193,10 @@ function drawCompany(){const cfg=db.settings;$('#companyName').value=cfg.company
   if(i===0)return '¿Por qué ocurrió la detención o falla registrada?';
   const prev=normalizeText(c.whys[i-1]||'').toLowerCase();
   if(!prev)return '¿Por qué ocurrió lo indicado en la respuesta '+i+'?';
+  if(/(?:sensor|detector).{0,55}(?:temperatura|rodamiento)|(?:temperatura|rodamiento).{0,55}(?:sensor|detector)/.test(prev))return '¿Por qué la señal del sensor activó esa condición de protección?';
+  if(/(?:señal|canal).{0,55}(?:alarma|disparo|temperatura)|(?:alarma|disparo).{0,55}(?:sensor|temperatura)/.test(prev))return '¿Por qué la señal alcanzó la condición de disparo?';
+  if(/(?:medici[oó]n|cableado|cadena de medici[oó]n|temperatura real)/.test(prev))return '¿Por qué pudo producirse esa condición física o de medición?';
+  if(/(?:monitoreo|verificaciones|identificado antes)/.test(prev))return '¿Por qué no se detectó la desviación oportunamente?';
   if(/fuga|p[eé]rdida de aceite/.test(prev))return '¿Por qué se produjo la fuga de aceite?';
   if(/tap[oó]n/.test(prev)&&/sin|falt|ausen|no ten|no ten[ií]a|retir|desprend/.test(prev))return '¿Por qué faltaba o se desprendió el tapón?';
   if(/presi[oó]n/.test(prev)&&/baj|ca[ií]d|p[eé]rdid|insuficien|sin/.test(prev))return '¿Por qué se perdió presión en el sistema?';
