@@ -261,7 +261,7 @@ function drawHypotheses(){
 }
 function drawSafety(){
  const c=current();if(!c)return;
- $('input[name="safetyChoice"]').forEach(input=>input.checked=== (input.value===c.safetyCondition));
+ $('input[name="safetyChoice"]').forEach(input=>input.checked=(input.value===c.safetyCondition));
  const yes=c.safetyCondition==='si',no=c.safetyCondition==='no';
  $('#safetyDetails').classList.toggle('hidden',!yes);
  $('#safetyNone').classList.toggle('hidden',!no);
