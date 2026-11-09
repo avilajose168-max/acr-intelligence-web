@@ -1684,8 +1684,19 @@ async function finishInvestigationAndCommitments(){
   message.textContent=info.textContent;
   message.hidden=false;
  }catch(error){
-  info.textContent='No se pudo completar el guardado/publicación: '+error.message;
-  alert(info.textContent);
+  // La copia local ya se guardó antes de intentar la publicación corporativa.
+  // Distinguir los dos resultados evita alarmar al usuario o perder sus compromisos.
+  const saved=!!db.cases.find(item=>item.id===c.id);
+  info.textContent=saved
+   ?'✓ Investigación y compromisos guardados en este navegador. ⚠ La publicación en la empresa no se completó: '+error.message+'. Puedes volver a intentar «Guardar todo y finalizar».'
+   :'⚠ No se completó el guardado: '+error.message;
+  $('#commitPeriod').value='all';
+  $('#commitScope').value='personal';
+  drawList();
+  navigate('inicio');
+  const message=$('#commitScopeMessage');
+  message.textContent=info.textContent;
+  message.hidden=false;
  }finally{controls.forEach(button=>button.disabled=false)}
 }
 ['saveAllReport','saveAllReportBottom'].forEach(id=>$('#'+id).onclick=()=>void finishInvestigationAndCommitments());
