@@ -407,7 +407,7 @@ assert.equal(await signupPage.locator('#authAffiliation').inputValue(),'independ
 assert.equal(await signupPage.locator('#authCompanyFields').isVisible(),false,'Independiente no pide compañía');
 await signupPage.locator('#authAffiliation').selectOption('company');
 await signupPage.locator('#authCompanyFields').waitFor({state:'visible'});
-await signupPage.locator('#authOrganization option').last().waitFor({timeout:12000});
+await signupPage.waitForFunction(()=>document.querySelectorAll('#authOrganization option').length>1,{timeout:12000});
 await signupPage.locator('#authOrganization').selectOption(testOrgId);
 await signupPage.locator('#authRequestedRole').selectOption('admin');
 await signupPage.locator('#authName').fill('Jefe de mantenimiento');
