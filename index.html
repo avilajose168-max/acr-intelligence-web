@@ -398,6 +398,15 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field">Estado<select id="corpCommitStatus"><option value="all">Todos los estados</option><option value="overdue">Vencidos</option><option value="pending">En seguimiento</option><option value="complete">Completados</option></select></label>
     <label class="field">Buscar acción, equipo o responsable<input id="corpCommitSearch" placeholder="Ej.: impulsor, inspección, supervisor"></label>
   </div>
+  <div class="dashboard-chart" style="margin:12px 0">
+    <h3>Pareto corporativo de compromisos</h3>
+    <div class="dashboard-toolbar corporate-toolbar">
+      <label class="field">Indicador<select id="corpCommitParetoMetric"><option value="count">Cantidad de compromisos</option><option value="overdue">Compromisos vencidos</option></select></label>
+      <label class="field">Agrupar por<select id="corpCommitParetoGroup"><option value="equipment">Equipo / TAG</option><option value="owner">Responsable</option><option value="area">Área</option></select></label>
+    </div>
+    <div id="corpCommitParetoChart" aria-label="Pareto de compromisos corporativos"></div>
+    <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Categoría</th><th>Acciones</th><th>Acumulado</th></tr></thead><tbody id="corpCommitParetoRows"></tbody></table></div>
+  </div>
   <div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Compromisos corporativos"><thead><tr><th>Investigación / Equipo</th><th>Acción correctiva</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>ACR</th></tr></thead><tbody id="corpCommitRows"></tbody></table></div>
   <p class="help" style="margin-top:10px">Los filtros semanal y mensual corresponden a la fecha de vencimiento. Los estados muestran la situación actual publicada por el investigador. El administrador consulta, pero no modifica el estado desde este tablero.</p>
 </div>
@@ -1873,6 +1882,23 @@ function corporateCommitmentFilteredRows(){
   return !term||[r.caseTitle,r.equipment,r.action.description,r.action.owner,r.area,r.sector,r.productionUnit].join(' ').toLocaleLowerCase('es').includes(term);
  }).sort((a,b)=>(a.action.due||'9999-12-31').localeCompare(b.action.due||'9999-12-31'));
 }
+function corporateCommitmentPareto(rows,metric='count',group='equipment'){
+ const categories=new Map();
+ for(const r of rows){
+  if(metric==='overdue'&&r.status!=='overdue')continue;
+  const key=group==='owner'?(r.action.owner||'Sin asignar'):group==='area'?(r.area||'Sin clasificar'):(r.equipment||'Sin equipo');
+  categories.set(key,(categories.get(key)||0)+1);
+ }
+ const sorted=[...categories].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
+ const condensed=sorted.length>9?[...sorted.slice(0,8),{label:'Otros',value:sorted.slice(8).reduce((n,r)=>n+r.value,0)}]:sorted;
+ const total=condensed.reduce((n,r)=>n+r.value,0);
+ let running=0;
+ return {rows:condensed.map(r=>({...r,cumulative:total?100*(running+=r.value)/total:0})),total};
+}
+function corporateCommitmentParetoHtml(pareto){
+ if(!pareto.rows.length)return '<p class="dashboard-empty">No hay acciones para construir el Pareto.</p>';
+ return renderParetoSvg(pareto.rows,pareto.total,'count');
+}
 function drawCorporateCommitments(){
  if(!$('#corporateCommitmentsPanel')||!corporateIsAdmin()||!corporateSelection())return;
  corporateCommitmentSubareaOptions();
@@ -1886,6 +1912,11 @@ function drawCorporateCommitments(){
  $('#corpCommitOverdue').textContent=stats.overdue;
  $('#corpCommitRate').textContent=stats.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
  const filtered=corporateCommitmentFilteredRows();
+ const pareto=corporateCommitmentPareto(filtered,$('#corpCommitParetoMetric').value,$('#corpCommitParetoGroup').value);
+ $('#corpCommitParetoChart').innerHTML=corporateCommitmentParetoHtml(pareto);
+ $('#corpCommitParetoRows').innerHTML=pareto.rows.length?pareto.rows.map(r=>
+  '<tr><td>'+esc(r.label)+'</td><td>'+r.value+'</td><td>'+r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%</td></tr>'
+ ).join(''):'<tr><td colspan="3">Sin datos para el indicador seleccionado.</td></tr>';
  $('#corpCommitRows').innerHTML=filtered.length?filtered.map(r=>
   '<tr><td><strong>'+esc(r.equipment)+'</strong><div class="small">'+esc(r.caseTitle)+'</div><div class="small">'+esc(r.area)+
   (r.area==='Área Húmeda'?' · '+esc(r.productionUnit):r.sector?' · '+esc(r.sector):'')+'</div></td>'+
@@ -1905,6 +1936,8 @@ $('#corpCommitPeriod').onchange=drawCorporateCommitments;
 $('#corpCommitArea').onchange=()=>{$('#corpCommitSubarea').value='__all__';drawCorporateCommitments()};
 $('#corpCommitSubarea').onchange=drawCorporateCommitments;
 $('#corpCommitStatus').onchange=drawCorporateCommitments;
+$('#corpCommitParetoMetric').onchange=drawCorporateCommitments;
+$('#corpCommitParetoGroup').onchange=drawCorporateCommitments;
 $('#corpCommitSearch').oninput=drawCorporateCommitments;
 $('#corpCommitPrevious').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,-1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,-7);drawCorporateCommitments()};
 $('#corpCommitNext').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,7);drawCorporateCommitments()};
