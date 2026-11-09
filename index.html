@@ -361,7 +361,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field">Agrupar por<select id="corporateParetoGroup"><option value="equipment">Equipo / TAG</option><option value="failure">Tipo de falla / evento</option></select></label>
     <button type="button" class="secondary" id="corporateExportPeriod">⬇ Exportar período (CSV)</button>
   </div>
-  <div class="dashboard-charts">
+  <div class="dashboard-charts" aria-label="Pareto y tendencia de las últimas ocho semanas">
     <div class="dashboard-chart"><h3>Pareto corporativo</h3><div id="corporateParetoChart" role="img" aria-label="Pareto corporativo semanal o mensual"></div>
       <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo / falla</th><th>Valor</th><th>Acumulado</th></tr></thead><tbody id="corporateParetoTable"></tbody></table></div>
     </div>
@@ -429,6 +429,17 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 #corpReportSheet td,#corpReportSheet th{padding:7px 8px;border:1px solid #cbd6e1;vertical-align:top;overflow-wrap:anywhere}
 #corpReportSheet tr{break-inside:avoid}
 #corpReportSheet .corp-report-note{font-size:10px;color:#617181;margin-top:14px}
+/* Gráficos corporativos de confiabilidad: dos paneles iguales en pantalla y PDF. */
+#corpReportSheet .corp-reliability-visuals{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;margin:12px 0 14px}
+#corpReportSheet .corp-reliability-visuals .corp-report-visual{min-width:0;break-inside:avoid;page-break-inside:avoid}
+#corpReportSheet .corp-reliability-visuals h2{font-size:12px;line-height:1.3;margin:0 0 8px;min-height:30px}
+#corpReportSheet .corp-reliability-visuals .corp-report-chart{width:100%;box-sizing:border-box;margin:0;overflow:hidden}
+#corpReportSheet .corp-reliability-visuals .corp-report-chart svg{width:100%;max-width:100%;height:auto;max-height:190px}
+@media(max-width:680px){#corpReportSheet .corp-reliability-visuals{grid-template-columns:1fr}}
+@media print{
+ body.corp-report-print #corpReportSheet .corp-reliability-visuals{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10mm!important}
+ body.corp-report-print #corpReportSheet .corp-reliability-visuals .corp-report-chart svg{max-height:160px!important}
+}
 #corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:11px 12px;margin:8px 0 13px;break-inside:avoid;page-break-inside:avoid}
 #corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:260px}
 #corpReportSheet .corp-report-chart-label{color:#d7e4ed;font-size:10px;font-weight:700;margin:0 0 8px}
@@ -2195,15 +2206,18 @@ function corporateReliabilityReportHtml(){
  return corporateReportHeader('confiabilidad',bounds.label,corporateAreaScopeName()+' · '+(asset===ALL_ASSETS?'Todos los equipos':asset))+
   corporateReportKpis(info)+
   '<h2>01 · Desglose de detenciones por área de la compañía</h2><div class="corp-report-breakdown">'+breakdown.join('')+'</div>'+
-  '<h2>02 · Pareto corporativo ('+(metric==='hours'?'horas de detención':'cantidad de fallas')+')</h2>'+
-  corporateReportParetoChart(pareto.rows,pareto.total,metric,group==='equipment'?'Pareto de equipos':'Pareto por tipo de falla')+
+  '<div class="corp-reliability-visuals">'+
+  '<section class="corp-report-visual"><h2>02 · Pareto corporativo ('+(metric==='hours'?'horas de detención':'cantidad de fallas')+')</h2>'+
+  corporateReportParetoChart(pareto.rows,pareto.total,metric,group==='equipment'?'Pareto de equipos':'Pareto por tipo de falla')+'</section>'+
+  '<section class="corp-report-visual"><h2>03 · Tendencia de las últimas 8 semanas ('+(trendMetric==='hours'?'horas detenidas':'cantidad de fallas')+')</h2>'+
+  '<div class="corp-report-chart" role="img" aria-label="Tendencia de fallas corporativas de ocho semanas">'+
+  '<p class="corp-report-chart-label">Historial semanal · '+esc(corporateAreaScopeName())+'</p>'+
+  corporateTrendChart(trendCases,trendMonday,trendMetric)+'</div></section></div>'+
+  '<h2>Detalle del Pareto corporativo</h2>'+
   corporateReportTable([group==='equipment'?'Equipo / TAG':'Tipo de falla','Valor','Acumulado'],pareto.rows.map(r=>[
    r.label,dashboardMetricText(r.value,metric),r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%'
   ]),'Sin fallas para el período')+
-  '<h2>03 · Tendencia de las últimas 8 semanas ('+(trendMetric==='hours'?'horas detenidas':'cantidad de fallas')+')</h2>'+
-  '<div class="corp-report-chart" role="img" aria-label="Tendencia de fallas corporativas de ocho semanas">'+
-  '<p class="corp-report-chart-label">Historial semanal · '+esc(corporateAreaScopeName())+'</p>'+
-  corporateTrendChart(trendCases,trendMonday,trendMetric)+'</div>'+
+  '<h2>Detalle semanal de tendencias</h2>'+
   corporateReportTable(['Semana (lunes)','Fallas','Horas detenidas'],trendRows.map(r=>[r.week,r.events,dashboardMetricText(r.hours,'hours')]),'Sin eventos para las últimas ocho semanas')+
   '<h2>04 · Investigaciones del período</h2>'+
   corporateReportTable(['Fecha','Área','Sector / unidad','Equipo','Evento','Detención'],eventRows,'No hay investigaciones publicadas con estos filtros')+
