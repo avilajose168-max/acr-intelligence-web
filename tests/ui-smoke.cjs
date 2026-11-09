@@ -515,6 +515,28 @@ const corpDownload=await corpDownloadPromise;
 assert.ok(corpDownload.suggestedFilename().endsWith('.csv'),'Descarga compromisos corporativos');
 
 
+// Ambos tableros corporativos presentan informe previo y permiten guardar PDF.
+await companyAdminPage.locator('#corpRelPreview').click();
+await companyAdminPage.locator('#corpReportSheet').waitFor({state:'visible'});
+let reportContents=await companyAdminPage.locator('#corpReportSheet').innerText();
+assert.ok(reportContents.includes('Informe corporativo de confiabilidad')&&reportContents.includes('CT-11C'),'Vista previa corporativa de confiabilidad refleja los eventos publicados');
+await companyAdminPage.emulateMedia({media:'print'});
+await companyAdminPage.evaluate(()=>document.body.classList.add('corp-report-print'));
+assert.equal(await companyAdminPage.locator('#corporateReportPreview').evaluate(el=>getComputedStyle(el).display),'block','Se imprime únicamente el informe corporativo');
+assert.equal(await companyAdminPage.locator('#reporte').evaluate(el=>getComputedStyle(el).display),'none','Se oculta el informe individual durante impresión corporativa');
+let reportPdf=await companyAdminPage.pdf({printBackground:true,preferCSSPageSize:true});
+assert.ok(reportPdf.length>3500&&reportPdf.subarray(0,4).toString()==='%PDF','El informe de confiabilidad genera PDF');
+await companyAdminPage.evaluate(()=>document.body.classList.remove('corp-report-print'));
+await companyAdminPage.emulateMedia({media:'screen'});
+await companyAdminPage.locator('#corpReportBack').click();
+await companyAdminPage.locator('#corpCommitPreview').click();
+reportContents=await companyAdminPage.locator('#corpReportSheet').innerText();
+assert.ok(reportContents.includes('Informe corporativo de seguimiento de compromisos')&&reportContents.includes('Verificar transmisión CT-11C'),'Vista previa de compromisos conserva las acciones publicadas');
+await companyAdminPage.evaluate(()=>{window.__corporatePrintCalls=0;window.print=()=>{window.__corporatePrintCalls++}});
+await companyAdminPage.locator('#corpReportSavePdf').click();
+assert.equal(await companyAdminPage.evaluate(()=>window.__corporatePrintCalls),1,'Guardar PDF invoca la impresión fiel de la vista previa');
+await companyAdminPage.locator('#corpReportBack').click();
+
 // Desglose de una misma empresa entre Área Seca y Área Húmeda.
 const wetSample=structuredClone(mockCompanyCases.find(x=>x.organization_id===testOrgId));
 assert.ok(wetSample,'Existe ACR inicial para ensayar las dos áreas');
