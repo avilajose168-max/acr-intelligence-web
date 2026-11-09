@@ -204,6 +204,12 @@ await page.waitForFunction(()=>window.__shareCount===1,{timeout:15000});
 await page.setViewportSize({width:1440,height:900});
 
 await page.locator('#reportFormat').selectOption('a3');
+await page.locator('#saveAllReport').click();
+await page.locator('#commitScopeMessage').waitFor({state:'visible'});
+assert.ok((await page.locator('#commitScopeMessage').innerText()).includes('1 compromiso(s)'),'Guardar todo confirma los compromisos');
+assert.equal(await page.locator('#commitPeriod').inputValue(),'all','Los compromisos nuevos se muestran sin filtro de vencimiento');
+assert.ok((await page.locator('#commitmentsTable').innerText()).includes('Verificar transmisión CT-11C'),'Acción recién guardada aparece en el tablero personal');
+await page.locator('button[data-page="reporte"]').click();
 await page.locator('button[data-page="inicio"]').click();
 
 // V40: la acción vencida del ensayo pertenece a febrero de 2020; seleccionar ese mes.
