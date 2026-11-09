@@ -198,13 +198,13 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field">Compañía contratante
       <select id="authOrganization"><option value="">Cargando compañías disponibles…</option></select>
     </label>
-    <label class="field">Solicitar registro como
+    <label class="field" id="authRequestedRoleWrap">Solicitar registro como
       <select id="authRequestedRole">
         <option value="member">Usuario / supervisor / ingeniero</option>
         <option value="admin">Administrador de la compañía (requiere aprobación)</option>
       </select>
     </label>
-    <p class="auth-company-help">Las empresas aparecen aquí cuando el administrador general las incorpora a la plataforma. El cargo de administrador queda pendiente de autorización. Seleccionar una empresa no da acceso a sus datos automáticamente.</p>
+    <p id="authCompanyHelp" class="auth-company-help">Las empresas aparecen aquí cuando el administrador general las incorpora a la plataforma. El cargo de administrador queda pendiente de autorización. Seleccionar una empresa no da acceso a sus datos automáticamente.</p>
   </div>
   <p id="authIndependentHelp" class="auth-company-help">Tu cuenta será independiente. Tus investigaciones seguirán siendo privadas y podrás solicitar afiliación a una empresa más adelante.</p>
 </div>
@@ -520,8 +520,8 @@ function setAuthMode(mode){
   document.getElementById('authTitle').textContent=signup?'Crea tu cuenta':recover?'Recuperar acceso':'Bienvenido';
   document.getElementById('authSubtitle').textContent=signup?'Regístrate para comenzar a investigar y gestionar tus eventos.':recover?'Te enviaremos instrucciones para restablecer la contraseña.':'Ingresa con tus credenciales para acceder a tu espacio de investigación.';
   document.getElementById('authNameWrap').hidden=!signup;
-  document.getElementById('authCompanyWrap').hidden=!signup;
-  if(signup){drawAuthAffiliation();void loadSignupOrganizations();}
+  document.getElementById('authCompanyWrap').hidden=recover;
+  if(!recover){drawAuthAffiliation();void loadSignupOrganizations();}
   document.getElementById('authPassWrap').hidden=recover;
   document.getElementById('authPassword').required=!recover;
   document.getElementById('authPassword').autocomplete=signup?'new-password':'current-password';
@@ -535,7 +535,14 @@ function drawAuthAffiliation(){
  const company=document.getElementById('authAffiliation').value==='company';
  document.getElementById('authCompanyFields').hidden=!company;
  document.getElementById('authIndependentHelp').hidden=company;
- document.getElementById('authOrganization').required=company&&authMode==='signup';
+ document.getElementById('authRequestedRoleWrap').hidden=authMode!=='signup';
+ document.getElementById('authOrganization').required=company&&authMode!=='recover';
+ document.getElementById('authCompanyHelp').textContent=authMode==='signup'
+  ?'La afiliación se solicita al crear tu cuenta. Los administradores requieren autorización del administrador general y ningún rol recibe acceso automático.'
+  :'Con tu cuenta actual puedes solicitar incorporación a esta compañía sin volver a registrarte. La empresa debe aprobar tu solicitud antes de darte acceso corporativo.';
+ document.getElementById('authIndependentHelp').textContent=authMode==='signup'
+  ?'Tu cuenta será independiente. Tus investigaciones seguirán siendo privadas y podrás solicitar afiliación a una empresa más adelante.'
+  :'Ingresa con tu cuenta actual. Si ya perteneces a una empresa aprobada, tus permisos existentes se mantienen.';
 }
 document.getElementById('authAffiliation').addEventListener('change',drawAuthAffiliation);
 async function loadSignupOrganizations(){
@@ -589,8 +596,32 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
       if(data.access_token&&data.user){await enter(data)}
       else{setAuthMode('login');authFeedback('Cuenta solicitada. Confirma tu correo electrónico y luego inicia sesión. Si elegiste una compañía, tu afiliación quedará pendiente de aprobación.','notice')}
     }else{
+      const company=document.getElementById('authAffiliation').value==='company';
+      const orgId=document.getElementById('authOrganization').value;
+      if(company&&!orgId)throw Error('Selecciona la empresa a la que deseas incorporarte.');
       const data=await requestAuth('token?grant_type=password',{email,password});
       await enter(data);
+      if(company){
+        try{
+          await loadOrganizations();
+          const org=corporateCtx?.organizations?.find(o=>o.id===orgId&&o.active);
+          if(!org)throw Error('La compañía ya no está disponible.');
+          localStorage.setItem('acr-org-choice-'+activeUser.id,orgId);
+          const currentMembership=corporateCtx.memberships.find(m=>m.organization_id===orgId&&m.user_id===activeUser.id);
+          if(!currentMembership){
+            await corporateApi(organizationApiPath('acr_memberships'),'POST',{
+              organization_id:orgId,user_id:activeUser.id,email:activeUser.email,
+              display_name:activeUser.user_metadata?.display_name||activeUser.email||'',role:'member',status:'pending'
+            },'return=representation');
+          }
+          await loadOrganizations();
+          navigate('organizaciones');
+          if(!currentMembership)alert('Solicitud de afiliación enviada a «'+org.name+'». Tu cuenta e investigaciones personales se conservan. La incorporación queda pendiente de aprobación.');
+        }catch(error){
+          navigate('organizaciones');
+          alert('Ingresaste a tu cuenta, pero no se pudo tramitar la afiliación: '+error.message+'. Puedes intentarlo desde Empresas.');
+        }
+      }
     }
   }catch(err){authFeedback(err.message||'Ocurrió un error de autenticación.')}
   finally{btn.disabled=false}
