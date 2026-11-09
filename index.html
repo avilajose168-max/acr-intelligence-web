@@ -1336,11 +1336,35 @@ async function loadCorporateOverview(){
   $('#orgCommitTotal').textContent=metric.total;
   $('#orgCommitOverdue').textContent=metric.overdue;
   $('#orgCompliance').textContent=metric.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
-  $('#orgUsersTable').innerHTML=members.length?members.map(m=>
-   '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td><td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador':'Usuario')+'<div class="small">Solicita: '+esc(m.requested_role==='admin'?'Administrador':'Usuario')+'</div></td>'+
-   '<td><div class="toolbar"><select data-org-member-status="'+esc(m.id)+'" aria-label="Estado de afiliación"><option value="pending"'+(m.status==='pending'?' selected':'')+'>Pendiente</option><option value="approved"'+(m.status==='approved'?' selected':'')+'>Aprobado</option><option value="rejected"'+(m.status==='rejected'?' selected':'')+'>Rechazado</option></select>'+
-   '<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario"><option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option><option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select></div></td></tr>'
-  ).join(''):'<tr><td colspan="5">Todavía no hay solicitudes de afiliación.</td></tr>';
+  const platformAdmin=!!corporateCtx.platform;
+  const admins=members.filter(m=>m.requested_role==='admin'||m.role==='admin');
+  const users=members.filter(m=>m.requested_role!=='admin'&&m.role!=='admin');
+  const tableRows=arr=>arr.map(m=>{
+   const isAdminAccount=m.role==='admin'||m.requested_role==='admin';
+   const manageable=isAdminAccount?platformAdmin:true;
+   let controls;
+   if(!manageable){
+    controls='<span class="small">Solo administrador general</span>';
+   }else{
+    controls='<div class="toolbar"><select data-org-member-status="'+esc(m.id)+'" aria-label="Estado de afiliación">'+
+      '<option value="pending"'+(m.status==='pending'?' selected':'')+'>Pendiente</option>'+
+      '<option value="approved"'+(m.status==='approved'?' selected':'')+'>Aprobado</option>'+
+      '<option value="rejected"'+(m.status==='rejected'?' selected':'')+'>Rechazado</option></select>'+
+      (platformAdmin?'<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario">'+
+       '<option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option>'+
+       '<option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select>':'')+
+     '</div>';
+   }
+   return '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td>'+
+    '<td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador de empresa':'Usuario')+
+    '<div class="small">Solicita: '+esc(m.requested_role==='admin'?'Administrador':'Usuario')+'</div></td>'+
+    '<td>'+controls+'</td></tr>';
+  }).join('');
+  $('#orgUsersTable').innerHTML=
+   '<tr><td colspan="5"><strong>ADMINISTRADORES DE LA COMPAÑÍA</strong> · Solo el administrador general de ACR Intelligence puede autorizar estos accesos.</td></tr>'+
+   (admins.length?tableRows(admins):'<tr><td colspan="5" class="small">Sin administradores ni solicitudes de administración.</td></tr>')+
+   '<tr><td colspan="5"><strong>USUARIOS DE LA COMPAÑÍA</strong> · El administrador de esta compañía aprueba o rechaza sus solicitudes.</td></tr>'+
+   (users.length?tableRows(users):'<tr><td colspan="5" class="small">Sin usuarios registrados.</td></tr>');
   $$('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
   $$('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
   $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
@@ -1368,18 +1392,35 @@ async function loadCorporateOverview(){
 async function changeCorporateMembership(id,changes){
  const item=corporateCtx?.orgMembers.find(m=>m.id===id);
  if(!item)return;
- if(item.user_id===activeUser.id&&changes.role==='member')return alert('No puedes retirar tu propio rol de administrador desde este panel.');
- const requestedAdmin=changes.status==='approved'&&item.requested_role==='admin';
- const confirmMessage=requestedAdmin
-  ?'¿APROBAR como ADMINISTRADOR de esta compañía a '+(item.display_name||item.email)+'? Esta persona podrá consultar el consolidado y administrar afiliaciones.'
-  :'¿Actualizar permisos de '+(item.display_name||item.email)+'?';
- if(!confirm(confirmMessage)){await loadCorporateOverview();return}
+ const platform=!!corporateCtx.platform;
+ const adminAction=item.requested_role==='admin'||item.role==='admin'||changes.role==='admin';
+ if(adminAction&&!platform){
+  alert('Solo el administrador general de ACR Intelligence puede aprobar o modificar administradores.');
+  await loadCorporateOverview();return;
+ }
+ if(changes.role&& !platform){
+  alert('Los administradores de empresa no pueden asignar roles.');
+  await loadCorporateOverview();return;
+ }
+ if(item.user_id===activeUser.id&&changes.role==='member'){
+  alert('No puedes retirarte tu propio rol de administrador.');
+  await loadCorporateOverview();return;
+ }
+ const isPromotion=changes.role==='admin'||(changes.status==='approved'&&item.requested_role==='admin');
+ const warning=isPromotion
+  ?'¿Designar a '+(item.display_name||item.email)+' como ADMINISTRADOR de esta compañía? Podrá aprobar usuarios y consultar el consolidado de ESTA empresa, pero no administrar otras.'
+  :adminAction
+  ?'¿Cambiar el estado de administración de '+(item.display_name||item.email)+'? Solo tendrá permisos cuando esté aprobado.'
+  :'¿Aprobar o actualizar a '+(item.display_name||item.email)+' como usuario de esta compañía?';
+ if(!confirm(warning)){await loadCorporateOverview();return}
  try{
-  await corporateApi(organizationApiPath('acr_memberships','?id=eq.'+id),'PATCH',{
-   ...changes,...(requestedAdmin?{role:'admin'}:{}),...(changes.status==='approved'?{approved_at:new Date().toISOString()}:{})
-  },'return=minimal');
+  const updates={...changes};
+  if(isPromotion)updates.role='admin';
+  if(changes.status==='rejected'&&item.role==='admin')updates.role='member';
+  if(changes.status==='approved')updates.approved_at=new Date().toISOString();
+  await corporateApi(organizationApiPath('acr_memberships','?id=eq.'+id),'PATCH',updates,'return=minimal');
   await loadOrganizations();
- }catch(error){alert('No se pudo actualizar el permiso: '+error.message);await loadCorporateOverview()}
+ }catch(error){alert('No se pudieron actualizar los permisos: '+error.message);await loadCorporateOverview()}
 }
 $('#exportCompanyCsv').onclick=()=>{
  if(!corporateIsAdmin())return;
