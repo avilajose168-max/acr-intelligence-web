@@ -125,3 +125,22 @@ assert.equal(nextWeek.baseHours,0,'Semanas futuras no anticipan horas');
 const carried=[{id:'d',equipment:'CT-11C',title:'Larga',stopStart:'2026-11-02T20:00',stopEnd:'2026-11-03T08:00',downtime:'12'}];
 assert.equal(dashboardScope.weeklyIndicators(carried,'2026-11-02','CT-11C',new Date(2026,10,3,0,0)).downtime,4,'Las paradas abiertas solo se cuentan hasta el corte');
 console.log('OK MTTR/MTBF en tiempo real, cierre semanal, ejemplo 24h/4h y recortes');
+
+
+// Catálogo de chancado: cada descripción seleccionada determina su SAP, sin inventar equipos para filas incompletas.
+const catalogStart=script.indexOf('const CHANCADO_ASSETS=');
+const catalogEnd=script.indexOf('function isLomasBayasAreaCatalog(){',catalogStart);
+assert.ok(catalogStart>=0&&catalogEnd>catalogStart,'Catálogo de chancado disponible');
+const catalogSource=script.slice(catalogStart,catalogEnd).replace('const CHANCADO_ASSETS=','var CHANCADO_ASSETS=');
+const catalogScope=vm.createContext({});
+vm.runInContext(catalogSource,catalogScope,{timeout:1000});
+const catalog=catalogScope.CHANCADO_ASSETS;
+assert.equal(catalog.length,35,'Catálogo contiene 35 equipos con descripción y SAP');
+assert.equal(catalog.find(([name])=>name==='CHANCADOR PRIMARIO')[1],'10027327');
+assert.equal(catalog.find(([name])=>name==='CHANCADOR TERCIARIO #2 (LINEA-2)')[1],'10028088');
+assert.equal(catalog.find(([name])=>name==='CORREA #9G')[1],'10027641');
+assert.equal(catalog.filter(([,sap])=>sap==='10027641').length,3,'Se conservan los SAP repetidos aportados');
+assert.ok(!catalog.some(([name,sap])=>!name||!sap||sap==='10028099'),'La fila sin descripción no se inventa');
+assert.ok(doc.includes('id="chancadoEquipmentSelect"')&&doc.includes('id="chancadoSapNumber"'),'Seleccionar equipo y visualizar SAP en el formulario');
+assert.ok(doc.includes('id="chancadoEquipmentGroup"')&&doc.includes('readonly placeholder="Se completa automáticamente"'),'SAP automático de solo lectura');
+console.log('OK catálogo de equipos de chancado y numeración SAP');
