@@ -1650,6 +1650,45 @@ async function publishCorporateCases(silent=false){
  }finally{corporateSaveActive=false}
 }
 $('#publishCompanyCases').onclick=()=>publishCorporateCases(false);
+async function finishInvestigationAndCommitments(){
+ const c=current();if(!c)return alert('Abre una investigación para guardarla.');
+ const controls=['saveAllReport','saveAllReportBottom'].map(id=>$('#'+id));
+ controls.forEach(button=>button.disabled=true);
+ const info=$('#reportSaveFeedback');
+ info.hidden=false;
+ try{
+  if(!persist(false))throw Error('No se pudieron guardar los datos locales.');
+  const actions=(c.actions||[]).filter(a=>String(a.description||'').trim());
+  const org=corporateCtx?.organizations?.find(o=>o.id===corporateSelection());
+  if(corporateAllowed()&&org){
+   const confirmed=confirm('¿Guardar y publicar esta investigación, sus compromisos y evidencias en «'+org.name+'»? Sus administradores autorizados podrán consultar el ACR. Tus investigaciones personales permanecerán en tu cuenta.');
+   if(confirmed){
+    await publishCorporateCase(org.id,c);
+    c.corporateOrgId=org.id;
+    if(!persist(false))throw Error('El ACR se publicó, pero no se pudo actualizar la copia local.');
+    info.textContent='✓ Investigación publicada en '+org.name+' con '+actions.length+' compromiso(s). El administrador podrá consultarlos en Compromisos de la compañía.';
+    if(corporateIsAdmin())await refreshCompanyCommitments();
+   }else{
+    info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en esta cuenta y navegador. No se publicó a la compañía.';
+   }
+  }else{
+   info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en esta cuenta y navegador. Para compartirlos con una compañía, primero solicita afiliación y aprobación.';
+  }
+  // Mostrar los compromisos recién creados aunque su vencimiento sea posterior al mes actual.
+  $('#commitPeriod').value='all';
+  $('#commitScope').value='personal';
+  drawList();
+  navigate('inicio');
+  const message=$('#commitScopeMessage');
+  message.textContent=info.textContent;
+  message.hidden=false;
+ }catch(error){
+  info.textContent='No se pudo completar el guardado/publicación: '+error.message;
+  alert(info.textContent);
+ }finally{controls.forEach(button=>button.disabled=false)}
+}
+['saveAllReport','saveAllReportBottom'].forEach(id=>$('#'+id).onclick=()=>void finishInvestigationAndCommitments());
+
 function scheduleCorporateSync(){
  if(!activeUser||!corporateCtx||!corporateAllowed()||corporateSaveActive)return;
  const orgId=corporateSelection();
