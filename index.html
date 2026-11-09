@@ -433,16 +433,16 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 #corpReportSheet td,#corpReportSheet th{padding:7px 8px;border:1px solid #cbd6e1;vertical-align:top;overflow-wrap:anywhere}
 #corpReportSheet tr{break-inside:avoid}
 #corpReportSheet .corp-report-note{font-size:10px;color:#617181;margin-top:14px}
-#corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:11px 12px;margin:8px 0 13px;break-inside:avoid;page-break-inside:avoid}
-#corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:260px}
+#corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:10px 12px;margin:8px 0 13px;width:50%;max-width:50%;break-inside:avoid;page-break-inside:avoid}
+#corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:200px}
 #corpReportSheet .corp-report-chart-label{color:#d7e4ed;font-size:10px;font-weight:700;margin:0 0 8px}
-@media print{body.corp-report-print #corpReportSheet .corp-report-chart{background:#10263c!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
+@media print{body.corp-report-print #corpReportSheet .corp-report-chart{width:50%!important;max-width:50%!important;background:#10263c!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
 
 #corpReportSheet .corp-report-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 #corpReportSheet .corp-report-breakdown>div{border:1px solid #d1dde8;border-radius:5px;padding:10px}
 #corpReportSheet .corp-report-breakdown b{display:block;color:#24435b;font-size:11px}
 #corpReportSheet .corp-report-breakdown strong{font-size:17px;color:#203c53}
-@media(max-width:680px){#corpReportSheet{padding:14px}#corpReportSheet .corp-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#corpReportSheet .corp-report-breakdown{grid-template-columns:1fr}}
+@media(max-width:680px){#corpReportSheet .corp-report-chart{width:100%;max-width:100%}#corpReportSheet{padding:14px}#corpReportSheet .corp-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#corpReportSheet .corp-report-breakdown{grid-template-columns:1fr}}
 @media print{
  body.corp-report-print .section,body.corp-report-print #reporte{display:none!important}
  body.corp-report-print #corporateReportPreview{display:block!important;margin:0!important;padding:0!important}
