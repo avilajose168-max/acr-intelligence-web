@@ -78,6 +78,11 @@ assert.equal(await page.locator('#hypothesisFields').count(),0,'No deben aparece
 const base=await page.locator('[data-k="basicCause"]').inputValue();
 assert.ok(/rodamiento|t[eé]rmica/.test(base),'Causa básica pertinente');
 await page.locator('[data-k="reviewer"]').fill('Revisor de prueba');
+// Acciones correctivas: captura de responsable, vencimiento y estado en el ACR.
+await page.locator('[data-ai="0"][data-ak="description"]').fill('Verificar transmisión CT-11C');
+await page.locator('[data-ai="0"][data-ak="owner"]').fill('Supervisor turno A');
+await page.locator('[data-ai="0"][data-ak="due"]').fill('2020-02-01');
+assert.equal(await page.locator('[data-ai="0"][data-ak="status"]').inputValue(),'Pendiente','El estado inicial es pendiente');
 await page.locator('#nextReport').click();
 const report=await page.locator('#printDocument').innerText();
 assert.ok(report.includes('Causa básica'),'Informe debe contener causa básica');
@@ -139,6 +144,31 @@ await page.waitForFunction(()=>window.__shareCount===1,{timeout:15000});
 await page.setViewportSize({width:1440,height:900});
 
 await page.locator('#reportFormat').selectOption('a3');
+await page.locator('button[data-page="inicio"]').click();
+
+// V27: tablero de compromisos, cumplimiento, actualización y exportación.
+assert.equal(await page.locator('#commitTotal').innerText(),'1','Existe un compromiso registrado');
+assert.equal(await page.locator('#commitOverdue').innerText(),'1','Se detecta fecha vencida automáticamente');
+assert.equal(await page.locator('#commitComplete').innerText(),'0','No hay acciones completadas inicialmente');
+assert.ok((await page.locator('#commitmentsTable').innerText()).includes('Verificar transmisión CT-11C'));
+await page.locator('#commitFilter').selectOption('overdue');
+assert.equal(await page.locator('#commitmentsTable tr').count(),1,'Filtro de vencidos');
+const excelWait=page.waitForEvent('download');
+await page.locator('#exportCommitmentsExcel').click();
+const excel=await excelWait;
+assert.ok(excel.suggestedFilename().endsWith('.csv'),'Exportación Excel compatible');
+assert.ok(require('node:fs').readFileSync(await excel.path(),'utf8').includes('Supervisor turno A'),'CSV contiene responsable');
+const commitPdfWait=page.waitForEvent('download');
+await page.locator('#exportCommitmentsPdf').click();
+const commitPdf=await commitPdfWait;
+assert.ok(commitPdf.suggestedFilename().endsWith('.pdf'),'El seguimiento exporta PDF real');
+assert.equal(require('node:fs').readFileSync(await commitPdf.path()).subarray(0,4).toString(),'%PDF','PDF válido');
+await page.locator('#commitFilter').selectOption('all');
+await page.locator('[data-commit-case]').first().selectOption('Completado');
+assert.equal(await page.locator('#commitOverdue').innerText(),'0','Compromiso completado deja de estar vencido');
+assert.equal(await page.locator('#commitRate').innerText(),'100%','El cumplimiento refleja el cierre');
+await page.locator('[data-commit-open]').first().click();
+assert.equal(await page.locator('[data-ai="0"][data-ak="status"]').inputValue(),'Completado','El ACR original conserva el estado actualizado');
 await page.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Una falla registrada');
 assert.ok((await page.locator('#paretoTable').innerText()).includes('CT-11C'),'Pareto muestra caso');
