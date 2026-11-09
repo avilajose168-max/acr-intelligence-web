@@ -338,9 +338,16 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <button type="button" class="secondary" id="corporatePrevious">← Anterior</button>
     <button type="button" class="secondary" id="corporateCurrent">Período actual</button>
     <button type="button" class="secondary" id="corporateNext">Siguiente →</button>
+    <label class="field">Área operacional<select id="corporateArea"><option value="__all__">Toda la compañía</option><option value="Área Seca">Área Seca</option><option value="Área Húmeda">Área Húmeda</option><option value="__unclassified__">Sin clasificar</option></select></label>
+    <label class="field" id="corporateSubareaWrap" hidden>Sector del área<select id="corporateSubarea"><option value="__all__">Todos los sectores</option></select></label>
     <label class="field">Equipo / TAG<select id="corporateAsset"><option value="__all__">Todos los equipos</option></select></label>
   </div>
   <div class="dashboard-week" id="corporatePeriodLabel"></div>
+  <div class="dashboard-kpis corporate-area-breakdown" id="corporateAreaSummary" aria-live="polite">
+    <div class="kpi-pane"><span>ÁREA SECA</span><strong id="corpDryEvents">0 fallas</strong><small id="corpDryHours">0,00 h de detención</small></div>
+    <div class="kpi-pane"><span>ÁREA HÚMEDA</span><strong id="corpWetEvents">0 fallas</strong><small id="corpWetHours">0,00 h de detención</small></div>
+    <div class="kpi-pane"><span>SIN CLASIFICAR</span><strong id="corpOtherEvents">0 fallas</strong><small id="corpOtherHours">0,00 h de detención</small></div>
+  </div>
   <div class="dashboard-kpis corporate-reliability-kpis">
     <div class="kpi-pane"><span>EVENTOS</span><strong id="corpEvents">0</strong><small>Fallas registradas</small></div>
     <div class="kpi-pane"><span>DETENCIÓN</span><strong id="corpHours">—</strong><small>Horas documentadas</small></div>
@@ -1844,19 +1851,57 @@ function corporatePeriodPareto(events,bounds,metric,group){
  let cumulative=0;
  return {rows:condensed.map(row=>({...row,cumulative:total?100*(cumulative+=row.value)/total:0})),total};
 }
+function corporateAreaScopedCases(cases){
+ const area=$('#corporateArea').value,sub=$('#corporateSubarea').value;
+ return cases.filter(c=>{
+  if(area==='__all__')return true;
+  if(area==='__unclassified__')return !['Área Seca','Área Húmeda'].includes(c.area);
+  if(c.area!==area)return false;
+  return sub==='__all__'||(area==='Área Seca'?c.sector:c.productionUnit)===sub;
+ });
+}
+function corporateAreaOptions(){
+ const area=$('#corporateArea').value,sub=$('#corporateSubarea'),old=sub.value;
+ const opts=area==='Área Seca'?['Chancado','Apilamiento']:area==='Área Húmeda'
+   ?[...new Set([...Object.keys(AREA_HUMEDA_ASSETS),...selectedCorporateCases().filter(c=>c.area==='Área Húmeda').map(c=>c.productionUnit).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'es'))
+   :[];
+ $('#corporateSubareaWrap').hidden=!opts.length;
+ $('#corporateSubareaWrap').firstChild.textContent=area==='Área Húmeda'?'Unidad de producción':'Sector del área';
+ sub.innerHTML='<option value="__all__">'+(area==='Área Húmeda'?'Todas las unidades':'Todos los sectores')+'</option>'+
+   opts.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+ sub.value=opts.includes(old)?old:'__all__';
+}
+function corporateAreaScopeName(){
+ const area=$('#corporateArea').value,sub=$('#corporateSubarea').value;
+ return (area==='__all__'?'Toda la compañía':area==='__unclassified__'?'Sin clasificar':area)+
+ (sub!=='__all__'?' / '+sub:'');
+}
+function drawCorporateAreaSummary(cases,bounds){
+ const areas=[['Área Seca','corpDryEvents','corpDryHours'],['Área Húmeda','corpWetEvents','corpWetHours'],['__unclassified__','corpOtherEvents','corpOtherHours']];
+ for(const [area,eventId,hourId] of areas){
+  const matching=cases.filter(c=>area==='__unclassified__'?!['Área Seca','Área Húmeda'].includes(c.area):c.area===area);
+  const period=matching.filter(c=>{const d=investigationStart(c);return d&&d>=bounds.start&&d<bounds.cutoff});
+  const downtime=period.reduce((total,c)=>total+(investigationDowntime(c,bounds)?.hours??sumDashboardHours(c)),0);
+  $('#'+eventId).textContent=period.length+' '+(period.length===1?'falla':'fallas');
+  $('#'+hourId).textContent=dashboardReliabilityFormat(downtime)+' de detención';
+ }
+}
 function drawCorporateReliability(){
  const panel=$('#corporateReliabilityPanel');
  if(!panel||!corporateIsAdmin()||!corporateSelection())return;
- const cases=selectedCorporateCases(),assetSelect=$('#corporateAsset');
+ const allCases=selectedCorporateCases();
+ corporateAreaOptions();
+ const cases=corporateAreaScopedCases(allCases),assetSelect=$('#corporateAsset');
  const assets=[...new Set(cases.map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
  const old=assetSelect.value||ALL_ASSETS;
  assetSelect.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+
   assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
  assetSelect.value=assets.includes(old)?old:ALL_ASSETS;
  const bounds=corporateCalendarBounds(),results=corporatePeriodResults(cases,bounds,assetSelect.value);
+ drawCorporateAreaSummary(allCases,bounds);
  const metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
  const pareto=corporatePeriodPareto(results.events,bounds,metric,group);
- $('#corporatePeriodLabel').textContent=bounds.label+' · '+(assetSelect.value===ALL_ASSETS?'Todos los equipos':assetSelect.value);
+ $('#corporatePeriodLabel').textContent=bounds.label+' · '+corporateAreaScopeName()+' · '+(assetSelect.value===ALL_ASSETS?'Todos los equipos':assetSelect.value);
  $('#corpEvents').textContent=results.events.length;
  $('#corpHours').textContent=dashboardReliabilityFormat(results.hours);
  $('#corpMttr').textContent=dashboardReliabilityFormat(results.mttr);
@@ -1882,6 +1927,8 @@ $('#corporatePeriod').onchange=()=>{corporateCalendarSelection=null;drawCorporat
 $('#corporatePrevious').onclick=()=>shiftCorporatePeriod(-1);
 $('#corporateNext').onclick=()=>shiftCorporatePeriod(1);
 $('#corporateCurrent').onclick=()=>{corporateCalendarSelection=null;drawCorporateReliability()};
+$('#corporateArea').onchange=()=>{$('#corporateSubarea').value='__all__';$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
+$('#corporateSubarea').onchange=()=>{$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
 $('#corporateAsset').onchange=drawCorporateReliability;
 $('#corporateParetoMetric').onchange=drawCorporateReliability;
 $('#corporateParetoGroup').onchange=drawCorporateReliability;
@@ -1889,14 +1936,14 @@ $('#corporateRefresh').onclick=loadCorporateOverview;
 $('#corporateExportPeriod').onclick=()=>{
  if(!corporateIsAdmin())return;
  const bounds=corporateCalendarBounds(),asset=$('#corporateAsset').value;
- const results=corporatePeriodResults(selectedCorporateCases(),bounds,asset);
+ const results=corporatePeriodResults(corporateAreaScopedCases(selectedCorporateCases()),bounds,asset);
  const memberNames=new Map((corporateCtx?.orgMembers||[]).map(m=>[m.user_id,m.display_name||m.email]));
  const rows=(corporateCtx?.cases||[]).filter(entry=>results.events.some(c=>c.id===entry.payload?.id)).map(entry=>{
   const c=entry.payload;
-  return [memberNames.get(entry.owner_id)||'Usuario',c.equipment||'',c.title||'',c.datetime||c.stopStart||'',
+  return [memberNames.get(entry.owner_id)||'Usuario',c.area||'',c.area==='Área Húmeda'?(c.productionUnit||''):(c.sector||''),c.equipment||'',c.title||'',c.datetime||c.stopStart||'',
    investigationDowntime(c,bounds)?.hours??'',c.basicCause||'',c.conclusion||'',(c.actions||[]).filter(a=>a.description).length];
  });
- const head=['Autor','Equipo','Falla','Fecha','Horas de detención','Causa básica','Conclusión','Número de compromisos'];
+ const head=['Autor','Área','Sector o unidad de producción','Equipo','Falla','Fecha','Horas de detención','Causa básica','Conclusión','Número de compromisos'];
  const output='\uFEFF'+[head,...rows].map(cols=>cols.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  download('ACR_Tablero_Corporativo_'+bounds.period+'.csv',output,'text/csv;charset=utf-8');
 };
