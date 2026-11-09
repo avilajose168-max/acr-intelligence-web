@@ -357,7 +357,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
   <p class="help" id="corporateReliabilityNote">Se asume operación 24 horas al día por equipo con eventos. Los indicadores no se calculan si faltan horas verificables.</p>
   <div class="dashboard-toolbar corporate-toolbar">
-    <label class="field">Indicador de Pareto<select id="corporateParetoMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label>
+    <label class="field">Indicador para ambos gráficos<select id="corporateParetoMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label>
     <label class="field">Agrupar por<select id="corporateParetoGroup"><option value="equipment">Equipo / TAG</option><option value="failure">Tipo de falla / evento</option></select></label>
     <button type="button" class="secondary" id="corporateExportPeriod">⬇ Exportar período (CSV)</button>
   </div>
@@ -366,7 +366,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
       <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo / falla</th><th>Valor</th><th>Acumulado</th></tr></thead><tbody id="corporateParetoTable"></tbody></table></div>
     </div>
     <div class="dashboard-chart"><h3>Tendencia de las últimas 8 semanas</h3>
-      <div class="dashboard-toolbar corporate-toolbar"><label class="field">Indicador<select id="corporateTrendMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label></div>
+      
       <div id="corporateTrendChart" role="img" aria-label="Tendencia semanal de confiabilidad corporativa"></div>
       <p class="help" id="corporateTrendLabel">Historial de ocho semanas (lunes a domingo) con los filtros de la compañía.</p>
     </div>
@@ -2119,7 +2119,7 @@ function drawCorporateReliability(){
    'MTBF y disponibilidad son estimaciones basadas en los equipos documentados, no en toda la flota.');
  $('#corporateParetoChart').innerHTML=renderParetoSvg(pareto.rows,pareto.total,metric);
  const trendMonday=corporateTrendEndMonday(bounds);
- $('#corporateTrendChart').innerHTML=corporateTrendChart(corporateTrendSource(),trendMonday,$('#corporateTrendMetric').value);
+ $('#corporateTrendChart').innerHTML=corporateTrendChart(corporateTrendSource(),trendMonday,metric);
  $('#corporateTrendLabel').textContent='8 semanas de lunes a domingo, hasta '+dashboardWeekLabel(trendMonday)+
   '. '+corporateAreaScopeName()+(assetSelect.value===ALL_ASSETS?' · Todos los equipos':' · '+assetSelect.value);
  $('#corporateParetoTable').innerHTML=pareto.rows.length?pareto.rows.map(row=>
@@ -2140,7 +2140,7 @@ $('#corporateArea').onchange=()=>{$('#corporateSubarea').value='__all__';$('#cor
 $('#corporateSubarea').onchange=()=>{$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
 $('#corporateAsset').onchange=drawCorporateReliability;
 $('#corporateParetoMetric').onchange=drawCorporateReliability;
-$('#corporateTrendMetric').onchange=drawCorporateReliability;
+
 $('#corporateParetoGroup').onchange=drawCorporateReliability;
 $('#corporateRefresh').onclick=loadCorporateOverview;
 $('#corporateExportPeriod').onclick=()=>{
@@ -2185,7 +2185,7 @@ function corporateReliabilityReportHtml(){
  const bounds=corporateCalendarBounds(),all=selectedCorporateCases(),cases=corporateAreaScopedCases(all),asset=$('#corporateAsset').value;
  const data=corporatePeriodResults(cases,bounds,asset),metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
  const pareto=corporatePeriodPareto(data.events,bounds,metric,group);
- const trendMonday=corporateTrendEndMonday(bounds),trendMetric=$('#corporateTrendMetric').value;
+ const trendMonday=corporateTrendEndMonday(bounds),trendMetric=metric;
  const trendCases=corporateTrendSource();
  const trendRows=corporateTrendRows(trendCases,trendMonday,trendMetric);
  const breakdown=['Área Seca','Área Húmeda','Sin clasificar'].map(area=>{
