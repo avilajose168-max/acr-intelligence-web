@@ -87,6 +87,14 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
   return route.fulfill({status:200,headers,body:'{}'});
 });
 await page.goto('http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
+assert.equal(await page.locator('#authCompanyWrap').isVisible(),true,'La selección de perfil debe aparecer al iniciar sesión');
+assert.equal(await page.locator('#authAffiliation').inputValue(),'independent','Inicio de sesión independiente por defecto');
+await page.locator('#authAffiliation').selectOption('company');
+await page.locator('#authCompanyFields').waitFor({state:'visible'});
+assert.equal(await page.locator('#authRequestedRoleWrap').isVisible(),false,'Un usuario existente no puede solicitar automáticamente administración');
+await page.waitForFunction(()=>document.querySelector('#authOrganization option[value="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"]'),{timeout:10000});
+await page.locator('#authAffiliation').selectOption('independent');
+assert.equal(await page.locator('#authCompanyFields').isVisible(),false,'La selección independiente no exige compañía');
 await page.locator('#authEmail').fill('test@example.com');
 await page.locator('#authPassword').fill('password-test-123');
 await page.locator('#authSubmit').click();
