@@ -501,6 +501,39 @@ assert.equal(await companyAdminPage.locator('.nav button[data-page="organizacion
 assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Visualiza ACR de usuarios de su compañía');
 assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
 assert.equal(await companyAdminPage.locator('[data-org-member-role]').count(),0,'No puede asignar administradores');
+
+// Desglose de una misma empresa entre Área Seca y Área Húmeda.
+const wetSample=structuredClone(mockCompanyCases.find(x=>x.organization_id===testOrgId));
+assert.ok(wetSample,'Existe ACR inicial para ensayar las dos áreas');
+wetSample.id='abababab-abab-4bab-8bab-abababababab';
+wetSample.local_case_id='bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc';
+wetSample.payload.id=wetSample.local_case_id;
+wetSample.payload.area='Área Húmeda';
+wetSample.payload.productionUnit='AGUAS CALAMA';
+wetSample.payload.sector='';
+wetSample.payload.equipment='BBA AGUA CALAMA #1';
+wetSample.payload.title='Daño del impulsor de bomba';
+const originalArea=mockCompanyCases.find(x=>x.organization_id===testOrgId);
+originalArea.payload.area='Área Seca';
+originalArea.payload.sector='Chancado';
+mockCompanyCases.push(wetSample);
+await companyAdminPage.locator('#corporateRefresh').click();
+await companyAdminPage.waitForFunction(()=>document.querySelector('#corpEvents')?.textContent==='2',{timeout:15000});
+assert.equal(await companyAdminPage.locator('#corpDryEvents').innerText(),'1 falla','Resumen identifica una falla seca');
+assert.equal(await companyAdminPage.locator('#corpWetEvents').innerText(),'1 falla','Resumen identifica una falla húmeda');
+await companyAdminPage.locator('#corporateArea').selectOption('Área Húmeda');
+assert.equal(await companyAdminPage.locator('#corpEvents').innerText(),'1','Filtro Área Húmeda muestra solo su falla');
+await companyAdminPage.locator('#corporateSubarea').selectOption('AGUAS CALAMA');
+assert.ok((await companyAdminPage.locator('#corporateParetoTable').innerText()).includes('BBA AGUA CALAMA #1'),'Unidad húmeda filtra Pareto');
+await companyAdminPage.locator('#corporateArea').selectOption('Área Seca');
+await companyAdminPage.locator('#corporateSubarea').selectOption('Chancado');
+assert.equal(await companyAdminPage.locator('#corpEvents').innerText(),'1','Sector Chancado muestra la falla seca');
+await companyAdminPage.locator('#corporateArea').selectOption('__all__');
+assert.equal(await companyAdminPage.locator('#corpEvents').innerText(),'2','Vista de toda la compañía suma ambas áreas');
+mockCompanyCases.splice(mockCompanyCases.indexOf(wetSample),1);
+await companyAdminPage.locator('#corporateRefresh').click();
+await companyAdminPage.waitForFunction(()=>document.querySelector('#corpEvents')?.textContent==='1',{timeout:15000});
+
 // Otra persona de la compañía publica un ACR con compromisos: el administrador debe verlos.
 mockCompanyCases.push({
  id:'fffefefe-ffff-4fff-8fff-ffffffffffff',
