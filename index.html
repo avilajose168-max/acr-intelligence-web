@@ -1924,30 +1924,41 @@ function drawList(){
  });
 }
 const CHANCADO_ASSETS=[["CHANCADOR PRIMARIO","10027327"],["CORREA ALIMENTADORA #1","10028082"],["CORREA #2","10028242"],["PICAROCA","10027784"],["CHANCADOR PRIMARIO LOMAS II","10027484"],["CORREA ALIMENTADORA 101","10027938"],["CORREA TRANSPORTADORA 201","10027937"],["CORREA TRANSPORTADORA 202","10027485"],["CORREA TRANSPORTADORA 203","10027185"],["CORREA TRANSPORTADORA 204","10027184"],["CORREA ALIMENTADORA #3","10028086"],["CORREA ALIMENTADORA #4","10027642"],["CORREA #5","10027333"],["HARNERO SECUNDARIO BANANA","10028087"],["CHANCADOR SECUNDARIO","10027643"],["CORREA #6","10027473"],["CORREA #6A","10027786"],["CORREA #9A","10027787"],["CORREA #9D","10027332"],["CORREA #9C","10027641"],["CORREA ALIMENTADORA #7A","10027794"],["CORREA #7C","10028253"],["CORREA #8","10027183"],["HARNERO TERCIARIO LINEA 1","10028254"],["CHANCADOR TERCIARIO LINEA 1","10028095"],["CORREA #09","10028094"],["CORREA ALIMENTADORA #7B","10027930"],["CORREA #8A","10028245"],["HARNERO TERCIARIO LINEA 2","10027176"],["CHANCADOR TERCIARIO #2 (LINEA-2)","10028088"],["CORREA #9B","10027474"],["HARNERO FINO","10027788"],["CORREA #9E","10027641"],["CORREA #9F","10027475"],["CORREA #9G","10027641"]];
+const APILAMIENTO_ASSETS=[["CORREA #10","10028243"],["CORREA #11","10027776"],["CORREA #11A","10027631"],["CORREA #11B","10027923"],["CORREA #11C","10027468"],["CORREA TRIPPER #12B","10027633"],["CORREA TRIPPER #12","10027164"],["CORREA TRIPPER #12A","10028231"],["CORREA PORTATIL #03","10027779"],["CORREA PORTATIL #04","10027321"],["CORREA PORTATIL #05","10027169"],["CORREA PORTATIL #06","10027637"],["CORREA PORTATIL #07","10027780"],["CORREA PORTATIL #08","10027170"],["CORREA PORTATIL #09","10028240"],["CORREA PORTATIL #10","10027638"],["CORREA PORTATIL #11","10027171"],["CORREA PORTATIL #13","10027781"],["CORREA PORTATIL #14","10027172"],["CORREA PORTATIL #15","10027319"],["CORREA PORTATIL #16","10027167"],["CORREA PORTATIL #17","10028234"],["CORREA PORTATIL #18","10027635"],["CORREA PORTATIL #19","10027469"],["CORREA PORTATIL #20","10027636"],["CORREA PORTATIL #21","10027320"],["CORREA PORTATIL #22","10028235"],["CORREA PORTATIL #23","10028236"],["CORREA PORTATIL #24","10028237"],["CORREA PORTATIL #25","10027168"],["CORREA PORTATIL #26","10028238"],["CORREA PORTATIL #27","10028077"],["CORREA PORTATIL #28","10028239"],["CORREA PORTATIL #29","10028078"],["CORREA PORTATIL #33","10027782"],["CORREA PORTATIL #34","10027173"],["CORREA PORTATIL #35","10027783"],["CORREA PORTATIL #36","10027925"],["CORREA PORTATIL #37","10027924"],["CORREA PORTATIL #38","10027326"],["CORREA PORTATIL #39","10027470"],["CORREA PORTATIL #40","10027322"],["CORREA PORTATIL #41","10028079"],["CORREA PORTATIL #42","10027174"],["CORREA PORTATIL #43","10027324"],["CORREA PORTATIL #44","10027323"],["CORREA PORTATIL #45","10027325"],["CORREA PORTATIL #46","10028080"],["CORREA ALIMENTADOR PUENTE #47","10028232"],["CORREA PUENTE HORIZONTAL #48","10027318"],["CORREA STACKER RADIAL #49","10027632"],["CORREA PORTATIL #50","10028241"],["CORREA PORTATIL #51","10028081"],["CORREA PORTATIL #52","10027639"],["CORREA PORTATIL #53","10027471"],["CORREA TELESCOPICA #32A","10028230"],["CORREA STACKER #32","10027922"],["CORREA PUENTE HORIZONTAL #31","10027467"],["CORREA ALIMENTADOR #30","10028074"],["CORREA TRIPPER #12C","10085161"]];
 function isLomasBayasAreaCatalog(){
  const org=activeCorporateBrand()||(corporateCtx?.platform?corporateCtx.organizations?.find(o=>o.id===corporateSelection()&&o.active):null);
  const company=String(org?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  return /lomas\s+(bayas|vallas)/.test(company);
 }
+function operationalEquipmentCatalog(c){
+ if(!isLomasBayasAreaCatalog()||c.area!=='Área Seca')return null;
+ if(c.sector==='Chancado')return CHANCADO_ASSETS;
+ if(c.sector==='Apilamiento')return APILAMIENTO_ASSETS;
+ return null;
+}
 function drawChancadoEquipment(c){
- const catalog=isLomasBayasAreaCatalog()&&c.area==='Área Seca'&&c.sector==='Chancado';
- $('#freeEquipmentField').hidden=catalog;
- $('#chancadoEquipmentGroup').hidden=!catalog;
- if(!catalog)return;
+ const list=operationalEquipmentCatalog(c);
+ const enabled=!!list;
+ $('#freeEquipmentField').hidden=enabled;
+ $('#chancadoEquipmentGroup').hidden=!enabled;
+ if(!enabled)return;
+ const sector=c.sector;
  const select=$('#chancadoEquipmentSelect');
  const saved=c.equipment||'';
- const known=CHANCADO_ASSETS.find(item=>item[0]===saved);
- select.innerHTML='<option value="">Seleccionar equipo de chancado…</option>'+
- CHANCADO_ASSETS.map(([name,sap])=>'<option value="'+esc(name)+'">'+esc(name)+'</option>').join('')+
+ const known=list.find(item=>item[0]===saved);
+ select.innerHTML='<option value="">Seleccionar equipo de '+sector.toLowerCase()+'…</option>'+
+ list.map(([name])=>'<option value="'+esc(name)+'">'+esc(name)+'</option>').join('')+
  (saved&&!known?'<option value="'+esc(saved)+'">Anterior: '+esc(saved)+' (sin catálogo)</option>':'');
  select.value=saved;
  $('#chancadoSapNumber').value=known?known[1]:(c.equipmentSap||'');
+ $('#chancadoEquipmentSelect').setAttribute('aria-label','Seleccionar equipo de '+sector.toLowerCase());
 }
 $('#chancadoEquipmentSelect').onchange=()=>{
  const c=current();if(!c)return;
  const selected=$('#chancadoEquipmentSelect').value;
+ const list=operationalEquipmentCatalog(c)||[];
  c.equipment=selected;
- c.equipmentSap=CHANCADO_ASSETS.find(item=>item[0]===selected)?.[1]||'';
+ c.equipmentSap=list.find(item=>item[0]===selected)?.[1]||'';
  $('#chancadoSapNumber').value=c.equipmentSap;
  persist();
 };
@@ -1968,11 +1979,15 @@ $('#miningAreaSelect').onchange=()=>{
  const c=current();if(!c)return;
  c.area=$('#miningAreaSelect').value;
  c.sector='';
+ c.equipment='';
+ c.equipmentSap='';
  persist();drawMiningArea(c);
 };
 $('#miningSectorSelect').onchange=()=>{
  const c=current();if(!c||$('#miningAreaSelect').value!=='Área Seca')return;
  c.sector=$('#miningSectorSelect').value;
+ c.equipment='';
+ c.equipmentSap='';
  persist();
  drawChancadoEquipment(c);
 };
