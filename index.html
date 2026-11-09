@@ -156,6 +156,12 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .org-admin-table td{vertical-align:middle}
 .org-admin-table .help{font-size:12px}
 @media(max-width:700px){#organizaciones .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.auth-company-block{display:grid;gap:12px;margin:8px 0 13px;padding:14px;border:1px solid #3a5268;border-radius:12px;background:#0d1c2e}
+.auth-company-block[hidden],.auth-company-block [hidden]{display:none!important}
+.auth-company-block .field select{background:#0a1727;color:#f1f6fc;border:1px solid #456078;border-radius:9px;padding:12px;width:100%;font-size:13px}
+.auth-company-block #authCompanyFields{display:grid;gap:12px}
+.auth-company-help{font-size:11px;line-height:1.55;margin:0;color:#aebfd1}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
@@ -172,6 +178,27 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
       <h2 id="authTitle">Bienvenido</h2>
       <p id="authSubtitle">Ingresa con tus credenciales para acceder a tu espacio de investigación.</p>
       <label class="field" id="authNameWrap" hidden>Nombre completo<input id="authName" type="text" autocomplete="name" maxlength="120"></label>
+<div id="authCompanyWrap" hidden class="auth-company-block">
+  <label class="field">¿Cómo utilizarás ACR Intelligence?
+    <select id="authAffiliation" aria-label="Tipo de afiliación">
+      <option value="independent">Profesional independiente</option>
+      <option value="company">Pertenecer a una compañía registrada</option>
+    </select>
+  </label>
+  <div id="authCompanyFields" hidden>
+    <label class="field">Compañía contratante
+      <select id="authOrganization"><option value="">Cargando compañías disponibles…</option></select>
+    </label>
+    <label class="field">Solicitar registro como
+      <select id="authRequestedRole">
+        <option value="member">Usuario / supervisor / ingeniero</option>
+        <option value="admin">Administrador de la compañía (requiere aprobación)</option>
+      </select>
+    </label>
+    <p class="auth-company-help">Las empresas aparecen aquí cuando el administrador general las incorpora a la plataforma. El cargo de administrador queda pendiente de autorización. Seleccionar una empresa no da acceso a sus datos automáticamente.</p>
+  </div>
+  <p id="authIndependentHelp" class="auth-company-help">Tu cuenta será independiente. Tus investigaciones seguirán siendo privadas y podrás solicitar afiliación a una empresa más adelante.</p>
+</div>
       <label class="field">Correo electrónico<input id="authEmail" type="email" autocomplete="email" required placeholder="nombre@empresa.com"></label>
       <label class="field" id="authPassWrap">Contraseña<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo 8 caracteres"></label>
       <div id="authFeedback" aria-live="polite"></div>
@@ -416,12 +443,45 @@ function setAuthMode(mode){
   document.getElementById('authTitle').textContent=signup?'Crea tu cuenta':recover?'Recuperar acceso':'Bienvenido';
   document.getElementById('authSubtitle').textContent=signup?'Regístrate para comenzar a investigar y gestionar tus eventos.':recover?'Te enviaremos instrucciones para restablecer la contraseña.':'Ingresa con tus credenciales para acceder a tu espacio de investigación.';
   document.getElementById('authNameWrap').hidden=!signup;
+  document.getElementById('authCompanyWrap').hidden=!signup;
+  if(signup)void loadSignupOrganizations();
   document.getElementById('authPassWrap').hidden=recover;
   document.getElementById('authPassword').required=!recover;
   document.getElementById('authPassword').autocomplete=signup?'new-password':'current-password';
   document.getElementById('authSubmit').textContent=signup?'Crear cuenta':recover?'Enviar instrucciones':'Ingresar a ACR Intelligence';
   document.getElementById('authSwitch').textContent=mode==='login'?'Crear una cuenta':'Volver a iniciar sesión';
   document.getElementById('authRecover').hidden=mode!=='login';
+}
+
+let signupOrganizations=[];
+function drawAuthAffiliation(){
+ const company=document.getElementById('authAffiliation').value==='company';
+ document.getElementById('authCompanyFields').hidden=!company;
+ document.getElementById('authIndependentHelp').hidden=company;
+ document.getElementById('authOrganization').required=company&&authMode==='signup';
+}
+document.getElementById('authAffiliation').addEventListener('change',drawAuthAffiliation);
+async function loadSignupOrganizations(){
+ const select=document.getElementById('authOrganization');
+ try{
+  const response=await fetch(SUPABASE_URL+'/rest/v1/acr_organizations?select=id,name&active=eq.true&order=name',{
+   headers:{apikey:PUBLIC_KEY,'Authorization':'Bearer '+PUBLIC_KEY},
+   cache:'no-store'
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!Array.isArray(data))throw Error('No se pudo consultar el listado de compañías.');
+  signupOrganizations=data;
+  const previous=select.value;
+  select.innerHTML='<option value="">Seleccionar compañía…</option>'+data.map(o=>
+   '<option value="'+String(o.id).replace(/[^0-9a-f-]/gi,'')+'">'+o.name.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))+'</option>'
+  ).join('');
+  if(data.some(o=>o.id===previous))select.value=previous;
+  if(!data.length)select.innerHTML='<option value="">Todavía no hay compañías contratantes registradas</option>';
+ }catch(error){
+  signupOrganizations=[];
+  select.innerHTML='<option value="">No se pudieron cargar compañías. Intenta nuevamente.</option>';
+ }
+ drawAuthAffiliation();
 }
 document.getElementById('authSwitch').addEventListener('click',()=>setAuthMode(authMode==='login'?'signup':'login'));
 document.getElementById('authRecover').addEventListener('click',()=>setAuthMode('recover'));
@@ -437,9 +497,19 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
       authFeedback('Si el correo está registrado, recibirás instrucciones para recuperar el acceso.','notice');
     }else if(authMode==='signup'){
       if(password.length<8)throw Error('La contraseña debe tener al menos 8 caracteres.');
-      const data=await requestAuth('signup',{email,password,data:{display_name:name}});
+      const affiliation=document.getElementById('authAffiliation').value;
+      const organizationId=document.getElementById('authOrganization').value;
+      const role=document.getElementById('authRequestedRole').value;
+      if(affiliation==='company'&&!organizationId)throw Error('Selecciona la compañía contratante o regístrate como independiente.');
+      const metadata={display_name:name};
+      if(affiliation==='company'){
+        if(!signupOrganizations.some(o=>o.id===organizationId))throw Error('La compañía seleccionada ya no está disponible.');
+        metadata.acr_organization_id=organizationId;
+        metadata.acr_requested_role=role==='admin'?'admin':'member';
+      }
+      const data=await requestAuth('signup',{email,password,data:metadata});
       if(data.access_token&&data.user){await enter(data)}
-      else{setAuthMode('login');authFeedback('Cuenta solicitada. Confirma tu correo electrónico y luego inicia sesión.','notice')}
+      else{setAuthMode('login');authFeedback('Cuenta solicitada. Confirma tu correo electrónico y luego inicia sesión. Si elegiste una compañía, tu afiliación quedará pendiente de aprobación.','notice')}
     }else{
       const data=await requestAuth('token?grant_type=password',{email,password});
       await enter(data);
