@@ -1853,7 +1853,8 @@ function drawCorporateCommitments(){
  ).join(''):'<tr><td colspan="6">No hay compromisos para los filtros seleccionados.</td></tr>';
  $$('[data-corp-commit-case]').forEach(button=>button.onclick=()=>{
   const entry=(corporateCtx?.cases||[]).find(c=>c.id===button.dataset.corpCommitCase);
-  const existing=$('[data-org-case="'+button.dataset.corpCommitCase+'"]');
+  const index=(corporateCtx?.cases||[]).findIndex(c=>c.id===button.dataset.corpCommitCase);
+  const existing=index>=0?$('[data-org-case="'+index+'"]'):null;
   if(existing){existing.click();$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
   else if(entry){$('#orgCaseDetail').textContent='Investigación: '+(entry.title||'ACR')+'. Consulta el detalle en Investigaciones por usuario.';$('#orgCaseDetail').classList.remove('hidden');$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
  });
