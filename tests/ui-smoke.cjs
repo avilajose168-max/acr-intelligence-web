@@ -11,6 +11,13 @@ page.on('pageerror',e=>errors.push(e.message));
 const sharedSnapshots=new Map();
 let latestSharedToken=null;
 
+const testOrgId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const testOwnerId='11111111-1111-4111-8111-111111111111';
+const testOrgName='Compañía Minera de Prueba';
+const mockOrganizations=[{id:testOrgId,name:testOrgName,active:true}];
+const mockMemberships=[{id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',organization_id:testOrgId,user_id:testOwnerId,display_name:'Supervisor Administrador',email:'test@example.com',status:'approved',role:'admin'}];
+const mockCompanyCases=[];
+
 await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
   const url=route.request().url();
   const headers={'access-control-allow-origin':'*','access-control-allow-methods':'POST, GET, OPTIONS','access-control-allow-headers':'*','content-type':'application/json'};
@@ -19,6 +26,46 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
     access_token:'test-access-token',refresh_token:'test-refresh-token',expires_in:3600,
     user:{id:'11111111-1111-4111-8111-111111111111',email:'test@example.com'}
   })});
+
+  if(url.includes('/rest/v1/acr_platform_admins'))return route.fulfill({status:200,headers,body:JSON.stringify([{user_id:testOwnerId}])});
+  if(url.includes('/rest/v1/acr_organizations')){
+    const method=route.request().method();
+    if(method==='POST'){
+      const obj=route.request().postDataJSON(),entry={...obj,id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',active:true};
+      mockOrganizations.push(entry);
+      return route.fulfill({status:201,headers,body:JSON.stringify([entry])});
+    }
+    return route.fulfill({status:200,headers,body:JSON.stringify(mockOrganizations)});
+  }
+  if(url.includes('/rest/v1/acr_memberships')){
+    const request=new URL(url),method=route.request().method();
+    const orgId=request.searchParams.get('organization_id')?.replace(/^eq\./,'');
+    const userId=request.searchParams.get('user_id')?.replace(/^eq\./,'');
+    if(method==='PATCH'){
+      const id=request.searchParams.get('id')?.replace(/^eq\./,'');
+      const member=mockMemberships.find(m=>m.id===id);
+      if(member)Object.assign(member,route.request().postDataJSON());
+      return route.fulfill({status:204,headers});
+    }
+    if(method==='POST'){
+      const obj=route.request().postDataJSON();
+      mockMemberships.push({...obj,id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd'});
+      return route.fulfill({status:201,headers,body:JSON.stringify([obj])});
+    }
+    return route.fulfill({status:200,headers,body:JSON.stringify(mockMemberships.filter(m=>(!orgId||m.organization_id===orgId)&&(!userId||m.user_id===userId)))});
+  }
+  if(url.includes('/rest/v1/acr_corporate_investigations')){
+    const request=new URL(url),method=route.request().method();
+    if(method==='POST'){
+      const incoming=route.request().postDataJSON();
+      const existing=mockCompanyCases.find(x=>x.organization_id===incoming.organization_id&&x.owner_id===incoming.owner_id&&x.local_case_id===incoming.local_case_id);
+      if(existing)Object.assign(existing,incoming);
+      else mockCompanyCases.push({...incoming,id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'});
+      return route.fulfill({status:201,headers});
+    }
+    const orgId=request.searchParams.get('organization_id')?.replace(/^eq\./,'');
+    return route.fulfill({status:200,headers,body:JSON.stringify(mockCompanyCases.filter(c=>!orgId||c.organization_id===orgId))});
+  }
   if(url.includes('/functions/v1/acr-share')){
     const posted=route.request().postDataJSON();
     if(posted.action==='create'){
@@ -299,6 +346,43 @@ await recipient.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('[data-k="description"]').inputValue(),originalDescription,'Cambios en copia recibida no alteran el original');
 await recipient.close();await other.close();
 await page.locator('#revokeInvestigationLink').click().catch(()=>{});
+
+
+// V28: un administrador visualiza usuarios e investigaciones SOLO de la organización seleccionada.
+await page.locator('button[data-page="organizaciones"]').click();
+await page.waitForFunction(()=>document.querySelectorAll('#organizationSelect option').length>1,{timeout:15000});
+await page.locator('#organizationSelect').selectOption(testOrgId);
+await page.locator('#companyAdminPanel').waitFor({state:'visible'});
+await page.waitForFunction(()=>document.querySelector('#orgUserCount')?.textContent==='1',{timeout:15000});
+assert.equal(await page.locator('#platformAdminPanel').isVisible(),true,'La cuenta designada es administradora de la plataforma');
+assert.ok((await page.locator('#companyAdminTitle').innerText()).includes(testOrgName),'Consolidado solo de compañía seleccionada');
+assert.equal(await page.locator('#orgCaseCount').innerText(),'0','Los ACR locales no se exponen sin publicación');
+page.once('dialog',d=>d.accept());
+await page.locator('#publishCompanyCases').click();
+await page.waitForFunction(()=>document.querySelector('#corporateSyncStatus')?.textContent.includes('1 investigaciones corporativas'),{timeout:15000});
+assert.equal(mockCompanyCases.length,1,'La publicación corporativa se envía al servidor con afiliación aprobada');
+assert.equal(mockCompanyCases[0].organization_id,testOrgId,'Investigación asociada a la organización correcta');
+assert.equal(mockCompanyCases[0].owner_id,testOwnerId,'Propietario queda registrado en la empresa');
+await page.locator('#refreshOrganizations').click();
+await page.waitForFunction(()=>document.querySelector('#orgCaseCount')?.textContent==='1',{timeout:15000});
+assert.ok((await page.locator('#orgCasesTable').innerText()).includes('CT-11C'),'Administrador ve los ACR corporativos');
+await page.locator('[data-org-case]').first().click();
+assert.ok((await page.locator('#orgCaseDetail').innerText()).includes('Protección temperatura rodamiento'),'Vista corporativa contiene investigación');
+const exportCompanyTask=page.waitForEvent('download');
+await page.locator('#exportCompanyCsv').click();
+const companyCsv=await exportCompanyTask;
+assert.ok(companyCsv.suggestedFilename().endsWith('.csv'),'Consolidado corporativo exportable a Excel');
+const memberRole=page.locator('[data-org-member-role]').first();
+assert.equal(await memberRole.inputValue(),'admin','Rol del usuario visible al administrador');
+await page.locator('#newOrganizationName').fill('Empresa Industrial Independiente');
+page.once('dialog',d=>d.accept());
+await page.locator('#createOrganization').click();
+await page.waitForFunction(()=>document.querySelectorAll('#organizationSelect option').length===3,{timeout:15000});
+await page.locator('#organizationSelect').selectOption('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+await page.waitForFunction(()=>document.querySelector('#orgCaseCount')?.textContent==='0',{timeout:15000});
+assert.equal(await page.locator('#orgUserCount').innerText(),'0','Nueva empresa no hereda los usuarios de la anterior');
+assert.equal(await page.locator('#orgCasesTable').innerText(),'Todavía no hay investigaciones corporativas publicadas.','Nueva empresa no hereda investigaciones');
+await page.locator('button[data-page="inicio"]').click();
 
 console.log('OK informe semanal, PDF válido, PowerPoint válido, impresión y eliminación individual');
 assert.ok(errors.length===0,'Errores de JavaScript en la UI: '+errors.join('; '));
