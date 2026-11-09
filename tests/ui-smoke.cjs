@@ -4,6 +4,8 @@ const assert=require('node:assert/strict');
 (async()=>{
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
+// Mantener una hora operacional estable para que el evento 09:00–11:00 ya haya ocurrido, independiente del horario del CI.
+await page.clock.install({time:new Date('2026-11-09T15:00:00Z')});
 const errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 const sharedSnapshots=new Map();
