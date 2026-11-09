@@ -182,12 +182,15 @@ await page.waitForFunction(()=>document.querySelectorAll('#photos .photo').lengt
 await page.locator('#safetyPhotoInput').setInputFiles({name:'riesgo-en-galeria.png',mimeType:'image/png',buffer:imgBuffer});
 await page.waitForFunction(()=>document.querySelectorAll('#safetyPhotos .photo').length===1,{timeout:15000});
 await page.locator('button[data-page="reporte"]').click();
-const individualPdfTask=page.waitForEvent('download',{timeout:30000});
+await page.evaluate(()=>{window.__casePrintCount=0;window.print=()=>{window.__casePrintCount++}});
 await page.locator('#downloadCasePdf').click();
-const individualPdf=await individualPdfTask;
-assert.ok(individualPdf.suggestedFilename().endsWith('.pdf'),'El informe individual debe descargarse en teléfono');
-const pdfBytes=require('node:fs').readFileSync(await individualPdf.path());
-assert.ok(pdfBytes.length>3500&&pdfBytes.subarray(0,4).toString()==='%PDF','El PDF debe contener las secciones y fotos');
+assert.equal(await page.evaluate(()=>window.__casePrintCount),1,'Guardar como PDF utiliza el informe visual y la impresión nativa');
+await page.emulateMedia({media:'print'});
+assert.equal(await page.locator('#reporte').evaluate(el=>getComputedStyle(el).display),'block','La vista de impresión incluye el informe original');
+assert.notEqual(await page.locator('#printDocument').evaluate(el=>getComputedStyle(el).display),'none','El informe visible se conserva para PDF');
+const originalPdf=await page.pdf({printBackground:true,preferCSSPageSize:true});
+assert.ok(originalPdf.length>3500&&originalPdf.subarray(0,4).toString()==='%PDF','La impresión visual produce un PDF auténtico');
+await page.emulateMedia({media:'screen'});
 await page.evaluate(()=>{
   window.__shareCount=0;
   Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
