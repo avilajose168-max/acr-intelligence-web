@@ -1910,7 +1910,7 @@ $('#miningSectorSelect').onchange=()=>{
  c.sector=$('#miningSectorSelect').value;
  persist();
 };
-function drawForm(){const c=current();if(!c)return;$('[data-k]').forEach(el=>el.value=c[el.dataset.k]??'');drawMiningArea(c);recalcDowntime(c);drawWhys();drawPhotos();drawSafety();drawActions();drawCompany()}
+function drawForm(){const c=current();if(!c)return;$$('[data-k]').forEach(el=>el.value=c[el.dataset.k]??'');drawMiningArea(c);recalcDowntime(c);drawWhys();drawPhotos();drawSafety();drawActions();drawCompany()}
 $$('[data-k]').forEach(el=>el.addEventListener('input',()=>{const c=current();if(!c)return;c[el.dataset.k]=el.value;if(el.dataset.k==='stopStart'||el.dataset.k==='stopEnd')recalcDowntime(c);persist()}));
 function recalcDowntime(c){
  const hint=$('#durationHint'),output=$('#downtime');
