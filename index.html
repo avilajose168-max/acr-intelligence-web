@@ -465,7 +465,7 @@ async function loadSignupOrganizations(){
  const select=document.getElementById('authOrganization');
  try{
   const response=await fetch(SUPABASE_URL+'/rest/v1/acr_organizations?select=id,name&active=eq.true&order=name',{
-   headers:{apikey:PUBLIC_KEY,'Authorization':'Bearer '+PUBLIC_KEY},
+   headers:{apikey:PUBLIC_KEY},
    cache:'no-store'
   });
   const data=await response.json().catch(()=>null);
