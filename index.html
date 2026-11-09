@@ -290,7 +290,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="eyebrow">ADMINISTRACIÓN GENERAL · PLATAFORMA</div><h2>Crear una organización</h2><p class="help">Solo el administrador general puede crear empresas en ACR Integrity. Ningún usuario se convierte en administrador por escribir el nombre de una compañía.</p>
 <div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre legal de la compañía<input id="newOrganizationName" placeholder="Nombre legal de la compañía" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Logo corporativo (PNG, JPG o WEBP)<input id="newOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="createOrganization" class="primary">Crear compañía</button></div><div class="logoPreview" id="newOrganizationLogoPreview">Sin logo seleccionado.</div>
 <div style="margin-top:16px"><h3>Actualizar identidad de una compañía</h3><p class="help">Selecciona una compañía en el listado inferior para editar su nombre o logo. Los informes de sus usuarios aprobados mostrarán los cambios automáticamente.</p>
-<div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre corporativo<input id="editOrganizationName" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Sustituir logo<input id="editOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button id="saveOrganizationBrand" type="button" class="secondary">Guardar identidad</button></div><div id="editOrganizationLogoPreview" class="logoPreview">Selecciona una compañía.</div><button id="clearOrganizationLogo" type="button" class="secondary">Quitar logo corporativo</button></div></div>
+<div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre corporativo<input id="editOrganizationName" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Sustituir logo<input id="editOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button id="saveOrganizationBrand" type="button" class="secondary">Guardar identidad</button></div><div id="editOrganizationLogoPreview" class="logoPreview">Selecciona una compañía.</div><button id="clearOrganizationLogo" type="button" class="secondary">Quitar logo corporativo</button><div style="margin-top:16px;border-top:1px solid var(--line,#ddd);padding-top:14px"><h3>Eliminar empresa</h3><p class="help">La compañía dejará de aparecer en registros y afiliaciones. Se conservarán sus investigaciones y datos históricos para evitar pérdidas accidentales.</p><button id="deleteOrganization" type="button" class="secondary" disabled>Eliminar empresa seleccionada</button></div></div></div>
 <div class="card" id="corporateAffiliationPanel">
 <h2>Afiliación y organización</h2><p class="muted">Selecciona la compañía a la que perteneces. La afiliación requiere aprobación de su administrador. Tus investigaciones personales no se transfieren automáticamente.</p>
 <div class="toolbar" style="flex-wrap:wrap;align-items:end">
@@ -1331,6 +1331,7 @@ function fillOrganizationBrandEditor(){
  const org=corporateCtx?.organizations?.find(o=>o.id===corporateSelection());
  $('#editOrganizationName').value=org?.name||'';
  $('#editOrganizationLogoPreview').innerHTML=org?corporateBrandPreview(org):'Selecciona una compañía.';
+ $('#deleteOrganization').disabled=!corporateCtx?.platform||!org;
 }
 async function readCorporateLogo(file){
  if(!file)return '';
@@ -1389,6 +1390,24 @@ $('#clearOrganizationLogo').onclick=async()=>{
   await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+org.id),'PATCH',{logo_data:''},'return=minimal');
   await loadOrganizations();
  }catch(error){alert(error.message)}
+};
+$('#deleteOrganization').onclick=async()=>{
+ if(!corporateCtx?.platform)return alert('Solo el administrador general puede eliminar empresas.');
+ const org=corporateCtx.organizations.find(o=>o.id===corporateSelection()&&o.active);
+ if(!org)return alert('Selecciona una empresa activa antes de eliminarla.');
+ const typed=prompt('Vas a eliminar la empresa «'+org.name+'» de los registros activos. Sus investigaciones históricas no serán borradas. Para confirmar, escribe exactamente el nombre de la empresa:');
+ if(typed===null)return;
+ if(typed.trim()!==org.name)return alert('El nombre no coincide. No se realizó ningún cambio.');
+ if(!confirm('¿Confirmas que deseas desactivar «'+org.name+'»? Sus trabajadores dejarán de estar asociados a una empresa activa y esta no podrá recibir nuevas afiliaciones.'))return;
+ const button=$('#deleteOrganization');button.disabled=true;
+ try{
+  const updated=await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+encodeURIComponent(org.id)+'&active=eq.true'),'PATCH',{active:false},'return=representation');
+  if(!Array.isArray(updated)||updated.length!==1||updated[0].active!==false)throw Error('No se confirmó la desactivación. Comprueba los permisos de administrador en Supabase.');
+  if(activeUser?.id)localStorage.removeItem('acr-org-choice-'+activeUser.id);
+  $('#organizationSelect').value='';
+  await loadOrganizations();
+  alert('Empresa desactivada: «'+org.name+'». Se conservaron sus datos históricos.');
+ }catch(error){alert('No se pudo eliminar la empresa: '+error.message);button.disabled=false}
 };
 $('#requestOrganizationMembership').onclick=async()=>{
  const oid=corporateSelection();
