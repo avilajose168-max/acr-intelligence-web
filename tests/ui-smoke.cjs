@@ -256,6 +256,18 @@ await page.locator('[data-commit-open]').first().click();
 assert.equal(await page.locator('[data-ai="0"][data-ak="status"]').inputValue(),'Completado','El ACR original conserva el estado actualizado');
 await page.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Una falla registrada');
+await page.locator('#reliabilityArea').selectOption('Área Húmeda');
+assert.equal(await page.locator('#weekEvents').innerText(),'0','Área Húmeda excluye falla sin área');
+assert.equal(await page.locator('#reliabilitySubareaWrap').isVisible(),true,'Área Húmeda despliega unidad de producción');
+await page.locator('#reliabilitySubarea').selectOption('AGUAS CALAMA');
+assert.ok((await page.locator('#weekLabel').innerText()).includes('AGUAS CALAMA'),'Tablero identifica unidad húmeda');
+await page.locator('#reliabilityArea').selectOption('Área Seca');
+assert.ok((await page.locator('#reliabilitySubarea').locator('option').allTextContents()).includes('Chancado'),'Área Seca ofrece Chancado');
+await page.locator('#reliabilitySubarea').selectOption('Apilamiento');
+assert.equal(await page.locator('#weekEvents').innerText(),'0','Filtra sectores de Área Seca');
+await page.locator('#reliabilityArea').selectOption('__all__');
+assert.equal(await page.locator('#weekEvents').innerText(),'1','Todas las áreas recupera la falla sin clasificar');
+
 await page.locator('#reliabilityPeriod').selectOption('monthly');
 assert.ok((await page.locator('#weekLabel').innerText()).includes(new Date().getFullYear().toString()),'El resumen mensual identifica el año');
 assert.equal(await page.locator('#weekEvents').innerText(),'1','El informe mensual contabiliza la falla');
