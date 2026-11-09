@@ -162,6 +162,15 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .auth-company-block .field select{background:#0a1727;color:#f1f6fc;border:1px solid #456078;border-radius:9px;padding:12px;width:100%;font-size:13px}
 .auth-company-block #authCompanyFields{display:grid;gap:12px}
 .auth-company-help{font-size:11px;line-height:1.55;margin:0;color:#aebfd1}
+
+.corporate-command{margin:18px 0 24px;padding:18px;border:1px solid #385068;border-radius:15px;background:#102033}
+.corporate-reliability-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.corporate-reliability-kpis .kpi-pane strong{font-size:23px}
+.corporate-toolbar{margin:16px 0;flex-wrap:wrap;align-items:end}
+.corporate-toolbar .field{min-width:155px;flex:1}
+.corporate-toolbar select{width:100%;padding:9px}
+#corporateRecentCases{font-size:12px}
+@media(max-width:850px){.corporate-reliability-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.corporate-command{padding:12px}}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
@@ -302,6 +311,41 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div><span>CUMPLIMIENTO</span><strong id="orgCompliance">0%</strong></div>
 </div>
 <div class="dashboard-toolbar" style="margin:12px 0"><button type="button" class="secondary" id="exportCompanyCsv">⬇ Exportar consolidado Excel (CSV)</button></div>
+<div class="corporate-command" id="corporateReliabilityPanel">
+  <div class="between" style="flex-wrap:wrap;gap:12px">
+    <div><div class="eyebrow">CONFIABILIDAD · EMPRESA SELECCIONADA</div><h2>Tablero corporativo de confiabilidad</h2><p class="muted">Indicadores calculados solo con los ACR publicados por esta compañía. Datos actualizados al cargar o refrescar la vista.</p></div>
+    <button type="button" class="secondary" id="corporateRefresh">↻ Actualizar tablero</button>
+  </div>
+  <div class="dashboard-toolbar corporate-toolbar">
+    <label class="field">Período<select id="corporatePeriod"><option value="weekly">Semanal (lunes a domingo)</option><option value="monthly">Mensual</option></select></label>
+    <button type="button" class="secondary" id="corporatePrevious">← Anterior</button>
+    <button type="button" class="secondary" id="corporateCurrent">Período actual</button>
+    <button type="button" class="secondary" id="corporateNext">Siguiente →</button>
+    <label class="field">Equipo / TAG<select id="corporateAsset"><option value="__all__">Todos los equipos</option></select></label>
+  </div>
+  <div class="dashboard-week" id="corporatePeriodLabel"></div>
+  <div class="dashboard-kpis corporate-reliability-kpis">
+    <div class="kpi-pane"><span>EVENTOS</span><strong id="corpEvents">0</strong><small>Fallas registradas</small></div>
+    <div class="kpi-pane"><span>DETENCIÓN</span><strong id="corpHours">—</strong><small>Horas documentadas</small></div>
+    <div class="kpi-pane"><span>MTTR</span><strong id="corpMttr">—</strong><small>Horas por detención</small></div>
+    <div class="kpi-pane"><span>MTBF</span><strong id="corpMtbf">—</strong><small>Horas operadas / fallas</small></div>
+    <div class="kpi-pane"><span>DISPONIBILIDAD</span><strong id="corpAvailability">—</strong><small>Disponibilidad estimada</small></div>
+  </div>
+  <p class="help" id="corporateReliabilityNote">Se asume operación 24 horas al día por equipo con eventos. Los indicadores no se calculan si faltan horas verificables.</p>
+  <div class="dashboard-toolbar corporate-toolbar">
+    <label class="field">Indicador de Pareto<select id="corporateParetoMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label>
+    <label class="field">Agrupar por<select id="corporateParetoGroup"><option value="equipment">Equipo / TAG</option><option value="failure">Tipo de falla / evento</option></select></label>
+    <button type="button" class="secondary" id="corporateExportPeriod">⬇ Exportar período (CSV)</button>
+  </div>
+  <div class="dashboard-charts">
+    <div class="dashboard-chart"><h3>Pareto corporativo</h3><div id="corporateParetoChart" role="img" aria-label="Pareto corporativo semanal o mensual"></div>
+      <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo / falla</th><th>Valor</th><th>Acumulado</th></tr></thead><tbody id="corporateParetoTable"></tbody></table></div>
+    </div>
+    <div class="dashboard-chart"><h3>Investigaciones del período</h3><div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo</th><th>Investigación</th><th>Horas</th></tr></thead><tbody id="corporateRecentCases"></tbody></table></div>
+      <p class="help">El administrador puede abrir la investigación completa desde la tabla inferior «Investigaciones por usuario».</p>
+    </div>
+  </div>
+</div>
 <h3>Afiliaciones y roles</h3>
 <div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Estado</th><th>Rol</th><th>Administrar</th></tr></thead><tbody id="orgUsersTable"></tbody></table></div>
 <h3 style="margin-top:24px">Investigaciones por usuario</h3>
@@ -1317,6 +1361,151 @@ function corporateCommitMetrics(cases){
  const overdue=rows.filter(a=>a.status!=='Completado'&&/^\d{4}-\d{2}-\d{2}$/.test(a.due||'')&&a.due<today).length;
  return {total,completed,overdue,rate:total?completed/total*100:0};
 }
+
+let corporateCalendarSelection=null;
+function corporateCalendarBounds(now=new Date()){
+ const type=$('#corporatePeriod').value;
+ const today=dashboardToday();
+ const period=corporateCalendarSelection||(
+  type==='monthly'?today.slice(0,7):isoWeekStart(today)
+ );
+ let start,end,label;
+ if(type==='monthly'){
+  const match=/^(\d{4})-(\d{2})$/.exec(period);
+  const y=match?Number(match[1]):now.getFullYear(),m=match?Number(match[2]):now.getMonth()+1;
+  start=new Date(y,m-1,1);end=new Date(y,m,1);
+  label=start.toLocaleDateString('es-CL',{year:'numeric',month:'long'});
+ }else{
+  const mon=isoWeekStart(period)||isoWeekStart(today),p=mon.split('-').map(Number);
+  start=new Date(p[0],p[1]-1,p[2]);end=new Date(p[0],p[1]-1,p[2]+7);
+  label=dashboardWeekLabel(mon);
+ }
+ const cutoff=new Date(Math.max(start.getTime(),Math.min(now.getTime(),end.getTime())));
+ return {type,start,end,cutoff,baseHours:(cutoff-start)/3600000,label,period};
+}
+function shiftCorporatePeriod(step){
+ const bounds=corporateCalendarBounds(),d=new Date(bounds.start);
+ if(bounds.type==='monthly')d.setMonth(d.getMonth()+step);
+ else d.setDate(d.getDate()+7*step);
+ corporateCalendarSelection=bounds.type==='monthly'
+  ?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
+  :dateKeyUTC(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
+ drawCorporateReliability();
+}
+function selectedCorporateCases(){
+ return Array.isArray(corporateCtx?.cases)?corporateCtx.cases.map(row=>row.payload).filter(validDashboardCase):[];
+}
+function corporatePeriodResults(cases,bounds,asset){
+ const matching=(cases||[]).filter(c=>(asset===ALL_ASSETS||normalizeText(c.equipment)===asset)&&validDashboardCase(c));
+ const events=matching.filter(c=>{const d=investigationStart(c);return d&&d>=bounds.start&&d<bounds.cutoff});
+ const equipment=asset===ALL_ASSETS?[...new Set(events.map(c=>normalizeText(c.equipment)||'Equipo sin identificar'))]:[asset];
+ const ranges=new Map();
+ let documented=0,unverified=0;
+ for(const c of matching){
+  const date=investigationStart(c);
+  const inside=date&&date>=bounds.start&&date<bounds.cutoff;
+  const duration=investigationDowntime(c,bounds);
+  if(inside){if(duration)documented++;else unverified++}
+  if(!duration||duration.to<=duration.from)continue;
+  const key=asset===ALL_ASSETS?(normalizeText(c.equipment)||'Equipo sin identificar'):asset;
+  if(!equipment.includes(key))continue;
+  if(!ranges.has(key))ranges.set(key,[]);
+  ranges.get(key).push(duration);
+ }
+ let hours=0;
+ for(const intervals of ranges.values()){
+  intervals.sort((a,b)=>a.from-b.from);
+  let from=null,to=null;
+  for(const v of intervals){
+   if(from===null){from=v.from;to=v.to}
+   else if(v.from<=to)to=Math.max(to,v.to);
+   else{hours+=(to-from)/3600000;from=v.from;to=v.to}
+  }
+  if(from!==null)hours+=(to-from)/3600000;
+ }
+ const base=bounds.baseHours*equipment.length;
+ const complete=unverified===0&&base>0&&hours<=base+1e-8;
+ const operating=complete?Math.max(0,base-hours):null;
+ return {
+  events, hours, documented, unverified, base, equipmentCount:equipment.length,
+  mttr:documented>0?hours/documented:null,
+  mtbf:complete&&events.length>0?operating/events.length:null,
+  availability:complete?100*operating/base:null
+ };
+}
+function corporatePeriodPareto(events,bounds,metric,group){
+ const map=new Map();
+ for(const c of events){
+  const label=dashboardGroupKey(c,group),entry=map.get(label)||{label,events:0,hours:0};
+  entry.events++;
+  entry.hours+=(investigationDowntime(c,bounds)?.hours??0);
+  map.set(label,entry);
+ }
+ const sorted=[...map.values()].map(entry=>({...entry,value:metric==='hours'?entry.hours:entry.events}))
+  .filter(entry=>entry.value>0).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
+ const condensed=sorted.length>9?[...sorted.slice(0,8),sorted.slice(8).reduce((sum,x)=>({
+  label:'Otros',value:sum.value+x.value,events:sum.events+x.events,hours:sum.hours+x.hours
+ }),{label:'Otros',value:0,events:0,hours:0})]:sorted;
+ const total=condensed.reduce((n,row)=>n+row.value,0);
+ let cumulative=0;
+ return {rows:condensed.map(row=>({...row,cumulative:total?100*(cumulative+=row.value)/total:0})),total};
+}
+function drawCorporateReliability(){
+ const panel=$('#corporateReliabilityPanel');
+ if(!panel||!corporateIsAdmin()||!corporateSelection())return;
+ const cases=selectedCorporateCases(),assetSelect=$('#corporateAsset');
+ const assets=[...new Set(cases.map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+ const old=assetSelect.value||ALL_ASSETS;
+ assetSelect.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+
+  assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
+ assetSelect.value=assets.includes(old)?old:ALL_ASSETS;
+ const bounds=corporateCalendarBounds(),results=corporatePeriodResults(cases,bounds,assetSelect.value);
+ const metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
+ const pareto=corporatePeriodPareto(results.events,bounds,metric,group);
+ $('#corporatePeriodLabel').textContent=bounds.label+' · '+(assetSelect.value===ALL_ASSETS?'Todos los equipos':assetSelect.value);
+ $('#corpEvents').textContent=results.events.length;
+ $('#corpHours').textContent=dashboardReliabilityFormat(results.hours);
+ $('#corpMttr').textContent=dashboardReliabilityFormat(results.mttr);
+ $('#corpMtbf').textContent=dashboardReliabilityFormat(results.mtbf);
+ $('#corpAvailability').textContent=dashboardAvailabilityFormat(results.availability);
+ $('#corporateReliabilityNote').textContent=
+  'Base de operación: '+dashboardReliabilityFormat(results.base)+' para '+results.equipmentCount+
+  ' equipo(s) con eventos, considerando 24 h/día hasta el corte del período. '+
+  (results.unverified?'⚠ '+results.unverified+' evento(s) sin tiempo de detención verificable; MTBF y disponibilidad no disponibles.':
+   'MTBF y disponibilidad son estimaciones basadas en los equipos documentados, no en toda la flota.');
+ $('#corporateParetoChart').innerHTML=renderParetoSvg(pareto.rows,pareto.total,metric);
+ $('#corporateParetoTable').innerHTML=pareto.rows.length?pareto.rows.map(row=>
+  '<tr><td>'+esc(row.label)+'</td><td>'+dashboardMetricText(row.value,metric)+'</td><td>'+
+  row.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%</td></tr>'
+ ).join(''):'<tr><td colspan="3">Sin fallas registradas en este período.</td></tr>';
+ $('#corporateRecentCases').innerHTML=results.events.length?results.events.slice().sort((a,b)=>
+  (investigationStart(b)?.getTime()||0)-(investigationStart(a)?.getTime()||0)).slice(0,15).map(c=>
+  '<tr><td>'+esc(c.equipment||'Sin TAG')+'</td><td>'+esc(c.title||'Sin título')+'</td><td>'+
+  dashboardReliabilityFormat(investigationDowntime(c,bounds)?.hours??null)+'</td></tr>'
+ ).join(''):'<tr><td colspan="3">No hay investigaciones del período seleccionado.</td></tr>';
+}
+$('#corporatePeriod').onchange=()=>{corporateCalendarSelection=null;drawCorporateReliability()};
+$('#corporatePrevious').onclick=()=>shiftCorporatePeriod(-1);
+$('#corporateNext').onclick=()=>shiftCorporatePeriod(1);
+$('#corporateCurrent').onclick=()=>{corporateCalendarSelection=null;drawCorporateReliability()};
+$('#corporateAsset').onchange=drawCorporateReliability;
+$('#corporateParetoMetric').onchange=drawCorporateReliability;
+$('#corporateParetoGroup').onchange=drawCorporateReliability;
+$('#corporateRefresh').onclick=loadCorporateOverview;
+$('#corporateExportPeriod').onclick=()=>{
+ if(!corporateIsAdmin())return;
+ const bounds=corporateCalendarBounds(),asset=$('#corporateAsset').value;
+ const results=corporatePeriodResults(selectedCorporateCases(),bounds,asset);
+ const memberNames=new Map((corporateCtx?.orgMembers||[]).map(m=>[m.user_id,m.display_name||m.email]));
+ const rows=(corporateCtx?.cases||[]).filter(entry=>results.events.some(c=>c.id===entry.payload?.id)).map(entry=>{
+  const c=entry.payload;
+  return [memberNames.get(entry.owner_id)||'Usuario',c.equipment||'',c.title||'',c.datetime||c.stopStart||'',
+   investigationDowntime(c,bounds)?.hours??'',c.basicCause||'',c.conclusion||'',(c.actions||[]).filter(a=>a.description).length];
+ });
+ const head=['Autor','Equipo','Falla','Fecha','Horas de detención','Causa básica','Conclusión','Número de compromisos'];
+ const output='\uFEFF'+[head,...rows].map(cols=>cols.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ download('ACR_Tablero_Corporativo_'+bounds.period+'.csv',output,'text/csv;charset=utf-8');
+};
 async function loadCorporateOverview(){
  const orgId=corporateSelection();
  if(!orgId||!corporateIsAdmin()||!activeUser)return;
@@ -1329,6 +1518,7 @@ async function loadCorporateOverview(){
   if(initialId!==corporateSelection()||!corporateIsAdmin())return;
   if(!Array.isArray(members)||!Array.isArray(cases))throw Error('Datos incompletos.');
   corporateCtx.orgMembers=members;corporateCtx.cases=cases;
+  drawCorporateReliability();
   const metric=corporateCommitMetrics(cases);
   $('#companyAdminTitle').textContent='Consolidado · '+(corporateCtx.organizations.find(o=>o.id===orgId)?.name||'Compañía');
   $('#orgUserCount').textContent=members.filter(m=>m.status==='approved').length;
