@@ -204,6 +204,11 @@ await page.waitForFunction(()=>window.__shareCount===1,{timeout:15000});
 await page.setViewportSize({width:1440,height:900});
 
 await page.locator('#reportFormat').selectOption('a3');
+await page.emulateMedia({media:'print'});
+const executivePdf=await page.pdf({printBackground:true,preferCSSPageSize:true});
+const executivePdfPages=(executivePdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
+assert.equal(executivePdfPages,1,'El informe A3 ejecutivo no debe generar una segunda hoja en blanco');
+await page.emulateMedia({media:'screen'});
 await page.locator('#saveAllReport').click();
 await page.locator('#commitScopeMessage').waitFor({state:'visible'});
 assert.ok((await page.locator('#commitScopeMessage').innerText()).includes('1 compromiso(s)'),'Guardar todo confirma los compromisos');
