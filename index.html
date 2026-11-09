@@ -705,6 +705,7 @@ const ALL_ASSETS='__all__';
 function dashboardAssets(){return [...new Set(db.cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
 function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
 
+function weekTimeBounds(monday,now=new Date()){return periodTimeBounds(monday,now,'weekly')}
 function periodTimeBounds(monday,now=new Date(),type='weekly'){
  const [year,month,day]=monday.split('-').map(Number);
  const start=new Date(year,month-1,day,0,0,0,0);
