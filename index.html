@@ -365,6 +365,11 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div class="dashboard-chart"><h3>Pareto corporativo</h3><div id="corporateParetoChart" role="img" aria-label="Pareto corporativo semanal o mensual"></div>
       <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo / falla</th><th>Valor</th><th>Acumulado</th></tr></thead><tbody id="corporateParetoTable"></tbody></table></div>
     </div>
+    <div class="dashboard-chart"><h3>Tendencia de las últimas 8 semanas</h3>
+      <div class="dashboard-toolbar corporate-toolbar"><label class="field">Indicador<select id="corporateTrendMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label></div>
+      <div id="corporateTrendChart" role="img" aria-label="Tendencia semanal de confiabilidad corporativa"></div>
+      <p class="help" id="corporateTrendLabel">Historial de ocho semanas (lunes a domingo) con los filtros de la compañía.</p>
+    </div>
     <div class="dashboard-chart"><h3>Investigaciones del período</h3><div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Equipo</th><th>Investigación</th><th>Horas</th></tr></thead><tbody id="corporateRecentCases"></tbody></table></div>
       <p class="help">El administrador puede abrir la investigación completa desde la tabla inferior «Investigaciones por usuario».</p>
     </div>
@@ -2052,6 +2057,29 @@ function drawCorporateAreaSummary(cases,bounds){
   $('#'+hourId).textContent=dashboardReliabilityFormat(downtime)+' de detención';
  }
 }
+function corporateTrendSource(){
+ const filtered=corporateAreaScopedCases(selectedCorporateCases());
+ const asset=$('#corporateAsset').value;
+ return filtered.filter(c=>asset===ALL_ASSETS||normalizeText(c.equipment)===asset);
+}
+function corporateTrendEndMonday(bounds=corporateCalendarBounds()){
+ if(bounds.type==='weekly')return bounds.period;
+ const endDay=new Date(Math.max(bounds.start.getTime(),bounds.cutoff.getTime()-1));
+ const selectedDay=dateKeyUTC(new Date(Date.UTC(endDay.getFullYear(),endDay.getMonth(),endDay.getDate(),12)));
+ return isoWeekStart(selectedDay);
+}
+function corporateTrendRows(cases,monday,metric){
+ return Array.from({length:8},(_,i)=>{
+  const start=addDays(monday,(i-7)*7),end=addDays(start,7);
+  const events=cases.filter(c=>{const d=caseEventDate(c);return d>=start&&d<end});
+  const hours=events.reduce((total,c)=>total+sumDashboardHours(c),0);
+  return {week:start,events:events.length,hours,value:metric==='hours'?hours:events.length};
+ });
+}
+function corporateTrendChart(cases,monday,metric){
+ // Mismo gráfico de barras de ocho semanas utilizado en Inicio.
+ return renderWeeklyTrend(cases,monday,metric);
+}
 function drawCorporateReliability(){
  const panel=$('#corporateReliabilityPanel');
  if(!panel||!corporateIsAdmin()||!corporateSelection())return;
@@ -2079,6 +2107,10 @@ function drawCorporateReliability(){
   (results.unverified?'⚠ '+results.unverified+' evento(s) sin tiempo de detención verificable; MTBF y disponibilidad no disponibles.':
    'MTBF y disponibilidad son estimaciones basadas en los equipos documentados, no en toda la flota.');
  $('#corporateParetoChart').innerHTML=renderParetoSvg(pareto.rows,pareto.total,metric);
+ const trendMonday=corporateTrendEndMonday(bounds);
+ $('#corporateTrendChart').innerHTML=corporateTrendChart(corporateTrendSource(),trendMonday,$('#corporateTrendMetric').value);
+ $('#corporateTrendLabel').textContent='8 semanas de lunes a domingo, hasta '+dashboardWeekLabel(trendMonday)+
+  '. '+corporateAreaScopeName()+(assetSelect.value===ALL_ASSETS?' · Todos los equipos':' · '+assetSelect.value);
  $('#corporateParetoTable').innerHTML=pareto.rows.length?pareto.rows.map(row=>
   '<tr><td>'+esc(row.label)+'</td><td>'+dashboardMetricText(row.value,metric)+'</td><td>'+
   row.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%</td></tr>'
@@ -2097,6 +2129,7 @@ $('#corporateArea').onchange=()=>{$('#corporateSubarea').value='__all__';$('#cor
 $('#corporateSubarea').onchange=()=>{$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
 $('#corporateAsset').onchange=drawCorporateReliability;
 $('#corporateParetoMetric').onchange=drawCorporateReliability;
+$('#corporateTrendMetric').onchange=drawCorporateReliability;
 $('#corporateParetoGroup').onchange=drawCorporateReliability;
 $('#corporateRefresh').onclick=loadCorporateOverview;
 $('#corporateExportPeriod').onclick=()=>{
@@ -2141,6 +2174,9 @@ function corporateReliabilityReportHtml(){
  const bounds=corporateCalendarBounds(),all=selectedCorporateCases(),cases=corporateAreaScopedCases(all),asset=$('#corporateAsset').value;
  const data=corporatePeriodResults(cases,bounds,asset),metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
  const pareto=corporatePeriodPareto(data.events,bounds,metric,group);
+ const trendMonday=corporateTrendEndMonday(bounds),trendMetric=$('#corporateTrendMetric').value;
+ const trendCases=corporateTrendSource();
+ const trendRows=corporateTrendRows(trendCases,trendMonday,trendMetric);
  const breakdown=['Área Seca','Área Húmeda','Sin clasificar'].map(area=>{
   const scoped=all.filter(c=>area==='Sin clasificar'?!['Área Seca','Área Húmeda'].includes(c.area):c.area===area);
   const events=scoped.filter(c=>{const date=investigationStart(c);return date&&date>=bounds.start&&date<bounds.cutoff});
@@ -2164,7 +2200,12 @@ function corporateReliabilityReportHtml(){
   corporateReportTable([group==='equipment'?'Equipo / TAG':'Tipo de falla','Valor','Acumulado'],pareto.rows.map(r=>[
    r.label,dashboardMetricText(r.value,metric),r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%'
   ]),'Sin fallas para el período')+
-  '<h2>03 · Investigaciones del período</h2>'+
+  '<h2>03 · Tendencia de las últimas 8 semanas ('+(trendMetric==='hours'?'horas detenidas':'cantidad de fallas')+')</h2>'+
+  '<div class="corp-report-chart" role="img" aria-label="Tendencia de fallas corporativas de ocho semanas">'+
+  '<p class="corp-report-chart-label">Historial semanal · '+esc(corporateAreaScopeName())+'</p>'+
+  corporateTrendChart(trendCases,trendMonday,trendMetric)+'</div>'+
+  corporateReportTable(['Semana (lunes)','Fallas','Horas detenidas'],trendRows.map(r=>[r.week,r.events,dashboardMetricText(r.hours,'hours')]),'Sin eventos para las últimas ocho semanas')+
+  '<h2>04 · Investigaciones del período</h2>'+
   corporateReportTable(['Fecha','Área','Sector / unidad','Equipo','Evento','Detención'],eventRows,'No hay investigaciones publicadas con estos filtros')+
   '<p class="corp-report-note">Fuente: ACR publicados en esta compañía. MTBF y disponibilidad estimados sobre los equipos con eventos y horas verificables; no equivalen a indicadores de toda la flota. El desglose por áreas corresponde al período completo de la empresa.</p>';
 }
