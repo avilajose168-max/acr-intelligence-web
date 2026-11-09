@@ -1270,8 +1270,8 @@ async function loadCorporateOverview(){
    '<td><div class="toolbar"><select data-org-member-status="'+esc(m.id)+'" aria-label="Estado de afiliación"><option value="pending"'+(m.status==='pending'?' selected':'')+'>Pendiente</option><option value="approved"'+(m.status==='approved'?' selected':'')+'>Aprobado</option><option value="rejected"'+(m.status==='rejected'?' selected':'')+'>Rechazado</option></select>'+
    '<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario"><option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option><option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select></div></td></tr>'
   ).join(''):'<tr><td colspan="5">Todavía no hay solicitudes de afiliación.</td></tr>';
-  $('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
-  $('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
+  $$('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
+  $$('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
   $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
    const member=members.find(m=>m.user_id===c.owner_id);
    const count=(c.payload?.actions||[]).filter(a=>String(a?.description||'').trim()).length;
@@ -1279,7 +1279,7 @@ async function loadCorporateOverview(){
     '<td>'+esc(c.title||'Investigación sin título')+'</td><td>'+esc(new Date(c.updated_at).toLocaleString('es-CL'))+'</td>'+
     '<td>'+count+'</td><td><button type="button" class="secondary" data-org-case="'+i+'">Ver ACR</button></td></tr>'
   }).join(''):'<tr><td colspan="5">Todavía no hay investigaciones corporativas publicadas.</td></tr>';
-  $('[data-org-case]').forEach(el=>el.onclick=()=>{
+  $$('[data-org-case]').forEach(el=>el.onclick=()=>{
    const item=corporateCtx.cases[Number(el.dataset.orgCase)]?.payload;
    if(!item)return;
    const content=$('#orgCaseDetail');
