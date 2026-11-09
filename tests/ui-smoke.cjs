@@ -197,7 +197,10 @@ await page.locator('button[data-page="inicio"]').click();
 
 // V40: la acción vencida del ensayo pertenece a febrero de 2020; seleccionar ese mes.
 await page.locator('#commitPeriod').selectOption('monthly');
-await page.evaluate(()=>{selectedCommitMonth='2020-02-01';drawCommitments()});
+await page.evaluate(()=>{
+ for(let i=0;i<120&&!document.querySelector('#commitPeriodLabel').textContent.includes('2020-02-01');i++)document.querySelector('#commitPrevious').click();
+ if(!document.querySelector('#commitPeriodLabel').textContent.includes('2020-02-01'))throw Error('No se encontró febrero de 2020 en navegación mensual');
+});
 assert.ok((await page.locator('#commitPeriodLabel').innerText()).includes('2020'),'El filtro reconoce el mes histórico');
 assert.equal(await page.locator('#commitTotal').innerText(),'1','Existe un compromiso registrado');
 assert.equal(await page.locator('#commitOverdue').innerText(),'1','Se detecta fecha vencida automáticamente');
