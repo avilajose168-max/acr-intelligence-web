@@ -148,6 +148,14 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .commit-state-progress{color:#c5e5f1;background:#25465b}
 .commit-state-complete{color:#c8f1d5;background:#244936}
 @media(max-width:780px){.commitments-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.commitments-table{min-width:780px}}
+
+#organizaciones select,#organizaciones input{background:#0b1522;color:#f2f7fc;border:1px solid #39536c;border-radius:9px;padding:11px}
+#organizaciones .dashboard-kpis{margin:14px 0 20px}
+.org-admin-table{min-width:690px}
+.org-admin-table button,.org-admin-table select{font-size:12px;padding:7px 10px}
+.org-admin-table td{vertical-align:middle}
+.org-admin-table .help{font-size:12px}
+@media(max-width:700px){#organizaciones .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
@@ -173,7 +181,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </form>
   </div>
 </div>
-<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Intelligence</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint"><button class="active" data-page="inicio">Inicio</button><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · PDF</button></nav>
+<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Intelligence</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint"><button class="active" data-page="inicio">Inicio</button><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · PDF</button><button data-page="organizaciones">🏢 Empresas</button></nav>
 <section id="inicio" class="section active"><div class="card"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
   <div><div class="eyebrow">ACR INTELLIGENCE · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
@@ -240,6 +248,41 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <p class="help" style="margin-top:12px">Los estados se guardan en la acción original de cada ACR. Un compromiso pendiente con fecha anterior a hoy se marca automáticamente como vencido. Completar una acción no elimina su investigación.</p>
 </section>
 <div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones se guardan localmente por usuario. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
+<section id="organizaciones" class="section">
+<div class="between" style="flex-wrap:wrap;gap:12px;margin-bottom:17px"><div><div class="eyebrow">ACR INTELLIGENCE · V28</div><h1>Centro de administración corporativa</h1><p class="muted">Cada compañía mantiene sus usuarios, investigaciones e indicadores separados. Solo sus administradores autorizados pueden consultar el consolidado.</p></div><button type="button" id="refreshOrganizations" class="secondary">↻ Actualizar</button></div>
+<div class="card" id="platformAdminPanel" hidden>
+<div class="eyebrow">ADMINISTRACIÓN GENERAL · PLATAFORMA</div><h2>Crear una organización</h2><p class="help">Solo el administrador general puede crear empresas en ACR Intelligence. Ningún usuario se convierte en administrador por escribir el nombre de una compañía.</p>
+<div class="toolbar" style="flex-wrap:wrap"><input id="newOrganizationName" placeholder="Nombre legal de la compañía" maxlength="120" style="flex:1;min-width:230px"><button type="button" id="createOrganization" class="primary">Crear compañía</button></div></div>
+<div class="card">
+<h2>Afiliación y organización</h2><p class="muted">Selecciona la compañía a la que perteneces. La afiliación requiere aprobación de su administrador. Tus investigaciones personales no se transfieren automáticamente.</p>
+<div class="toolbar" style="flex-wrap:wrap;align-items:end">
+<label class="field" style="min-width:220px;flex:1">Compañía<select id="organizationSelect"><option value="">Seleccionar organización…</option></select></label>
+<button type="button" class="secondary" id="requestOrganizationMembership">Solicitar afiliación</button></div>
+<div id="orgMembershipStatus" class="notice" aria-live="polite" style="margin-top:12px">Selecciona una compañía para consultar su estado.</div>
+</div>
+<div id="approvedCompanyPanel" class="card" hidden>
+<div class="between" style="flex-wrap:wrap"><div><h2>Mis investigaciones corporativas</h2><p class="muted">Cuando publicas un ACR en esta compañía, el administrador autorizado puede visualizarlo, junto con sus fotografías, acciones e indicadores. El registro local se conserva.</p></div><button type="button" class="primary" id="publishCompanyCases">Publicar / actualizar mis ACR en esta compañía</button></div>
+<div id="corporateSyncStatus" class="help" aria-live="polite">Aún no se han publicado investigaciones.</div>
+<p class="help">Se sincronizan únicamente tus investigaciones con contenido. La publicación manual también habilita la actualización de estas investigaciones al guardar nuevos cambios, siempre que exista conexión.</p>
+</div>
+<div id="companyAdminPanel" class="card" hidden>
+<div class="eyebrow">PANEL ADMINISTRADOR · EMPRESA</div><h2 id="companyAdminTitle">Consolidado corporativo</h2>
+<div class="dashboard-kpis commitments-kpis">
+<div><span>USUARIOS APROBADOS</span><strong id="orgUserCount">0</strong></div>
+<div><span>ACR PUBLICADOS</span><strong id="orgCaseCount">0</strong></div>
+<div><span>ACCIONES TOTALES</span><strong id="orgCommitTotal">0</strong></div>
+<div><span>ACCIONES VENCIDAS</span><strong id="orgCommitOverdue">0</strong></div>
+<div><span>CUMPLIMIENTO</span><strong id="orgCompliance">0%</strong></div>
+</div>
+<div class="dashboard-toolbar" style="margin:12px 0"><button type="button" class="secondary" id="exportCompanyCsv">⬇ Exportar consolidado Excel (CSV)</button></div>
+<h3>Afiliaciones y roles</h3>
+<div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Estado</th><th>Rol</th><th>Administrar</th></tr></thead><tbody id="orgUsersTable"></tbody></table></div>
+<h3 style="margin-top:24px">Investigaciones por usuario</h3>
+<div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario / equipo</th><th>Investigación</th><th>Actualizado</th><th>Compromisos</th><th>Detalle</th></tr></thead><tbody id="orgCasesTable"></tbody></table></div>
+<div id="orgCaseDetail" class="notice hidden" style="margin-top:14px"></div>
+<div class="notice" style="margin-top:15px">Solo se incluyen ACR publicados por usuarios de esta empresa. Las cuentas y los datos de otras organizaciones no se incluyen en este panel.</div>
+</div>
+</section>
 <section id="weeklyReport" class="section">
   <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
     <div><div class="eyebrow">Reporte de confiabilidad · Semana ISO</div><h1>Informe semanal de Pareto</h1><p class="muted">Vista previa lista para imprimir o guardar como PDF.</p></div>
@@ -349,6 +392,7 @@ async function enter(sessionData){
   document.getElementById('accountEmail').textContent=activeUser.email||'Mi cuenta';
   hideAuth();navigate('inicio');
   void openIncomingShareFromUrl();
+  void loadOrganizations();
 }
 async function validateSession(){
   let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(_){stored=null}
@@ -360,7 +404,7 @@ async function validateSession(){
 }
 function logout(){
   const token=session?.access_token;
-  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';
+  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;
   localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
 }
@@ -413,7 +457,7 @@ function commitVoice(){const c=current();if(!c)return;const value=[voiceBase.tri
 if(!SpeechRecognitionAPI){voiceStatus('El dictado no está disponible en este navegador. Prueba Chrome o Edge actualizado, o escribe el evento.');$('#startVoice').disabled=true;}
 $('#startVoice').addEventListener('click',()=>{const c=current();if(!c){alert('Primero crea una investigación.');return;}if(!SpeechRecognitionAPI||voiceRunning)return;try{voiceRecognition=new SpeechRecognitionAPI();voiceRecognition.lang='es-CL';voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceBase=c.description||'';voiceFinal='';voiceRecognition.onstart=()=>{voiceRunning=true;voiceStatus('🔴 Escuchando… Describe la falla. Pulsa Detener al terminar.',true)};voiceRecognition.onresult=event=>{let provisional='';for(let i=event.resultIndex;i<event.results.length;i++){const phrase=event.results[i][0]?.transcript||'';if(event.results[i].isFinal)voiceFinal+=(voiceFinal?' ':'')+phrase.trim();else provisional+=phrase;}const composed=[voiceBase.trim(),voiceFinal.trim(),provisional.trim()].filter(Boolean).join('\n');const field=$('[data-k="description"]');if(field)field.value=composed;const row=current();if(row)row.description=composed;if(voiceFinal)persist();};voiceRecognition.onerror=e=>{const messages={'not-allowed':'Permiso de micrófono denegado. Actívalo en el navegador.','no-speech':'No se detectó voz. Intenta de nuevo.','network':'El reconocimiento de voz no está disponible por un problema de red.','audio-capture':'No se encontró un micrófono.'};voiceStatus(messages[e.error]||('No se pudo reconocer la voz: '+e.error));};voiceRecognition.onend=()=>{voiceRunning=false;commitVoice();voiceStatus('Dictado finalizado. Revisa y edita el texto antes de continuar.');};voiceRecognition.start();}catch(e){voiceRunning=false;voiceStatus('No se pudo iniciar el micrófono. Revisa permisos y compatibilidad.');}});
 $('#stopVoice').addEventListener('click',()=>{if(voiceRecognition&&voiceRunning){voiceStatus('Finalizando dictado…');voiceRecognition.stop();}});
-function makeCase(){return{id:id(),format,reportFormat:format,title:'',equipment:'',area:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}function navigate(name){if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;$$('.section').forEach(x=>x.classList.toggle('active',x.id===name));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(name==='inicio')drawList();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.page!=='inicio'&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
+function makeCase(){return{id:id(),format,reportFormat:format,title:'',equipment:'',area:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}function navigate(name){if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;$$('.section').forEach(x=>x.classList.toggle('active',x.id===name));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(name==='inicio')drawList();if(name==='organizaciones')void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','organizaciones'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
 // Semanas ISO: lunes a domingo sin desfase horario ni dependencia del huso del navegador.
 function dateKeyUTC(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0')}
 function parseDateKey(value){
