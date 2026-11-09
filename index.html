@@ -370,6 +370,37 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </div>
   </div>
 </div>
+<div class="corporate-command" id="corporateCommitmentsPanel" style="margin-top:18px">
+  <div class="between" style="flex-wrap:wrap;gap:12px">
+    <div><div class="eyebrow">GESTIÓN DE ACCIONES · EMPRESA SELECCIONADA</div><h2>Tablero corporativo de compromisos</h2><p class="muted">Compromisos de todos los ACR publicados por integrantes de esta compañía. Información de consulta para administración.</p></div>
+    <div class="toolbar" style="flex-wrap:wrap">
+      <button type="button" class="secondary" id="corpCommitRefresh">↻ Actualizar compromisos</button>
+      <button type="button" class="secondary" id="corpCommitExport">⬇ Exportar CSV</button>
+    </div>
+  </div>
+  <div class="dashboard-toolbar corporate-toolbar" style="margin:15px 0">
+    <label class="field">Período de vencimiento<select id="corpCommitPeriod"><option value="all">Todos los vencimientos</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label>
+    <button type="button" class="secondary" id="corpCommitPrevious">← Anterior</button>
+    <button type="button" class="secondary" id="corpCommitCurrent">Período actual</button>
+    <button type="button" class="secondary" id="corpCommitNext">Siguiente →</button>
+    <label class="field">Área<select id="corpCommitArea"><option value="__all__">Toda la compañía</option><option value="Área Seca">Área Seca</option><option value="Área Húmeda">Área Húmeda</option><option value="__unclassified__">Sin clasificar</option></select></label>
+    <label class="field" id="corpCommitSubareaWrap" hidden>Sector / unidad<select id="corpCommitSubarea"><option value="__all__">Todos</option></select></label>
+  </div>
+  <div id="corpCommitPeriodLabel" class="dashboard-week" aria-live="polite"></div>
+  <div class="dashboard-kpis corporate-reliability-kpis" style="margin-top:12px">
+    <div class="kpi-pane"><span>TOTAL</span><strong id="corpCommitTotal">0</strong><small>Acciones registradas</small></div>
+    <div class="kpi-pane"><span>COMPLETADOS</span><strong id="corpCommitComplete">0</strong><small>Acciones cerradas</small></div>
+    <div class="kpi-pane"><span>EN SEGUIMIENTO</span><strong id="corpCommitPending">0</strong><small>Pendientes o en curso</small></div>
+    <div class="kpi-pane"><span>VENCIDOS</span><strong id="corpCommitOverdue">0</strong><small>Fuera de plazo</small></div>
+    <div class="kpi-pane"><span>CUMPLIMIENTO</span><strong id="corpCommitRate">0%</strong><small>Completados / total</small></div>
+  </div>
+  <div class="dashboard-toolbar corporate-toolbar" style="margin:15px 0">
+    <label class="field">Estado<select id="corpCommitStatus"><option value="all">Todos los estados</option><option value="overdue">Vencidos</option><option value="pending">En seguimiento</option><option value="complete">Completados</option></select></label>
+    <label class="field">Buscar acción, equipo o responsable<input id="corpCommitSearch" placeholder="Ej.: impulsor, inspección, supervisor"></label>
+  </div>
+  <div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Compromisos corporativos"><thead><tr><th>Investigación / Equipo</th><th>Acción correctiva</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>ACR</th></tr></thead><tbody id="corpCommitRows"></tbody></table></div>
+  <p class="help" style="margin-top:10px">Los filtros semanal y mensual corresponden a la fecha de vencimiento. Los estados muestran la situación actual publicada por el investigador. El administrador consulta, pero no modifica el estado desde este tablero.</p>
+</div>
 <h3>Afiliaciones y roles</h3>
 <div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Estado</th><th>Rol</th><th>ACR publicados</th><th>Administrar</th></tr></thead><tbody id="orgUsersTable"></tbody></table></div>
 <h3 style="margin-top:24px">Investigaciones por usuario</h3>
@@ -1755,6 +1786,93 @@ function scheduleCorporateSync(){
  if(corporateAutoTimer)clearTimeout(corporateAutoTimer);
  corporateAutoTimer=setTimeout(()=>void publishCorporateCases(true).catch(()=>{}),2000);
 }
+let selectedCorporateCommitWeek=isoWeekStart(dashboardToday()),selectedCorporateCommitMonth=monthStart(dashboardToday());
+function corporateCommitmentRows(){
+ const rows=[],today=dashboardToday();
+ for(const pub of corporateCtx?.cases||[]){
+  const c=pub.payload||{};
+  if(!Array.isArray(c.actions))continue;
+  c.actions.forEach((action,index)=>{
+   if(!String(action?.description||'').trim())return;
+   rows.push({publishedId:pub.id,caseId:pub.local_case_id,index,caseTitle:c.title||pub.title||'Sin título',
+    equipment:c.equipment||pub.equipment||'Sin equipo',area:c.area||'',sector:c.sector||'',
+    productionUnit:c.productionUnit||'',owner:pub.owner_id,action,status:effectiveCommitStatus(action,today)});
+  });
+ }
+ return rows;
+}
+function corporateCommitmentSubareaOptions(){
+ const area=$('#corpCommitArea').value,field=$('#corpCommitSubareaWrap'),select=$('#corpCommitSubarea'),old=select.value;
+ const vals=area==='Área Seca'?['Chancado','Apilamiento']:area==='Área Húmeda'
+  ?[...new Set([...Object.keys(AREA_HUMEDA_ASSETS),...selectedCorporateCases().filter(c=>c.area==='Área Húmeda').map(c=>c.productionUnit).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'es')):[];
+ field.hidden=!vals.length;
+ field.firstChild.textContent=area==='Área Húmeda'?'Unidad de producción':'Sector del área';
+ select.innerHTML='<option value="__all__">'+(area==='Área Húmeda'?'Todas las unidades':'Todos los sectores')+'</option>'+vals.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+ select.value=vals.includes(old)?old:'__all__';
+}
+function corporateCommitmentScopeRows(){
+ const area=$('#corpCommitArea').value,sub=$('#corpCommitSubarea').value,period=$('#corpCommitPeriod').value;
+ const start=period==='monthly'?selectedCorporateCommitMonth:selectedCorporateCommitWeek;
+ const end=period==='all'?'':periodEnd(start,period);
+ return corporateCommitmentRows().filter(r=>{
+  if(area==='__unclassified__'&&['Área Seca','Área Húmeda'].includes(r.area))return false;
+  if(area!=='__all__'&&area!=='__unclassified__'&&r.area!==area)return false;
+  if(sub!=='__all__'&&(area==='Área Seca'?r.sector:r.productionUnit)!==sub)return false;
+  if(period!=='all'&&!(r.action.due>=start&&r.action.due<end))return false;
+  return true;
+ });
+}
+function corporateCommitmentFilteredRows(){
+ const status=$('#corpCommitStatus').value,term=$('#corpCommitSearch').value.trim().toLocaleLowerCase('es');
+ return corporateCommitmentScopeRows().filter(r=>{
+  if(status==='overdue'&&r.status!=='overdue')return false;
+  if(status==='complete'&&r.status!=='complete')return false;
+  if(status==='pending'&&!['pending','progress'].includes(r.status))return false;
+  return !term||[r.caseTitle,r.equipment,r.action.description,r.action.owner,r.area,r.sector,r.productionUnit].join(' ').toLocaleLowerCase('es').includes(term);
+ }).sort((a,b)=>(a.action.due||'9999-12-31').localeCompare(b.action.due||'9999-12-31'));
+}
+function drawCorporateCommitments(){
+ if(!$('#corporateCommitmentsPanel')||!corporateIsAdmin()||!corporateSelection())return;
+ corporateCommitmentSubareaOptions();
+ const period=$('#corpCommitPeriod').value,rows=corporateCommitmentScopeRows(),stats=commitSummary(rows);
+ $('#corpCommitPeriodLabel').textContent=(period==='all'?'Todos los vencimientos (incluye sin fecha)':periodTitle(period==='monthly'?selectedCorporateCommitMonth:selectedCorporateCommitWeek,period))+
+ ' · '+($('#corpCommitArea').value==='__all__'?'Toda la compañía':$('#corpCommitArea').value)+
+ ($('#corpCommitSubarea').value==='__all__'?'':' / '+$('#corpCommitSubarea').value);
+ $('#corpCommitTotal').textContent=stats.total;
+ $('#corpCommitComplete').textContent=stats.done;
+ $('#corpCommitPending').textContent=stats.pending;
+ $('#corpCommitOverdue').textContent=stats.overdue;
+ $('#corpCommitRate').textContent=stats.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
+ const filtered=corporateCommitmentFilteredRows();
+ $('#corpCommitRows').innerHTML=filtered.length?filtered.map(r=>
+  '<tr><td><strong>'+esc(r.equipment)+'</strong><div class="small">'+esc(r.caseTitle)+'</div><div class="small">'+esc(r.area)+
+  (r.area==='Área Húmeda'?' · '+esc(r.productionUnit):r.sector?' · '+esc(r.sector):'')+'</div></td>'+
+  '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td><td>'+
+  esc(r.action.due||'Sin fecha')+'</td><td><span class="commit-state commit-state-'+r.status+'">'+
+  esc(commitStatusLabel(r.status))+'</span></td><td><button type="button" class="secondary" data-corp-commit-case="'+esc(r.publishedId)+'">Ver ACR</button></td></tr>'
+ ).join(''):'<tr><td colspan="6">No hay compromisos para los filtros seleccionados.</td></tr>';
+ $('[data-corp-commit-case]').forEach(button=>button.onclick=()=>{
+  const entry=(corporateCtx?.cases||[]).find(c=>c.id===button.dataset.corpCommitCase);
+  const existing=$('[data-org-case="'+button.dataset.corpCommitCase+'"]');
+  if(existing){existing.click();$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
+  else if(entry){$('#orgCaseDetail').textContent='Investigación: '+(entry.title||'ACR')+'. Consulta el detalle en Investigaciones por usuario.';$('#orgCaseDetail').classList.remove('hidden');$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
+ });
+}
+$('#corpCommitPeriod').onchange=drawCorporateCommitments;
+$('#corpCommitArea').onchange=()=>{$('#corpCommitSubarea').value='__all__';drawCorporateCommitments()};
+$('#corpCommitSubarea').onchange=drawCorporateCommitments;
+$('#corpCommitStatus').onchange=drawCorporateCommitments;
+$('#corpCommitSearch').oninput=drawCorporateCommitments;
+$('#corpCommitPrevious').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,-1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,-7);drawCorporateCommitments()};
+$('#corpCommitNext').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,7);drawCorporateCommitments()};
+$('#corpCommitCurrent').onclick=()=>{selectedCorporateCommitWeek=isoWeekStart(dashboardToday());selectedCorporateCommitMonth=monthStart(dashboardToday());drawCorporateCommitments()};
+$('#corpCommitRefresh').onclick=()=>void loadCorporateOverview();
+$('#corpCommitExport').onclick=()=>{
+ const rows=corporateCommitmentFilteredRows(),head=['Área','Sector / Unidad','Equipo','Investigación','Acción','Responsable','Vencimiento','Estado'];
+ const data=rows.map(r=>[r.area||'',r.area==='Área Húmeda'?r.productionUnit:r.sector,r.equipment,r.caseTitle,r.action.description,r.action.owner||'',r.action.due||'',commitStatusLabel(r.status)]);
+ const csv='\\uFEFF'+[head,...data].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');
+ download('ACR_Compromisos_Corporativos_'+dashboardToday()+'.csv',csv,'text/csv;charset=utf-8');
+};
 function corporateCommitMetrics(cases){
  const today=dashboardToday();
  const rows=cases.flatMap(c=>Array.isArray(c.payload?.actions)?c.payload.actions.filter(a=>String(a?.description||'').trim()):[]);
@@ -1960,6 +2078,7 @@ async function loadCorporateOverview(){
   if(!Array.isArray(members)||!Array.isArray(cases))throw Error('Datos incompletos.');
   corporateCtx.orgMembers=members;corporateCtx.cases=cases;
   drawCorporateReliability();
+  drawCorporateCommitments();
   const metric=corporateCommitMetrics(cases);
   $('#companyAdminTitle').textContent='Consolidado · '+(corporateCtx.organizations.find(o=>o.id===orgId)?.name||'Compañía');
   $('#orgUserCount').textContent=members.filter(m=>m.status==='approved').length;
