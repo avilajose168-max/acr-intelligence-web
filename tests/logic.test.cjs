@@ -144,3 +144,17 @@ assert.ok(!catalog.some(([name,sap])=>!name||!sap||sap==='10028099'),'La fila si
 assert.ok(doc.includes('id="chancadoEquipmentSelect"')&&doc.includes('id="chancadoSapNumber"'),'Seleccionar equipo y visualizar SAP en el formulario');
 assert.ok(doc.includes('id="chancadoEquipmentGroup"')&&doc.includes('readonly placeholder="Se completa automáticamente"'),'SAP automático de solo lectura');
 console.log('OK catálogo de equipos de chancado y numeración SAP');
+
+// V58: orden real de lectura de los campos en el formulario de evento.
+const eventStart=html.indexOf('<section id="registro"');
+const eventEnd=html.indexOf('<div class="downtimeCard"',eventStart);
+const eventMarkup=html.slice(eventStart,eventEnd);
+const orderedFields=['id="miningAreaField"','id="miningSectorField"','id="eventTitleField"','id="chancadoEquipmentSelect"','id="chancadoSapNumber"'];
+let previousPosition=-1;
+for(const field of orderedFields){
+ const at=eventMarkup.indexOf(field);
+ assert.ok(at>previousPosition,'Secuencia del registro incorrecta: '+field);
+ previousPosition=at;
+}
+assert.ok(eventMarkup.indexOf('data-k="datetime"')>previousPosition,'La fecha y el resto deben ir después del SAP');
+console.log('OK orden de formulario: área, sector, título, equipo y SAP automático');
