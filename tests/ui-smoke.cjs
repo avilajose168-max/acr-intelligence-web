@@ -405,6 +405,59 @@ assert.equal(await page.locator('#orgCasesTable').innerText(),'Todavía no hay i
 await page.locator('button[data-page="inicio"]').click();
 
 
+
+// V32: la administradora de una compañía entra DIRECTAMENTE a su tablero, sin selector.
+const companyAdminId='22222222-2222-4222-8222-222222222222';
+const companyAdminPage=await browser.newPage({viewport:{width:1280,height:900}});
+companyAdminPage.on('pageerror',e=>errors.push('company-admin: '+e.message));
+await companyAdminPage.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
+ const url=route.request().url(),method=route.request().method();
+ const headers={'access-control-allow-origin':'*','access-control-allow-methods':'POST, GET, OPTIONS','access-control-allow-headers':'*','content-type':'application/json'};
+ if(method==='OPTIONS')return route.fulfill({status:204,headers});
+ if(url.includes('/auth/v1/token?grant_type=password'))return route.fulfill({status:200,headers,body:JSON.stringify({
+  access_token:'company-admin-token',refresh_token:'company-admin-refresh',expires_in:3600,
+  user:{id:companyAdminId,email:'lupe@example.test'}
+ })});
+ if(url.includes('/rest/v1/acr_platform_admins'))return route.fulfill({status:200,headers,body:'[]'});
+ if(url.includes('/rest/v1/acr_organizations'))return route.fulfill({status:200,headers,body:JSON.stringify(mockOrganizations)});
+ if(url.includes('/rest/v1/acr_memberships')){
+  const member={id:'33333333-3333-4333-8333-333333333333',organization_id:testOrgId,user_id:companyAdminId,
+   display_name:'Lupe Aguilera',email:'lupe@example.test',role:'admin',status:'approved',requested_role:'admin'};
+  const parsed=new URL(url),own=parsed.searchParams.get('user_id')?.replace(/^eq\./,'');
+  return route.fulfill({status:200,headers,body:JSON.stringify(own?[member]:[member,...mockMemberships])});
+ }
+ if(url.includes('/rest/v1/acr_corporate_investigations')){
+  const org=new URL(url).searchParams.get('organization_id')?.replace(/^eq\./,'');
+  return route.fulfill({status:200,headers,body:JSON.stringify(mockCompanyCases.filter(c=>c.organization_id===org))});
+ }
+ return route.fulfill({status:200,headers,body:'{}'});
+});
+await companyAdminPage.goto('http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
+await companyAdminPage.locator('#authEmail').fill('lupe@example.test');
+await companyAdminPage.locator('#authPassword').fill('password-test-123');
+await companyAdminPage.locator('#authSubmit').click();
+await companyAdminPage.waitForFunction(()=>document.querySelector('#organizaciones')?.classList.contains('active'),{timeout:15000});
+await companyAdminPage.locator('#companyAdminPanel').waitFor({state:'visible'});
+assert.equal(await companyAdminPage.locator('#corporateAffiliationPanel').isVisible(),false,'La administradora corporativa no ve selector de compañías');
+assert.equal(await companyAdminPage.locator('#platformAdminPanel').isVisible(),false,'No tiene controles de administrador general');
+assert.ok((await companyAdminPage.locator('#corporateViewTitle').innerText()).includes(testOrgName),'Se abre su compañía directamente');
+assert.equal(await companyAdminPage.locator('.nav button[data-page="organizaciones"]').innerText(),'🏢 Mi compañía','La navegación es personalizada');
+assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Visualiza ACR de usuarios de su compañía');
+assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
+assert.equal(await companyAdminPage.locator('[data-org-member-role]').count(),0,'No puede asignar administradores');
+await companyAdminPage.locator('[data-org-case]').first().click();
+const fullCase=await companyAdminPage.locator('#orgCaseDetail').innerText();
+assert.ok(fullCase.includes('Protección temperatura rodamiento'),'Puede abrir los ACR de los usuarios');
+assert.ok(fullCase.includes('Causa básica')&&fullCase.includes('Conclusión ejecutiva'),'Vista ACR técnica de solo lectura');
+await companyAdminPage.evaluate(()=>{
+ const selector=document.querySelector('#organizationSelect');
+ selector.value='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+ selector.dispatchEvent(new Event('change',{bubbles:true}));
+});
+await companyAdminPage.waitForTimeout(300);
+assert.ok((await companyAdminPage.locator('#corporateViewTitle').innerText()).includes(testOrgName),'No puede cambiar a otra empresa manipulando el selector oculto');
+await companyAdminPage.close();
+
 // V29: al crear una cuenta se elige Independiente o Empresa + rol solicitado, sin conceder privilegios.
 const signupPage=await browser.newPage({viewport:{width:430,height:890}});
 let recordedSignup=null;
