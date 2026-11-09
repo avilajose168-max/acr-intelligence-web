@@ -448,7 +448,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   finally{btn.disabled=false}
 });
 showAuth();void validateSession();
-let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));$('#saveStatus').textContent='● Guardado localmente';return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
+let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{localStorage.setItem(KEY,JSON.stringify(db));$('#saveStatus').textContent='● Guardado localmente';if(schedule)scheduleCorporateSync();return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
 // Dictado de voz opcional: inserta texto en el evento y utiliza el guardado existente.
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let voiceRecognition=null,voiceRunning=false,voiceBase='',voiceFinal='';
@@ -1093,6 +1093,231 @@ function exportCommitmentsPdf(){
 }
 $('#exportCommitmentsPdf').onclick=exportCommitmentsPdf;
 $('#exportCommitmentsExcel').onclick=exportCommitmentsExcel;
+
+
+let corporateCtx=null;
+let corporateAutoTimer=null;
+let corporateSaveActive=false;
+const corporateKey=()=>activeUser?'acr-v28-corporate-sync-'+activeUser.id:'';
+function organizationApiPath(table,query=''){return '/rest/v1/'+table+query}
+async function corporateApi(path,method='GET',body=undefined,prefer=''){
+ if(!session?.access_token)throw Error('Inicia sesión para administrar empresas.');
+ const headers={'apikey':PUBLIC_KEY,'authorization':'Bearer '+session.access_token,'content-type':'application/json'};
+ if(prefer)headers.Prefer=prefer;
+ const response=await fetch(SUPABASE_URL+path,{method,headers,...(body===undefined?{}:{body:JSON.stringify(body)})});
+ const data=await response.json().catch(()=>null);
+ if(!response.ok)throw Error(data?.message||data?.error||data?.hint||'Error de acceso corporativo ('+response.status+').');
+ return data;
+}
+function corporateSelection(){return $('#organizationSelect').value||''}
+function currentCorporateMembership(){
+ return corporateCtx?.memberships?.find(m=>m.organization_id===corporateSelection()&&m.user_id===activeUser?.id);
+}
+function corporateAllowed(){
+ return !!(currentCorporateMembership()?.status==='approved');
+}
+function corporateIsAdmin(){
+ return !!(corporateCtx?.platform||currentCorporateMembership()?.status==='approved'&&currentCorporateMembership()?.role==='admin');
+}
+function drawOrganizationStatus(){
+ const oid=corporateSelection(),org=corporateCtx?.organizations?.find(o=>o.id===oid);
+ const membership=currentCorporateMembership();
+ const platform=!!corporateCtx?.platform;
+ $('#platformAdminPanel').hidden=!platform;
+ const notice=$('#orgMembershipStatus');
+ if(!org){
+  notice.textContent='Selecciona una compañía. Si aún no está registrada, solicítala al administrador general de ACR Intelligence.';
+ }else if(membership?.status==='approved'){
+  notice.textContent='Afiliación aprobada · '+org.name+' · '+(membership.role==='admin'?'Administrador de empresa':'Usuario autorizado')+'.';
+ }else if(membership?.status==='pending'){
+  notice.textContent='Afiliación pendiente de aprobación para '+org.name+'. No puedes acceder a sus investigaciones corporativas todavía.';
+ }else if(membership?.status==='rejected'){
+  notice.textContent='Solicitud rechazada para '+org.name+'. Contacta al administrador de la empresa.';
+ }else notice.textContent=platform
+  ?'Organización seleccionada. Como administrador general puedes gestionar sus usuarios.'
+  :'Todavía no perteneces a '+org.name+'. Solicita afiliación para publicar investigaciones.';
+ $('#requestOrganizationMembership').hidden=!org||!!membership||platform;
+ $('#approvedCompanyPanel').hidden=!corporateAllowed();
+ $('#companyAdminPanel').hidden=!org||!corporateIsAdmin();
+ if(org&&corporateIsAdmin())void loadCorporateOverview();
+}
+async function loadOrganizations(){
+ if(!activeUser?.id||!session?.access_token||!$('#organizationSelect'))return;
+ try{
+  const [organizations,roles,memberships]=await Promise.all([
+   corporateApi(organizationApiPath('acr_organizations','?select=id,name,active&active=eq.true&order=name')),
+   corporateApi(organizationApiPath('acr_platform_admins','?select=user_id')),
+   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,status,role,display_name,email&user_id=eq.'+activeUser.id))
+  ]);
+  if(!Array.isArray(organizations)||!Array.isArray(memberships)||!Array.isArray(roles))throw Error('La información de empresas no se pudo leer.');
+  const lastOrg=corporateSelection()||localStorage.getItem('acr-org-choice-'+activeUser.id)||'';
+  corporateCtx={organizations,memberships,platform:roles.some(p=>p.user_id===activeUser.id),cases:[],orgMembers:[]};
+  const select=$('#organizationSelect');
+  select.innerHTML='<option value="">Seleccionar organización…</option>'+organizations.map(o=>
+   '<option value="'+esc(o.id)+'">'+esc(o.name)+'</option>').join('');
+  select.value=organizations.some(o=>o.id===lastOrg)?lastOrg:'';
+  drawOrganizationStatus();
+ }catch(error){
+  $('#orgMembershipStatus').textContent='No se pudo cargar la administración corporativa: '+error.message;
+ }
+}
+$('#organizationSelect').onchange=()=>{
+ if(activeUser?.id)localStorage.setItem('acr-org-choice-'+activeUser.id,corporateSelection());
+ drawOrganizationStatus();
+};
+$('#refreshOrganizations').onclick=loadOrganizations;
+$('#createOrganization').onclick=async()=>{
+ const name=$('#newOrganizationName').value.trim();
+ if(name.length<3)return alert('Indica un nombre de compañía válido.');
+ if(!corporateCtx?.platform)return alert('Solo el administrador general puede crear organizaciones.');
+ if(!confirm('¿Crear la organización «'+name+'»?'))return;
+ try{
+  await corporateApi(organizationApiPath('acr_organizations'), 'POST',{name},'return=representation');
+  $('#newOrganizationName').value='';
+  await loadOrganizations();
+  alert('Compañía registrada. Sus usuarios podrán solicitar afiliación.');
+ }catch(error){alert('No se pudo crear la compañía: '+error.message)}
+};
+$('#requestOrganizationMembership').onclick=async()=>{
+ const oid=corporateSelection();
+ if(!oid||!activeUser?.id)return;
+ const org=corporateCtx.organizations.find(x=>x.id===oid);
+ if(!confirm('¿Solicitar afiliación a «'+org.name+'»? Un administrador deberá aprobar tu solicitud.'))return;
+ try{
+  await corporateApi(organizationApiPath('acr_memberships'),'POST',{
+   organization_id:oid,user_id:activeUser.id,email:activeUser.email,
+   display_name:activeUser.user_metadata?.display_name||activeUser.email||'',role:'member',status:'pending'
+  },'return=representation');
+  await loadOrganizations();
+ }catch(error){alert('No se pudo solicitar afiliación: '+error.message)}
+};
+function corporateCasePublishable(c){return c&&String(c.title||c.description||'').trim().length>0}
+async function publishCorporateCase(orgId,c){
+ if(!corporateCasePublishable(c))return;
+ const payload=JSON.parse(JSON.stringify(c));
+ delete payload.corporateOrgId;
+ const bytes=JSON.stringify(payload).length;
+ if(bytes>4900000)throw Error('El ACR '+(c.equipment||c.title)+' contiene demasiadas fotografías. Reduce la cantidad o tamaño de imágenes.');
+ await corporateApi(organizationApiPath('acr_corporate_investigations',
+  '?on_conflict=organization_id,owner_id,local_case_id'),'POST',{
+  organization_id:orgId,owner_id:activeUser.id,local_case_id:c.id,
+  title:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',
+  payload,updated_at:new Date().toISOString()
+ },'resolution=merge-duplicates,return=minimal');
+}
+async function publishCorporateCases(silent=false){
+ if(corporateSaveActive)return;
+ const orgId=corporateSelection();
+ if(!corporateAllowed())return;
+ const candidates=db.cases.filter(c=>corporateCasePublishable(c)&&(!c.corporateOrgId||c.corporateOrgId===orgId));
+ if(!silent&&!confirm('¿Publicar las '+candidates.length+' investigaciones con contenido en la empresa seleccionada? Sus administradores autorizados podrán leer todos sus datos y fotografías.'))return;
+ corporateSaveActive=true;
+ let success=0,failed=0,firstError='';
+ const status=$('#corporateSyncStatus');
+ try{
+  for(const c of candidates){
+   try{
+    await publishCorporateCase(orgId,c);
+    c.corporateOrgId=orgId;success++;
+   }catch(error){failed++;if(!firstError)firstError=error.message}
+  }
+  const state=JSON.parse(localStorage.getItem(corporateKey())||'{}');
+  if(!silent&&failed===0){state[orgId]=true;localStorage.setItem(corporateKey(),JSON.stringify(state))}
+  if(success>0)persist(false);
+  if(status)status.textContent=success+' investigaciones corporativas actualizadas.'+(failed?' '+failed+' pendientes: '+firstError:'')+
+   ' Las investigaciones siguen guardadas en el navegador.';
+  if(!silent&&failed)alert('Algunas investigaciones no se pudieron publicar: '+firstError);
+ }finally{corporateSaveActive=false}
+}
+$('#publishCompanyCases').onclick=()=>publishCorporateCases(false);
+function scheduleCorporateSync(){
+ if(!activeUser||!corporateCtx||!corporateAllowed()||corporateSaveActive)return;
+ const orgId=corporateSelection();
+ let state={};
+ try{state=JSON.parse(localStorage.getItem(corporateKey())||'{}')}catch(_){}
+ if(!state[orgId])return;
+ if(corporateAutoTimer)clearTimeout(corporateAutoTimer);
+ corporateAutoTimer=setTimeout(()=>void publishCorporateCases(true).catch(()=>{}),2000);
+}
+function corporateCommitMetrics(cases){
+ const today=dashboardToday();
+ const rows=cases.flatMap(c=>Array.isArray(c.payload?.actions)?c.payload.actions.filter(a=>String(a?.description||'').trim()):[]);
+ const total=rows.length,completed=rows.filter(a=>a.status==='Completado').length;
+ const overdue=rows.filter(a=>a.status!=='Completado'&&/^\d{4}-\d{2}-\d{2}$/.test(a.due||'')&&a.due<today).length;
+ return {total,completed,overdue,rate:total?completed/total*100:0};
+}
+async function loadCorporateOverview(){
+ const orgId=corporateSelection();
+ if(!orgId||!corporateIsAdmin()||!activeUser)return;
+ const initialId=orgId;
+ try{
+  const [members,cases]=await Promise.all([
+   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,email,display_name,status,role,created_at&organization_id=eq.'+orgId+'&order=created_at.desc')),
+   corporateApi(organizationApiPath('acr_corporate_investigations','?select=id,owner_id,title,equipment,payload,updated_at,local_case_id&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'))
+  ]);
+  if(initialId!==corporateSelection()||!corporateIsAdmin())return;
+  if(!Array.isArray(members)||!Array.isArray(cases))throw Error('Datos incompletos.');
+  corporateCtx.orgMembers=members;corporateCtx.cases=cases;
+  const metric=corporateCommitMetrics(cases);
+  $('#companyAdminTitle').textContent='Consolidado · '+(corporateCtx.organizations.find(o=>o.id===orgId)?.name||'Compañía');
+  $('#orgUserCount').textContent=members.filter(m=>m.status==='approved').length;
+  $('#orgCaseCount').textContent=cases.length;
+  $('#orgCommitTotal').textContent=metric.total;
+  $('#orgCommitOverdue').textContent=metric.overdue;
+  $('#orgCompliance').textContent=metric.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
+  $('#orgUsersTable').innerHTML=members.length?members.map(m=>
+   '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td><td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador':'Usuario')+'</td>'+
+   '<td><div class="toolbar"><select data-org-member-status="'+esc(m.id)+'" aria-label="Estado de afiliación"><option value="pending"'+(m.status==='pending'?' selected':'')+'>Pendiente</option><option value="approved"'+(m.status==='approved'?' selected':'')+'>Aprobado</option><option value="rejected"'+(m.status==='rejected'?' selected':'')+'>Rechazado</option></select>'+
+   '<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario"><option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option><option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select></div></td></tr>'
+  ).join(''):'<tr><td colspan="5">Todavía no hay solicitudes de afiliación.</td></tr>';
+  $('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
+  $('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
+  $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
+   const member=members.find(m=>m.user_id===c.owner_id);
+   const count=(c.payload?.actions||[]).filter(a=>String(a?.description||'').trim()).length;
+   return '<tr><td>'+esc(member?.display_name||member?.email||'Usuario')+'<div class="small">'+esc(c.equipment||'Sin equipo')+'</div></td>'+
+    '<td>'+esc(c.title||'Investigación sin título')+'</td><td>'+esc(new Date(c.updated_at).toLocaleString('es-CL'))+'</td>'+
+    '<td>'+count+'</td><td><button type="button" class="secondary" data-org-case="'+i+'">Ver ACR</button></td></tr>'
+  }).join(''):'<tr><td colspan="5">Todavía no hay investigaciones corporativas publicadas.</td></tr>';
+  $('[data-org-case]').forEach(el=>el.onclick=()=>{
+   const item=corporateCtx.cases[Number(el.dataset.orgCase)]?.payload;
+   if(!item)return;
+   const content=$('#orgCaseDetail');
+   const photos=Array.isArray(item.photos)?item.photos:[];
+   content.innerHTML='<h3>'+esc(item.title||'Investigación')+'</h3><p><b>Equipo:</b> '+esc(item.equipment||'—')+'</p>'+
+    '<p><b>Descripción:</b> '+esc(item.description||'—')+'</p>'+
+    '<p><b>5 Porqués:</b></p><ol>'+((item.whys||[]).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join(''))+'</ol>'+
+    '<p><b>Causa básica:</b> '+esc(item.basicCause||'—')+'</p><p><b>Conclusión:</b> '+esc(item.conclusion||'—')+'</p>'+
+    '<p><b>Acciones correctivas:</b></p><ol>'+((item.actions||[]).filter(a=>a.description).map(a=>'<li>'+esc(a.description)+' · '+esc(a.owner||'')+' · '+esc(a.status||'Pendiente')+'</li>').join(''))+'</ol>'+
+    '<div class="shared-gallery">'+photos.map(p=>{const src=safeSharedPicture(p.data);return '<div class="shared-photo">'+(src?'<img src="'+src+'" alt="Evidencia">':'')+'<p>'+esc(p.caption||'Fotografía')+'</p></div>'}).join('')+'</div>';
+   content.classList.remove('hidden');content.scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+ }catch(error){$('#companyAdminTitle').textContent='No se pudo consultar el consolidado: '+error.message}
+}
+async function changeCorporateMembership(id,changes){
+ const item=corporateCtx?.orgMembers.find(m=>m.id===id);
+ if(!item)return;
+ if(item.user_id===activeUser.id&&changes.role==='member')return alert('No puedes retirar tu propio rol de administrador desde este panel.');
+ if(!confirm('¿Actualizar permisos de '+(item.display_name||item.email)+'?')){await loadCorporateOverview();return}
+ try{
+  await corporateApi(organizationApiPath('acr_memberships','?id=eq.'+id),'PATCH',{
+   ...changes,...(changes.status==='approved'?{approved_at:new Date().toISOString()}:{})
+  },'return=minimal');
+  await loadOrganizations();
+ }catch(error){alert('No se pudo actualizar el permiso: '+error.message);await loadCorporateOverview()}
+}
+$('#exportCompanyCsv').onclick=()=>{
+ if(!corporateIsAdmin())return;
+ const rows=corporateCtx?.cases||[];
+ const header=['Usuario','Equipo','Investigación','Fecha actualización','Compromisos','Vencidos'];
+ const memberMap=new Map((corporateCtx?.orgMembers||[]).map(m=>[m.user_id,m.display_name||m.email]));
+ const output=[header,...rows.map(c=>{
+  const actions=(c.payload?.actions||[]).filter(a=>a.description),today=dashboardToday();
+  return [memberMap.get(c.owner_id)||'Usuario',c.equipment,c.title,c.updated_at,actions.length,
+   actions.filter(a=>a.status!=='Completado'&&a.due&&a.due<today).length];
+ })].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ download('ACR_Consolidado_Empresa_'+dashboardToday()+'.csv','\uFEFF'+output,'text/csv;charset=utf-8');
+};
 
 function drawList(){
  drawDashboard();drawCommitments();
