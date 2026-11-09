@@ -384,6 +384,50 @@ assert.equal(await page.locator('#orgUserCount').innerText(),'0','Nueva empresa 
 assert.equal(await page.locator('#orgCasesTable').innerText(),'Todavía no hay investigaciones corporativas publicadas.','Nueva empresa no hereda investigaciones');
 await page.locator('button[data-page="inicio"]').click();
 
+
+// V29: al crear una cuenta se elige Independiente o Empresa + rol solicitado, sin conceder privilegios.
+const signupPage=await browser.newPage({viewport:{width:430,height:890}});
+let recordedSignup=null;
+signupPage.on('pageerror',e=>errors.push('signup: '+e.message));
+await signupPage.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
+ const url=route.request().url();
+ const headers={'access-control-allow-origin':'*','access-control-allow-methods':'POST, GET, OPTIONS','access-control-allow-headers':'*','content-type':'application/json'};
+ if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
+ if(url.includes('/rest/v1/acr_organizations'))return route.fulfill({status:200,headers,body:JSON.stringify([{id:testOrgId,name:testOrgName}])});
+ if(url.includes('/auth/v1/signup')){
+  recordedSignup=route.request().postDataJSON();
+  return route.fulfill({status:200,headers,body:JSON.stringify({user:{id:'99999999-9999-4999-8999-999999999999'},session:null})});
+ }
+ return route.fulfill({status:200,headers,body:'{}'});
+});
+await signupPage.goto('http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
+await signupPage.locator('#authSwitch').click();
+assert.equal(await signupPage.locator('#authCompanyWrap').isVisible(),true,'El selector de afiliación está en el registro');
+assert.equal(await signupPage.locator('#authAffiliation').inputValue(),'independent','Predeterminado es independiente');
+assert.equal(await signupPage.locator('#authCompanyFields').isVisible(),false,'Independiente no pide compañía');
+await signupPage.locator('#authAffiliation').selectOption('company');
+await signupPage.locator('#authCompanyFields').waitFor({state:'visible'});
+await signupPage.locator('#authOrganization option').last().waitFor({timeout:12000});
+await signupPage.locator('#authOrganization').selectOption(testOrgId);
+await signupPage.locator('#authRequestedRole').selectOption('admin');
+await signupPage.locator('#authName').fill('Jefe de mantenimiento');
+await signupPage.locator('#authEmail').fill('jefe-ejemplo@example.com');
+await signupPage.locator('#authPassword').fill('test-password-123');
+await signupPage.locator('#authSubmit').click();
+await signupPage.waitForFunction(()=>document.querySelector('#authFeedback')?.textContent?.includes('Cuenta solicitada'),{timeout:14000});
+assert.equal(recordedSignup.data.acr_organization_id,testOrgId,'El servidor recibe la organización seleccionada');
+assert.equal(recordedSignup.data.acr_requested_role,'admin','El administrador se registra como solicitud, no se le conceden permisos');
+assert.equal(recordedSignup.data.display_name,'Jefe de mantenimiento');
+await signupPage.locator('#authSwitch').click();
+await signupPage.locator('#authAffiliation').selectOption('independent');
+await signupPage.locator('#authEmail').fill('independiente-ejemplo@example.com');
+await signupPage.locator('#authPassword').fill('test-password-123');
+await signupPage.locator('#authSubmit').click();
+await signupPage.waitForFunction(()=>document.querySelector('#authFeedback')?.textContent?.includes('Cuenta solicitada'),{timeout:14000});
+assert.equal(recordedSignup.data.acr_organization_id,undefined,'Independiente nunca se afilia a una compañía al registrarse');
+assert.equal(recordedSignup.data.acr_requested_role,undefined,'Independiente no obtiene permisos corporativos');
+await signupPage.close();
+
 console.log('OK informe semanal, PDF válido, PowerPoint válido, impresión y eliminación individual');
 assert.ok(errors.length===0,'Errores de JavaScript en la UI: '+errors.join('; '));
 console.log('OK: registro/acceso, investigación, Sí/No seguridad, redacción, 5 Porqués, causa básica, consecuencia e informe');
