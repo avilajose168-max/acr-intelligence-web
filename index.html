@@ -1365,18 +1365,15 @@ $('#deleteOrganization').onclick=async()=>{
  if(!corporateCtx?.platform)return alert('Solo el administrador general puede eliminar empresas.');
  const org=corporateCtx.organizations.find(o=>o.id===corporateSelection()&&o.active);
  if(!org)return alert('Selecciona una empresa activa antes de eliminarla.');
- const typed=prompt('Vas a eliminar la empresa «'+org.name+'» de los registros activos. Sus investigaciones históricas no serán borradas. Para confirmar, escribe exactamente el nombre de la empresa:');
- if(typed===null)return;
- if(typed.trim()!==org.name)return alert('El nombre no coincide. No se realizó ningún cambio.');
- if(!confirm('¿Confirmas que deseas desactivar «'+org.name+'»? Sus trabajadores dejarán de estar asociados a una empresa activa y esta no podrá recibir nuevas afiliaciones.'))return;
+ if(!confirm('¿Estás seguro de que deseas eliminar definitivamente la empresa «'+org.name+'»?\n\nSe eliminarán su registro, su logo, todas las afiliaciones y todo su historial de investigaciones corporativas. Esta acción no se puede deshacer. Las copias personales guardadas en los dispositivos de los usuarios no se eliminan desde aquí.'))return;
  const button=$('#deleteOrganization');button.disabled=true;
  try{
-  const updated=await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+encodeURIComponent(org.id)+'&active=eq.true'),'PATCH',{active:false},'return=representation');
-  if(!Array.isArray(updated)||updated.length!==1||updated[0].active!==false)throw Error('No se confirmó la desactivación. Comprueba los permisos de administrador en Supabase.');
+  const deleted=await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+encodeURIComponent(org.id)),'DELETE',undefined,'return=representation');
+  if(!Array.isArray(deleted)||deleted.length!==1||deleted[0].id!==org.id)throw Error('La base de datos no confirmó la eliminación. Revisa los permisos del administrador general.');
   if(activeUser?.id)localStorage.removeItem('acr-org-choice-'+activeUser.id);
   $('#organizationSelect').value='';
   await loadOrganizations();
-  alert('Empresa desactivada: «'+org.name+'». Se conservaron sus datos históricos.');
+  alert('Empresa eliminada definitivamente: «'+org.name+'». También se eliminó su historial corporativo de la base de datos.');
  }catch(error){alert('No se pudo eliminar la empresa: '+error.message);button.disabled=false}
 };
 $('#requestOrganizationMembership').onclick=async()=>{
