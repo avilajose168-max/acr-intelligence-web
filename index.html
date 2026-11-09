@@ -982,7 +982,7 @@ function drawCommitments(){
   Object.keys(COMMIT_STATES).map(key=>'<option value="'+key+'"'+((COMMIT_STATES[r.action.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+
   '</select></div></td><td><button type="button" class="secondary" data-commit-open="'+esc(r.caseId)+'">Ver ACR</button></td></tr>'
  ).join(''):'<tr><td colspan="6" style="text-align:center;padding:18px;color:#b1c4d5">No hay compromisos para este filtro.</td></tr>';
- $('[data-commit-case]').forEach(el=>el.onchange=()=>{
+ $$('[data-commit-case]').forEach(el=>el.onchange=()=>{
   const c=db.cases.find(x=>x.id===el.dataset.commitCase),a=c?.actions?.[Number(el.dataset.commitIndex)];
   if(!a)return;
   const previous=a.status;
@@ -990,7 +990,7 @@ function drawCommitments(){
   if(!persist()){a.status=previous;drawCommitments();return}
   drawCommitments();
  });
- $('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
+ $$('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
 }
 $('#commitFilter').onchange=drawCommitments;
 $('#commitSearch').oninput=drawCommitments;
