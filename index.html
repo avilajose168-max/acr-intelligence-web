@@ -433,6 +433,11 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 #corpReportSheet td,#corpReportSheet th{padding:7px 8px;border:1px solid #cbd6e1;vertical-align:top;overflow-wrap:anywhere}
 #corpReportSheet tr{break-inside:avoid}
 #corpReportSheet .corp-report-note{font-size:10px;color:#617181;margin-top:14px}
+#corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:11px 12px;margin:8px 0 13px;break-inside:avoid;page-break-inside:avoid}
+#corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:260px}
+#corpReportSheet .corp-report-chart-label{color:#d7e4ed;font-size:10px;font-weight:700;margin:0 0 8px}
+@media print{body.corp-report-print #corpReportSheet .corp-report-chart{background:#10263c!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
+
 #corpReportSheet .corp-report-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 #corpReportSheet .corp-report-breakdown>div{border:1px solid #d1dde8;border-radius:5px;padding:10px}
 #corpReportSheet .corp-report-breakdown b{display:block;color:#24435b;font-size:11px}
@@ -2154,6 +2159,11 @@ function corporateReportTable(headers,rows,empty){
  '<tr><td colspan="'+headers.length+'">'+esc(empty||'Sin registros para los filtros seleccionados')+'</td></tr>')+
  '</tbody></table>';
 }
+function corporateReportParetoChart(rows,total,metric,label){
+ return '<div class="corp-report-chart" role="img" aria-label="Gráfico de Pareto con barras y porcentaje acumulado">'+
+  '<p class="corp-report-chart-label">'+esc(label)+'</p>'+
+  renderParetoSvg(rows,total,metric)+'</div>';
+}
 function corporateReportHeader(type,period,scope){
  return '<header class="corp-report-header"><div><div class="corp-report-eyebrow">ACR INTEGRITY · '+esc(corporateReportCompanyName())+'</div>'+
  '<h1>Informe corporativo de '+esc(type)+'</h1><div>Período: <b>'+esc(period)+'</b> · Alcance: <b>'+esc(scope)+'</b></div></div>'+
@@ -2183,6 +2193,7 @@ function corporateReliabilityReportHtml(){
   corporateReportKpis(info)+
   '<h2>01 · Desglose de detenciones por área de la compañía</h2><div class="corp-report-breakdown">'+breakdown.join('')+'</div>'+
   '<h2>02 · Pareto corporativo ('+(metric==='hours'?'horas de detención':'cantidad de fallas')+')</h2>'+
+  corporateReportParetoChart(pareto.rows,pareto.total,metric,group==='equipment'?'Pareto de equipos':'Pareto por tipo de falla')+
   corporateReportTable([group==='equipment'?'Equipo / TAG':'Tipo de falla','Valor','Acumulado'],pareto.rows.map(r=>[
    r.label,dashboardMetricText(r.value,metric),r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%'
   ]),'Sin fallas para el período')+
@@ -2197,6 +2208,9 @@ function corporateCommitmentReportHtml(){
  const scope=(area==='__all__'?'Toda la compañía':area==='__unclassified__'?'Sin clasificar':area)+
  (sub==='__all__'?'':' / '+sub);
  const rows=corporateCommitmentFilteredRows(),totals=commitSummary(corporateCommitmentScopeRows());
+ const pareto=corporateCommitmentPareto(rows,$('#corpCommitParetoMetric').value,$('#corpCommitParetoGroup').value);
+ const groupNames={equipment:'Equipo / TAG',owner:'Responsable',area:'Área'};
+ const metricLabel=$('#corpCommitParetoMetric').value==='overdue'?'Compromisos vencidos':'Cantidad de compromisos';
  const stateLabel=$('#corpCommitStatus').selectedOptions[0]?.textContent||'Todos los estados';
  const search=$('#corpCommitSearch').value.trim();
  return corporateReportHeader('seguimiento de compromisos',periodLabel,scope)+
@@ -2204,7 +2218,10 @@ function corporateCommitmentReportHtml(){
    ['Acciones totales',totals.total],['Completados',totals.done],['En seguimiento',totals.pending],
    ['Vencidos',totals.overdue],['Cumplimiento',totals.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%']
   ])+
-  '<h2>01 · Compromisos y responsables</h2><p>Estado consultado: <b>'+esc(stateLabel)+'</b>'+
+  '<h2>01 · Pareto corporativo de compromisos</h2>'+
+  corporateReportParetoChart(pareto.rows,pareto.total,'count',metricLabel+' · '+groupNames[$('#corpCommitParetoGroup').value])+
+  corporateReportTable(['Categoría','Acciones','Acumulado'],pareto.rows.map(r=>[r.label,r.value,r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%']),'Sin compromisos para el Pareto')+
+  '<h2>02 · Compromisos y responsables</h2><p>Estado consultado: <b>'+esc(stateLabel)+'</b>'+
   (search?' · Búsqueda: <b>'+esc(search)+'</b>':'')+'</p>'+
   corporateReportTable(['Área','Sector / unidad','Equipo / TAG','Investigación','Compromiso','Responsable','Vencimiento','Estado'],
   rows.map(r=>[r.area||'Sin clasificar',r.area==='Área Húmeda'?r.productionUnit:r.sector,r.equipment,r.caseTitle,
