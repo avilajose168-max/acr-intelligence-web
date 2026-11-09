@@ -1617,11 +1617,11 @@ async function loadCorporateOverview(){
     field('Descripción de seguridad',item.safetyDescription)+
     field('Acción de seguridad',item.safetyAction)+
     photoGallery(item.safetyPhotos,'Evidencia de seguridad')+
-    '<h4>Análisis de los 5 Porqués</h4><ol>'+((item.whys||[]).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
+    '<h4>Análisis de los 5 Porqués</h4><ol>'+(item.whys||[]).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
     field('Causa básica',item.basicCause)+field('Consecuencia de la causa',item.causeConsequence)+
     field('Causa raíz',item.rootCause)+field('Estado de validación',item.validationStatus)+
     field('Revisor técnico',item.reviewer)+field('Conclusión ejecutiva',item.conclusion)+
-    '<h4>Compromisos correctivos</h4><ol>'+((item.actions||[]).filter(a=>a.description).map(a=>
+    '<h4>Compromisos correctivos</h4><ol>'+(item.actions||[]).filter(a=>a.description).map(a=>
       '<li>'+esc(a.description)+' · Responsable: '+esc(a.owner||'Sin asignar')+
       ' · Fecha: '+esc(a.due||'Sin fecha')+' · Estado: '+esc(a.status||'Pendiente')+'</li>').join('')+'</ol>'+
     photoGallery(item.photos,'Fotografías de evidencia');
