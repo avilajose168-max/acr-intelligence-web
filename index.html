@@ -229,6 +229,12 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <div class="dashboard-week" id="weekLabel" aria-live="polite">Calculando semana…</div>
 <div class="reliability-controls">
+  <label class="field dashboard-filter">Área operacional
+    <select id="reliabilityArea"><option value="__all__">Todas las áreas</option><option value="Área Seca">Área Seca</option><option value="Área Húmeda">Área Húmeda</option><option value="__unclassified__">Sin clasificar</option></select>
+  </label>
+  <label class="field dashboard-filter" id="reliabilitySubareaWrap" hidden>Sector del área
+    <select id="reliabilitySubarea"><option value="__all__">Todos los sectores</option></select>
+  </label>
   <label class="field dashboard-filter">Alcance del análisis
     <select id="reliabilityAsset" aria-label="Equipo para indicadores"><option value="__all__">Todos los equipos</option></select>
   </label>
@@ -766,7 +772,34 @@ function renderMonthlyTrend(cases,month,metric){
  return parts.join('')+'</svg>';
 }
 const ALL_ASSETS='__all__';
-function dashboardAssets(){return [...new Set(db.cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
+function dashboardAssets(cases=db.cases){return [...new Set(cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
+function reliabilityAreaCases(cases=db.cases){
+ const area=$('#reliabilityArea').value;
+ const subarea=$('#reliabilitySubarea').value;
+ return cases.filter(c=>{
+  if(area==='__all__')return true;
+  if(area==='__unclassified__')return !c.area||!['Área Seca','Área Húmeda'].includes(c.area);
+  if(c.area!==area)return false;
+  if(subarea==='__all__')return true;
+  return (area==='Área Seca'?c.sector:c.productionUnit)===subarea;
+ });
+}
+function drawReliabilityAreaOptions(){
+ const area=$('#reliabilityArea').value;
+ const wrap=$('#reliabilitySubareaWrap'),select=$('#reliabilitySubarea');
+ const previous=select.value,options=area==='Área Seca'?['Chancado','Apilamiento']:area==='Área Húmeda'
+  ?[...new Set(db.cases.filter(c=>c.area==='Área Húmeda').map(c=>c.productionUnit).filter(Boolean)),...Object.keys(AREA_HUMEDA_ASSETS)].filter((x,i,a)=>a.indexOf(x)===i).sort((a,b)=>a.localeCompare(b,'es'))
+  :[];
+ wrap.hidden=options.length===0;
+ select.previousElementSibling; // La etiqueta permanece visible únicamente cuando hay subáreas.
+ select.innerHTML='<option value="__all__">'+(area==='Área Húmeda'?'Todas las unidades':'Todos los sectores')+'</option>'+options.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+ select.value=options.includes(previous)?previous:'__all__';
+ wrap.firstChild.textContent=area==='Área Húmeda'?'Unidad de producción':'Sector del área';
+}
+function reliabilityScopeLabel(){
+ const area=$('#reliabilityArea').value,sub=$('#reliabilitySubarea').value;
+ return (area==='__all__'?'Todas las áreas':area==='__unclassified__'?'Sin clasificar':area)+(sub!=='__all__'?' / '+sub:'');
+}
 function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
 
 function weekTimeBounds(monday,now=new Date()){return periodTimeBounds(monday,now,'weekly')}
@@ -857,15 +890,17 @@ function dashboardAvailabilityFormat(value){return value===null?'—':value.toLo
 function activeDashboardScope(){return $('#reliabilityAsset').value||ALL_ASSETS}
 function drawDashboard(){
  if(!$('#reliabilityDashboard'))return;
- const select=$('#reliabilityAsset'),existing=select.value||ALL_ASSETS,assets=dashboardAssets();
+ drawReliabilityAreaOptions();
+ const scopeCases=reliabilityAreaCases();
+ const select=$('#reliabilityAsset'),existing=select.value||ALL_ASSETS,assets=dashboardAssets(scopeCases);
  select.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
  select.value=assets.includes(existing)?existing:ALL_ASSETS;
  const asset=select.value,metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
  const now=new Date();
  const type=reportPeriodType(),start=reportPeriodStart();
- const kpi=weeklyIndicators(db.cases,start,asset,now,type);
+ const kpi=weeklyIndicators(scopeCases,start,asset,now,type);
  const data=weeklyPareto(kpi.records,start,metric,group,now,type);
- $('#weekLabel').textContent=periodTitle(start,type);
+ $('#weekLabel').textContent=periodTitle(start,type)+' · '+reliabilityScopeLabel();
  $('#previewWeekly').textContent='📄 Ver informe '+(type==='monthly'?'del mes':'de la semana');
  $('#weekEvents').textContent=String(kpi.events);
  $('#weekHours').textContent=dashboardReliabilityFormat(kpi.downtime);
@@ -888,13 +923,15 @@ function drawDashboard(){
  $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
- $('#weeklyTrend').innerHTML=type==='monthly'?renderMonthlyTrend(scopedCases(db.cases,asset),start,metric):renderWeeklyTrend(scopedCases(db.cases,asset),start,metric);
+ $('#weeklyTrend').innerHTML=type==='monthly'?renderMonthlyTrend(scopedCases(scopeCases,asset),start,metric):renderWeeklyTrend(scopedCases(scopeCases,asset),start,metric);
  $('#weeklyTrendTitle').textContent=type==='monthly'?'Tendencia · últimos 8 meses':'Tendencia · últimas 8 semanas';
  $('#paretoTable').innerHTML=data.rows.length?data.rows.map((entry,i)=>'<tr><td>'+(i+1)+'. '+esc(entry.label)+'</td><td>'+dashboardMetricText(entry.value,metric)+'</td><td>'+entry.cumulative.toFixed(1).replace('.',',')+'%</td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;color:#a8bfd0">Sin registros para esta semana</td></tr>';
 }
 $('#weekPrevious').onclick=()=>{if(reportPeriodType()==='monthly')selectedDashboardMonth=addMonths(selectedDashboardMonth,-1);else selectedDashboardWeek=addDays(selectedDashboardWeek,-7);drawDashboard()};
 $('#weekNext').onclick=()=>{if(reportPeriodType()==='monthly')selectedDashboardMonth=addMonths(selectedDashboardMonth,1);else selectedDashboardWeek=addDays(selectedDashboardWeek,7);drawDashboard()};
 $('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday());selectedDashboardMonth=monthStart(dashboardToday());drawDashboard()};
+$('#reliabilityArea').onchange=()=>{$('#reliabilitySubarea').value='__all__';$('#reliabilityAsset').value=ALL_ASSETS;drawDashboard()};
+$('#reliabilitySubarea').onchange=()=>{$('#reliabilityAsset').value=ALL_ASSETS;drawDashboard()};
 $('#reliabilityPeriod').onchange=drawDashboard;
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
@@ -909,9 +946,9 @@ let lastDashboardCurrentWeek=isoWeekStart(dashboardToday());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.querySelector('#inicio.section.active'))drawDashboard()});
 function weeklyReportData(){
  const type=reportPeriodType(),metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=reportPeriodStart(),asset=activeDashboardScope();
- const now=new Date(),reliability=weeklyIndicators(db.cases,monday,asset,now,type);
+ const now=new Date(),reliability=weeklyIndicators(reliabilityAreaCases(),monday,asset,now,type);
  const result=weeklyPareto(reliability.records,monday,metric,group,now,type);
- return {monday,type,metric,group,asset,period:periodTitle(monday,type),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
+ return {monday,type,metric,group,asset,scope:reliabilityScopeLabel(),period:periodTitle(monday,type),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
 }
 function weekExportName(data,ext){
  const week=isoWeekNumber(data.monday),stamp=data.type==='monthly'?'Mes_'+data.monday.slice(0,7):'Semana_'+String(week.week).padStart(2,'0')+'_'+week.year;
@@ -930,7 +967,7 @@ function weeklyReportHtml(data){
  ).join('');
  const top=data.rows[0];
  return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTEGRITY · RELIABILITY DASHBOARD</div>'+
-  '<h1>Informe '+(data.type==='monthly'?'mensual':'semanal')+' de fallas · Pareto</h1><p>'+esc(data.period)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
+  '<h1>Informe '+(data.type==='monthly'?'mensual':'semanal')+' de fallas · Pareto</h1><p>'+esc(data.period)+' · Área / sector: '+esc(data.scope)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
   '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Fallas registradas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.downtime)+'</strong><span>Horas detenidas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.operating)+'</strong><span>Horas operativas</span></div>'+
