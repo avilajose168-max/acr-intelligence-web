@@ -1657,8 +1657,10 @@ async function finishInvestigationAndCommitments(){
  controls.forEach(button=>button.disabled=true);
  const info=$('#reportSaveFeedback');
  info.hidden=false;
+ let localSaved=false;
  try{
   if(!persist(false))throw Error('No se pudieron guardar los datos locales.');
+  localSaved=true;
   const actions=(c.actions||[]).filter(a=>String(a.description||'').trim());
   const org=corporateCtx?.organizations?.find(o=>o.id===corporateSelection());
   if(corporateAllowed()&&org){
@@ -1686,8 +1688,7 @@ async function finishInvestigationAndCommitments(){
  }catch(error){
   // La copia local ya se guardó antes de intentar la publicación corporativa.
   // Distinguir los dos resultados evita alarmar al usuario o perder sus compromisos.
-  const saved=!!db.cases.find(item=>item.id===c.id);
-  info.textContent=saved
+  info.textContent=localSaved
    ?'✓ Investigación y compromisos guardados en este navegador. ⚠ La publicación en la empresa no se completó: '+error.message+'. Puedes volver a intentar «Guardar todo y finalizar».'
    :'⚠ No se completó el guardado: '+error.message;
   $('#commitPeriod').value='all';
