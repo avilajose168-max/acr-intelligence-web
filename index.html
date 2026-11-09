@@ -130,6 +130,24 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .reliability-auto-period span{font-size:10px;color:#9db9ca;letter-spacing:.8px;font-weight:800}
 .reliability-auto-period strong{font-size:22px;color:#eac884}
 .reliability-auto-period small{font-size:10px;line-height:1.4;color:#b6cad8}
+
+.commitments-dashboard{margin:17px 0 18px}
+.commitments-kpis{grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 9px}
+.commitments-kpis strong{font-size:24px}
+.commitments-progress{height:9px;background:#21374b;border-radius:20px;overflow:hidden;margin-bottom:11px}
+.commitments-progress>div{height:100%;width:0;background:linear-gradient(90deg,#5ca9aa,#e0bd75);transition:width .2s ease}
+.commitments-table{min-width:850px}
+.commitments-table td{vertical-align:middle}
+.commitments-table .commit-date{white-space:nowrap}
+.commitments-table select{background:#0b1522;color:#f2f7fc;border:1px solid #39536c;padding:7px;border-radius:7px;width:145px}
+.commitments-table button{padding:7px 10px;white-space:nowrap}
+.commitments-table .commit-name{font-weight:750;color:#f0d093}
+.commit-state{font-size:11px;font-weight:850;border-radius:8px;padding:4px 8px;display:inline-block;white-space:nowrap}
+.commit-state-overdue{color:#ffd1d9;background:#5b2734}
+.commit-state-pending{color:#e6cd97;background:#423b2c}
+.commit-state-progress{color:#c5e5f1;background:#25465b}
+.commit-state-complete{color:#c8f1d5;background:#244936}
+@media(max-width:780px){.commitments-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.commitments-table{min-width:780px}}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
@@ -201,6 +219,26 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <button type="button" class="secondary" id="downloadWeeklyPpt">⬇ Exportar PowerPoint</button>
   <button type="button" class="secondary" id="printWeekly">🖨 Imprimir informe</button>
 </div>
+<section class="card commitments-dashboard noprint" id="commitmentsDashboard" aria-label="Seguimiento de compromisos">
+  <div class="between" style="flex-wrap:wrap;gap:14px">
+    <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTELLIGENCE</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Control de acciones correctivas de todas las investigaciones guardadas en esta cuenta y navegador.</p></div>
+    <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
+  </div>
+  <div class="dashboard-kpis commitments-kpis">
+    <div><span>TOTAL DE COMPROMISOS</span><strong id="commitTotal">0</strong></div>
+    <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
+    <div><span>EN SEGUIMIENTO</span><strong id="commitPending">0</strong></div>
+    <div><span>VENCIDOS</span><strong id="commitOverdue">0</strong></div>
+    <div><span>CUMPLIMIENTO</span><strong id="commitRate">0%</strong></div>
+  </div>
+  <div class="commitments-progress"><div id="commitProgressFill"></div></div>
+  <div class="dashboard-toolbar" style="margin:14px 0">
+    <label class="field dashboard-filter">Estado<select id="commitFilter"><option value="all">Todos los compromisos</option><option value="overdue">Vencidos</option><option value="pending">Pendientes / en curso</option><option value="complete">Completados</option></select></label>
+    <label class="field dashboard-filter">Buscar acción, equipo o responsable<input type="search" id="commitSearch" placeholder="Ej.: CT-11C, inspección, supervisor"></label>
+  </div>
+  <div class="dashboard-table-wrap commitments-scroll"><table class="dashboard-table commitments-table"><thead><tr><th>Investigación / Equipo</th><th>Compromiso</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="commitmentsTable"></tbody></table></div>
+  <p class="help" style="margin-top:12px">Los estados se guardan en la acción original de cada ACR. Un compromiso pendiente con fecha anterior a hoy se marca automáticamente como vencido. Completar una acción no elimina su investigación.</p>
+</section>
 <div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones se guardan localmente por usuario. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
 <section id="weeklyReport" class="section">
   <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
@@ -886,8 +924,134 @@ function removeInvestigation(id){
  drawList();
  return true;
 }
+
+const COMMIT_STATES={Pendiente:'Pendiente', 'En curso':'En curso', Completado:'Completado'};
+function effectiveCommitStatus(action,today){
+ const status=COMMIT_STATES[action.status]||'Pendiente';
+ if(status==='Completado')return 'complete';
+ if(action.due && /^\d{4}-\d{2}-\d{2}$/.test(action.due) && action.due<today)return 'overdue';
+ return status==='En curso'?'progress':'pending';
+}
+function listCommitments(){
+ const today=dashboardToday();
+ const rows=[];
+ for(const c of db.cases){
+  if(!Array.isArray(c.actions))continue;
+  c.actions.forEach((a,i)=>{
+   if(!String(a?.description||'').trim())return;
+   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',action:a,status:effectiveCommitStatus(a,today)});
+  });
+ }
+ rows.sort((a,b)=>{
+  const severity={overdue:0,pending:1,progress:2,complete:3};
+  return severity[a.status]-severity[b.status]||
+    (a.action.due||'9999-12-31').localeCompare(b.action.due||'9999-12-31')||
+    a.equipment.localeCompare(b.equipment,'es');
+ });
+ return rows;
+}
+function commitStatusLabel(status){return {overdue:'Vencido',pending:'Pendiente',progress:'En curso',complete:'Completado'}[status]||status}
+function commitSummary(rows){
+ const done=rows.filter(x=>x.status==='complete').length,overdue=rows.filter(x=>x.status==='overdue').length;
+ return {total:rows.length,done,overdue,pending:rows.length-done-overdue,rate:rows.length?100*done/rows.length:0};
+}
+function filteredCommitments(rows){
+ const filter=$('#commitFilter').value,search=normalizeText($('#commitSearch').value).toLocaleLowerCase('es');
+ return rows.filter(r=>{
+  const allowed=filter==='all'||filter==='overdue'&&r.status==='overdue'||
+   filter==='complete'&&r.status==='complete'||filter==='pending'&&r.status!=='complete'&&r.status!=='overdue';
+  return allowed && (!search||[r.caseTitle,r.equipment,r.action.description,r.action.owner].join(' ').toLocaleLowerCase('es').includes(search));
+ });
+}
+function drawCommitments(){
+ const root=$('#commitmentsDashboard');if(!root)return;
+ const rows=listCommitments(),sum=commitSummary(rows);
+ $('#commitTotal').textContent=sum.total;
+ $('#commitComplete').textContent=sum.done;
+ $('#commitPending').textContent=sum.pending;
+ $('#commitOverdue').textContent=sum.overdue;
+ $('#commitRate').textContent=sum.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
+ $('#commitProgressFill').style.width=sum.rate+'%';
+ const filtered=filteredCommitments(rows);
+ $('#commitmentsTable').innerHTML=filtered.length?filtered.map(r=>
+  '<tr><td><span class="commit-name">'+esc(r.equipment)+'</span><div class="small">'+esc(r.caseTitle)+'</div></td>'+
+  '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td>'+
+  '<td class="commit-date">'+esc(r.action.due||'Sin fecha')+'</td>'+
+  '<td><span class="commit-state commit-state-'+r.status+'">'+commitStatusLabel(r.status)+'</span><div style="margin-top:5px">'+
+  '<select data-commit-case="'+esc(r.caseId)+'" data-commit-index="'+r.index+'" aria-label="Cambiar estado del compromiso">'+
+  Object.keys(COMMIT_STATES).map(key=>'<option value="'+key+'"'+((COMMIT_STATES[r.action.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+
+  '</select></div></td><td><button type="button" class="secondary" data-commit-open="'+esc(r.caseId)+'">Ver ACR</button></td></tr>'
+ ).join(''):'<tr><td colspan="6" style="text-align:center;padding:18px;color:#b1c4d5">No hay compromisos para este filtro.</td></tr>';
+ $('[data-commit-case]').forEach(el=>el.onchange=()=>{
+  const c=db.cases.find(x=>x.id===el.dataset.commitCase),a=c?.actions?.[Number(el.dataset.commitIndex)];
+  if(!a)return;
+  const previous=a.status;
+  a.status=el.value;
+  if(!persist()){a.status=previous;drawCommitments();return}
+  drawCommitments();
+ });
+ $('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
+}
+$('#commitFilter').onchange=drawCommitments;
+$('#commitSearch').oninput=drawCommitments;
+function commitmentsExportRows(){return filteredCommitments(listCommitments())}
+function exportCommitmentsExcel(){
+ const rows=commitmentsExportRows();
+ const header=['Equipo/TAG','Investigación','Acción correctiva','Responsable','Fecha compromiso','Estado'];
+ const escapeCsv=value=>'"'+String(value||'').replace(/"/g,'""')+'"';
+ const data='\uFEFF'+[header,...rows.map(r=>[r.equipment,r.caseTitle,r.action.description,r.action.owner||'',r.action.due||'',commitStatusLabel(r.status)])].map(cols=>cols.map(escapeCsv).join(';')).join('\r\n');
+ download('ACR_Seguimiento_Compromisos_'+dashboardToday()+'.csv',data,'text/csv;charset=utf-8');
+}
+function exportCommitmentsPdf(){
+ try{
+  loadExportLibrary('pdf');
+  const rows=commitmentsExportRows(),summary=commitSummary(listCommitments());
+  const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const pageW=297,pageH=210,left=12,breakY=193;
+  let y=0;
+  const write=(value,x,z,sz=9,bold=false,max=60)=>{
+   doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(sz);doc.setTextColor(22,42,61);
+   doc.text(doc.splitTextToSize(String(value||'—').replace(/[^\x20-\xFF]/g,'-'),max),x,z);
+  };
+  const header=()=>{
+   doc.setFillColor(19,39,58);doc.rect(0,0,pageW,24,'F');
+   doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(14);
+   doc.text('ACR INTELLIGENCE  |  SEGUIMIENTO DE COMPROMISOS',left,12);
+   doc.setFontSize(9);doc.text('Actualizado: '+dashboardToday(),left,19);
+   y=34;
+  };
+  header();
+  write('Total: '+summary.total+'     Completados: '+summary.done+'     En seguimiento: '+summary.pending+
+   '     Vencidos: '+summary.overdue+'     Cumplimiento: '+summary.rate.toFixed(1)+'%',left,y,10,true,270);
+  y+=12;
+  const widths=[43,47,93,43,28,25],starts=[12,55,102,195,238,266];
+  const headings=['Equipo','Investigación','Acción correctiva','Responsable','Fecha','Estado'];
+  const tableHeading=()=>{
+   doc.setFillColor(229,237,243);doc.rect(left,y-6,273,10,'F');
+   headings.forEach((v,i)=>write(v,starts[i]+2,y,8,true,widths[i]-4));
+   y+=10;
+  };
+  tableHeading();
+  rows.forEach((r,i)=>{
+   const cells=[r.equipment,r.caseTitle,r.action.description,r.action.owner||'Sin asignar',r.action.due||'Sin fecha',commitStatusLabel(r.status)];
+   const lines=cells.map((v,k)=>doc.splitTextToSize(String(v||'—').replace(/[^\x20-\xFF]/g,'-'),widths[k]-4));
+   const height=Math.max(9,Math.max(...lines.map(a=>a.length))*4.4+3);
+   if(y+height>breakY){doc.addPage();header();tableHeading()}
+   if(i%2===0){doc.setFillColor(244,247,250);doc.rect(left,y-6,273,height,'F')}
+   cells.forEach((v,k)=>write(v,starts[k]+2,y,7.6,false,widths[k]-4));
+   y+=height;
+  });
+  if(!rows.length)write('No hay compromisos para los filtros seleccionados.',left,y,10,false,260);
+  const pages=doc.getNumberOfPages();
+  for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(96,110,122);doc.text('ACR Intelligence | Página '+i+' de '+pages,pageW-12,pageH-7,{align:'right'})}
+  doc.save('ACR_Seguimiento_Compromisos_'+dashboardToday()+'.pdf');
+ }catch(error){alert('No se pudo exportar el seguimiento a PDF: '+error.message)}
+}
+$('#exportCommitmentsPdf').onclick=exportCommitmentsPdf;
+$('#exportCommitmentsExcel').onclick=exportCommitmentsExcel;
+
 function drawList(){
- drawDashboard();
+ drawDashboard();drawCommitments();
  const root=$('#casesList');
  root.innerHTML=db.cases.length?db.cases.map(c=>
   '<div class="listItem" data-id="'+esc(c.id)+'" tabindex="0" role="button" aria-label="Abrir investigación '+esc(c.title||'sin título')+'">'+
@@ -954,7 +1118,26 @@ function drawWhys(){
     el.onblur=()=>{drawWhys()};
   });
 }
-function drawActions(){const c=current();$('#actionFields').innerHTML=c.actions.map((a,i)=>`<div class="actionLine"><label class="field">Acción ${i+1}<input data-ai="${i}" data-ak="description" value="${esc(a.description)}" placeholder="Acción verificable"></label><label class="field">Responsable<input data-ai="${i}" data-ak="owner" value="${esc(a.owner)}"></label><label class="field">Fecha<input type="date" data-ai="${i}" data-ak="due" value="${esc(a.due)}"></label><button class="secondary" data-del="${i}" title="Eliminar acción">✕</button></div>`).join('');$$('[data-ai]').forEach(el=>el.oninput=()=>{c.actions[+el.dataset.ai][el.dataset.ak]=el.value;persist()});$$('[data-del]').forEach(b=>b.onclick=()=>{c.actions.splice(+b.dataset.del,1);persist();drawActions()})}$('#addAction').onclick=()=>{current().actions.push({description:'',owner:'',due:'',status:'Pendiente'});persist();drawActions()};
+function drawActions(){
+ const c=current();if(!c)return;
+ $('#actionFields').innerHTML=(c.actions||[]).map((a,i)=>'<div class="actionLine" style="grid-template-columns:1.4fr .7fr .65fr .68fr auto">'+
+  '<label class="field">Acción '+(i+1)+'<input data-ai="'+i+'" data-ak="description" value="'+esc(a.description||'')+'" placeholder="Acción verificable"></label>'+
+  '<label class="field">Responsable<input data-ai="'+i+'" data-ak="owner" value="'+esc(a.owner||'')+'"></label>'+
+  '<label class="field">Fecha<input type="date" data-ai="'+i+'" data-ak="due" value="'+esc(a.due||'')+'"></label>'+
+  '<label class="field">Estado<select data-ai="'+i+'" data-ak="status">'+Object.keys(COMMIT_STATES).map(key=>
+    '<option value="'+key+'"'+((COMMIT_STATES[a.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+'</select></label>'+
+  '<button class="secondary" data-del="'+i+'" title="Eliminar acción">✕</button></div>'
+ ).join('');
+ $$('[data-ai]').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{
+  c.actions[Number(el.dataset.ai)][el.dataset.ak]=el.value;persist();
+ }));
+ $$('[data-del]').forEach(b=>b.onclick=()=>{
+  c.actions.splice(Number(b.dataset.del),1);persist();drawActions();
+ });
+}
+$('#addAction').onclick=()=>{
+ current().actions.push({description:'',owner:'',due:'',status:'Pendiente'});persist();drawActions();
+};
 function drawPhotos(){const c=current();$('#photos').innerHTML=c.photos.length?c.photos.map((p,i)=>`<div class="photo"><img src="${p.data}" alt="Evidencia ${i+1}"><label class="field">Descripción<input data-caption="${i}" value="${esc(p.caption)}" placeholder="Qué muestra"></label><button class="danger" data-remove="${i}">Eliminar</button></div>`).join(''):'<p class="muted">Aún no has agregado fotografías.</p>';$$('[data-caption]').forEach(el=>el.oninput=()=>{c.photos[+el.dataset.caption].caption=el.value;persist()});$$('[data-remove]').forEach(el=>el.onclick=()=>{if(confirm('¿Eliminar esta foto de la investigación?')){c.photos.splice(+el.dataset.remove,1);persist();drawPhotos()}})}
 
 function drawSafety(){
