@@ -266,7 +266,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <section class="card commitments-dashboard noprint" id="commitmentsDashboard" aria-label="Seguimiento de compromisos">
   <div class="between" style="flex-wrap:wrap;gap:14px">
     <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Control de acciones correctivas de todas las investigaciones guardadas en esta cuenta y navegador.</p></div>
-    <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
+    <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="primary" id="previewCommitments">📄 Ver informe del período</button><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
   </div>
   <div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
   <div class="dashboard-kpis commitments-kpis">
@@ -376,6 +376,18 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </div>
   </div>
   <article id="weeklyReportContent" class="weekly-sheet" aria-label="Informe semanal de confiabilidad"></article>
+</section>
+<section id="commitmentsReport" class="section">
+ <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
+  <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h1 id="commitmentsReportTitle">Informe de compromisos</h1><p class="muted">Vista previa del período seleccionado antes de descargar.</p></div>
+  <div class="toolbar" style="flex-wrap:wrap">
+   <button type="button" class="secondary" id="commitmentsReportBack">← Volver a compromisos</button>
+   <button type="button" class="primary" id="commitmentsReportPrint">🖨 Imprimir</button>
+   <button type="button" class="secondary" id="commitmentsReportPdf">⬇ PDF</button>
+   <button type="button" class="secondary" id="commitmentsReportCsv">⬇ Excel (CSV)</button>
+  </div>
+ </div>
+ <article id="commitmentsReportContent" class="weekly-sheet" aria-label="Informe de compromisos del período"></article>
 </section>
 <section id="registro" class="section"><div class="bar" style="margin-bottom:18px;flex-wrap:wrap"><div><div class="eyebrow">Paso 1</div><h1>Registro de falla en terreno</h1></div><div class="toolbar"><button class="secondary" id="backHome">Mis investigaciones</button><button class="primary" id="nextAnalysis">Continuar →</button></div></div><div class="card" id="reportBrandPanel"><h2>🏢 Personalización del informe</h2><p class="muted" id="reportBrandHelp">Si eres independiente, agrega tu nombre o el de tu empresa y adjunta un logo. Si perteneces a una compañía, se utiliza su identidad aprobada automáticamente.</p><div class="grid"><label class="field">Nombre de la empresa<input id="companyName" placeholder="Ej.: Mi empresa minera"></label><label class="field">Logo de la empresa (PNG, JPG o WEBP)<input type="file" id="companyLogo" accept="image/png,image/jpeg,image/webp"></label></div><div class="logoPreview" id="logoPreview" style="margin-top:12px"></div><button class="secondary" id="removeLogo" type="button" style="margin-top:10px">Quitar logo</button></div><div class="card"><div class="grid"><label class="field">Título del evento<input data-k="title" placeholder="Ej.: Pérdida de presión del clamping"></label><label class="field">Equipo / TAG<input data-k="equipment" placeholder="MP1000 · CH3 L1"></label><label class="field">Área / proceso<input data-k="area" placeholder="Chancado terciario"></label><label class="field">Fecha y hora<input data-k="datetime" type="datetime-local"></label><label class="field">Severidad<select data-k="severity"><option>Media</option><option>Baja</option><option>Alta</option><option>Crítica</option></select></label><label class="field">Nombre del investigador<input data-k="author" placeholder="Ingeniero / supervisor"></label><label class="field">OT / aviso SAP (opcional)<input data-k="workorder" placeholder="OT-0000"></label><div class="downtimeCard" style="grid-column:1/-1"><h3>⏱ Tiempo de detención del equipo</h3><div class="grid"><label class="field">Inicio de detención<input type="datetime-local" data-k="stopStart" id="stopStart"></label><label class="field">Término de detención<input type="datetime-local" data-k="stopEnd" id="stopEnd"></label><label class="field">Total de horas de detención (cálculo automático)<input type="number" min="0" step="0.01" data-k="downtime" id="downtime" readonly aria-readonly="true" placeholder="Se calculará automáticamente"></label></div><div class="durationHint" id="durationHint">Ingresa el inicio y el término: el sistema calcula automáticamente la duración, incluso si cruza la medianoche.</div></div><label class="field full">¿Qué ocurrió? (hechos observados)<textarea data-k="description" placeholder="Describe el síntoma, la secuencia y las condiciones sin anticipar la causa raíz."></textarea></label><div class="voicebar"><button type="button" class="primary" id="startVoice">🎙 Dictar descripción</button><button type="button" class="secondary" id="stopVoice" disabled>■ Detener</button><span class="voice-status" id="voiceStatus" role="status" aria-live="polite">Presiona el micrófono y cuenta qué ocurrió.</span><div class="voice-tip">Habla con naturalidad: equipo, síntomas, alarmas y qué se observó. Revisa la transcripción antes de mejorar la redacción o generar los 5 Porqués. El reconocimiento puede requerir Internet y usar el servicio de voz del navegador; evita datos confidenciales sin autorización.</div></div><div class="full assist-panel"><div class="between" style="flex-wrap:wrap;gap:9px"><div><b>✦ Asistente de redacción y análisis</b><div class="help">Redacta los hechos y utiliza el asistente para mejorar la claridad técnica. Con IA externa activada, el texto se enviará al proveedor; sin ella, funciona el análisis local.</div></div><div class="toolbar"><button type="button" class="secondary" id="improveDescription">✍ Mejorar redacción técnica</button></div></div><div id="descriptionFeedback" class="notice hidden" style="margin-top:12px" aria-live="polite"></div></div><div class="field full safety-panel" id="safetyPanel">
   <h3>🛡️ Condición de seguridad para las personas</h3>
@@ -1248,6 +1260,33 @@ function exportCommitmentsPdf(){
   doc.save('ACR_Compromisos_'+commitPeriodType()+'_'+commitPeriodStart()+'.pdf');
  }catch(error){alert('No se pudo exportar el seguimiento a PDF: '+error.message)}
 }
+function commitmentsPreviewHtml(){
+ const rows=commitmentsExportRows(), all=periodCommitments(listCommitments()), summary=commitSummary(all);
+ const type=commitPeriodType(),title=periodTitle(commitPeriodStart(),type), pct=summary.rate.toLocaleString('es-CL',{maximumFractionDigits:1});
+ const statusColors={overdue:'#9a2e34',complete:'#276b56',pending:'#946621',progress:'#345b80'};
+ const tableRows=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.equipment)+'</td><td>'+esc(r.caseTitle)+'</td><td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td><td>'+esc(r.action.due||'Sin fecha')+'</td><td><strong style="color:'+statusColors[r.status]+'">'+esc(commitStatusLabel(r.status))+'</strong></td></tr>').join('');
+ const nums=[['Total de compromisos',summary.total],['Completados',summary.done],['En seguimiento',summary.pending],['Vencidos',summary.overdue],['Cumplimiento',pct+'%']];
+ return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTEGRITY · GESTIÓN DE ACCIONES</div>'+
+  '<h1>Informe '+(type==='monthly'?'mensual':'semanal')+' de seguimiento de compromisos</h1>'+
+  '<p>'+esc(title)+' · Fecha de emisión: '+esc(dashboardToday())+'</p></div>'+
+  '<div class="weekly-kpis">'+nums.map(k=>'<div><strong>'+k[1]+'</strong><span>'+k[0]+'</span></div>').join('')+'</div>'+
+  '<div class="weekly-report-notice">Los compromisos se asignan al período por su fecha de vencimiento. Los estados y el cumplimiento reflejan su situación actual. Los compromisos sin vencimiento no aparecen en un período.</div>'+
+  '<h2>01 · Detalle de compromisos del período</h2><div style="overflow-x:auto"><table><thead><tr><th>N.º</th><th>Equipo / TAG</th><th>Investigación</th><th>Acción correctiva</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody>'+
+  (tableRows||'<tr><td colspan="7">No existen compromisos para los filtros seleccionados.</td></tr>')+'</tbody></table></div>'+
+  '<div class="weekly-report-foot">Fuente: investigaciones guardadas en la cuenta y navegador. Se aplican los filtros de estado y búsqueda del tablero. Resumen calculado sobre todos los compromisos del período.</div>';
+}
+function showCommitmentsReport(){
+ $('#commitmentsReportTitle').textContent='Informe '+(commitPeriodType()==='monthly'?'mensual':'semanal')+' de compromisos';
+ $('#commitmentsReportContent').innerHTML=commitmentsPreviewHtml();
+ navigate('commitmentsReport');
+}
+$('#previewCommitments').onclick=showCommitmentsReport;
+$('#commitmentsReportBack').onclick=()=>navigate('inicio');
+$('#commitmentsReportPdf').onclick=exportCommitmentsPdf;
+$('#commitmentsReportCsv').onclick=exportCommitmentsExcel;
+$('#commitmentsReportPrint').onclick=()=>{
+ window.print();
+};
 $('#exportCommitmentsPdf').onclick=exportCommitmentsPdf;
 $('#exportCommitmentsExcel').onclick=exportCommitmentsExcel;
 
