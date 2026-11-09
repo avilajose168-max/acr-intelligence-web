@@ -206,6 +206,14 @@ assert.equal(await page.locator('#commitTotal').innerText(),'1','Existe un compr
 assert.equal(await page.locator('#commitOverdue').innerText(),'1','Se detecta fecha vencida automáticamente');
 assert.equal(await page.locator('#commitComplete').innerText(),'0','No hay acciones completadas inicialmente');
 assert.ok((await page.locator('#commitmentsTable').innerText()).includes('Verificar transmisión CT-11C'));
+// Vista previa de compromisos conserva período y muestra el informe antes de exportar.
+await page.locator('#previewCommitments').click();
+assert.equal(await page.locator('#commitmentsReport').evaluate(el=>el.classList.contains('active')),true,'Vista previa abierta');
+const previewCommitText=await page.locator('#commitmentsReportContent').innerText();
+assert.ok(previewCommitText.includes('2020')&&previewCommitText.includes('Verificar transmisión CT-11C'),'Vista previa mensual con acción registrada');
+assert.ok(previewCommitText.includes('Vencido')&&previewCommitText.includes('Supervisor turno A'),'Se muestran responsables y estados');
+await page.locator('#commitmentsReportBack').click();
+assert.equal(await page.locator('#commitTotal').innerText(),'1','Regresa al tablero sin alterar datos');
 await page.locator('#commitFilter').selectOption('overdue');
 assert.equal(await page.locator('#commitmentsTable tr').count(),1,'Filtro de vencidos');
 const excelWait=page.waitForEvent('download');
