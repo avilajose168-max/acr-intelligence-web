@@ -2108,6 +2108,106 @@ $('#corporateExportPeriod').onclick=()=>{
  const output='\uFEFF'+[head,...rows].map(cols=>cols.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  download('ACR_Tablero_Corporativo_'+bounds.period+'.csv',output,'text/csv;charset=utf-8');
 };
+function corporateReportCompanyName(){
+ return corporateCtx?.organizations?.find(o=>o.id===corporateSelection())?.name||'Compañía';
+}
+function corporateReportKpis(items){
+ return '<div class="corp-report-kpis">'+items.map(([label,value])=>
+  '<div class="corp-report-kpi"><span>'+esc(label)+'</span><strong>'+esc(String(value))+'</strong></div>').join('')+'</div>';
+}
+function corporateReportTable(headers,rows,empty){
+ return '<table><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+
+ (rows.length?rows.map(cols=>'<tr>'+cols.map(v=>'<td>'+esc(String(v??'—'))+'</td>').join('')+'</tr>').join(''):
+ '<tr><td colspan="'+headers.length+'">'+esc(empty||'Sin registros para los filtros seleccionados')+'</td></tr>')+
+ '</tbody></table>';
+}
+function corporateReportHeader(type,period,scope){
+ return '<header class="corp-report-header"><div><div class="corp-report-eyebrow">ACR INTEGRITY · '+esc(corporateReportCompanyName())+'</div>'+
+ '<h1>Informe corporativo de '+esc(type)+'</h1><div>Período: <b>'+esc(period)+'</b> · Alcance: <b>'+esc(scope)+'</b></div></div>'+
+ '<div style="text-align:right;font-size:10px;color:#57718b">Emisión: '+esc(new Date().toLocaleString('es-CL'))+
+ '<div>Uso interno · Gestión de activos</div></div></header>';
+}
+function corporateReliabilityReportHtml(){
+ const bounds=corporateCalendarBounds(),all=selectedCorporateCases(),cases=corporateAreaScopedCases(all),asset=$('#corporateAsset').value;
+ const data=corporatePeriodResults(cases,bounds,asset),metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
+ const pareto=corporatePeriodPareto(data.events,bounds,metric,group);
+ const breakdown=['Área Seca','Área Húmeda','Sin clasificar'].map(area=>{
+  const scoped=all.filter(c=>area==='Sin clasificar'?!['Área Seca','Área Húmeda'].includes(c.area):c.area===area);
+  const events=scoped.filter(c=>{const date=investigationStart(c);return date&&date>=bounds.start&&date<bounds.cutoff});
+  const hours=events.reduce((n,c)=>n+(investigationDowntime(c,bounds)?.hours??sumDashboardHours(c)),0);
+  return '<div><b>'+esc(area)+'</b><strong>'+events.length+' '+(events.length===1?'falla':'fallas')+'</strong><div>'+esc(dashboardReliabilityFormat(hours))+' de detención</div></div>';
+ });
+ const info=[
+  ['Fallas registradas',data.events.length],['Horas detenidas',dashboardReliabilityFormat(data.hours)],
+  ['MTTR',dashboardReliabilityFormat(data.mttr)],['MTBF',dashboardReliabilityFormat(data.mtbf)],
+  ['Disponibilidad',dashboardAvailabilityFormat(data.availability)]
+ ];
+ const eventRows=data.events.slice().sort((a,b)=>(investigationStart(b)?.getTime()||0)-(investigationStart(a)?.getTime()||0)).map(c=>[
+  displayEventDate(c),c.area||'Sin clasificar',c.area==='Área Húmeda'?(c.productionUnit||'—'):(c.sector||'—'),
+  c.equipment||'Sin TAG',c.title||'Sin título',dashboardReliabilityFormat(investigationDowntime(c,bounds)?.hours??null)
+ ]);
+ return corporateReportHeader('confiabilidad',bounds.label,corporateAreaScopeName()+' · '+(asset===ALL_ASSETS?'Todos los equipos':asset))+
+  corporateReportKpis(info)+
+  '<h2>01 · Desglose de detenciones por área de la compañía</h2><div class="corp-report-breakdown">'+breakdown.join('')+'</div>'+
+  '<h2>02 · Pareto corporativo ('+(metric==='hours'?'horas de detención':'cantidad de fallas')+')</h2>'+
+  corporateReportTable([group==='equipment'?'Equipo / TAG':'Tipo de falla','Valor','Acumulado'],pareto.rows.map(r=>[
+   r.label,dashboardMetricText(r.value,metric),r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%'
+  ]),'Sin fallas para el período')+
+  '<h2>03 · Investigaciones del período</h2>'+
+  corporateReportTable(['Fecha','Área','Sector / unidad','Equipo','Evento','Detención'],eventRows,'No hay investigaciones publicadas con estos filtros')+
+  '<p class="corp-report-note">Fuente: ACR publicados en esta compañía. MTBF y disponibilidad estimados sobre los equipos con eventos y horas verificables; no equivalen a indicadores de toda la flota. El desglose por áreas corresponde al período completo de la empresa.</p>';
+}
+function corporateCommitmentReportHtml(){
+ const period=$('#corpCommitPeriod').value,periodLabel=period==='all'?'Todos los vencimientos':
+ periodTitle(period==='monthly'?selectedCorporateCommitMonth:selectedCorporateCommitWeek,period);
+ const area=$('#corpCommitArea').value,sub=$('#corpCommitSubarea').value;
+ const scope=(area==='__all__'?'Toda la compañía':area==='__unclassified__'?'Sin clasificar':area)+
+ (sub==='__all__'?'':' / '+sub);
+ const rows=corporateCommitmentFilteredRows(),totals=commitSummary(corporateCommitmentScopeRows());
+ const stateLabel=$('#corpCommitStatus').selectedOptions[0]?.textContent||'Todos los estados';
+ const search=$('#corpCommitSearch').value.trim();
+ return corporateReportHeader('seguimiento de compromisos',periodLabel,scope)+
+  corporateReportKpis([
+   ['Acciones totales',totals.total],['Completados',totals.done],['En seguimiento',totals.pending],
+   ['Vencidos',totals.overdue],['Cumplimiento',totals.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%']
+  ])+
+  '<h2>01 · Compromisos y responsables</h2><p>Estado consultado: <b>'+esc(stateLabel)+'</b>'+
+  (search?' · Búsqueda: <b>'+esc(search)+'</b>':'')+'</p>'+
+  corporateReportTable(['Área','Sector / unidad','Equipo / TAG','Investigación','Compromiso','Responsable','Vencimiento','Estado'],
+  rows.map(r=>[r.area||'Sin clasificar',r.area==='Área Húmeda'?r.productionUnit:r.sector,r.equipment,r.caseTitle,
+   r.action.description,r.action.owner||'Sin asignar',r.action.due||'Sin fecha',commitStatusLabel(r.status)]),
+  'No hay compromisos para los filtros seleccionados')+
+  '<p class="corp-report-note">Fuente: ACR publicados en esta compañía. Los compromisos semanales y mensuales se agrupan por fecha de vencimiento. Las cifras resumen incluyen todos los estados del período y los estados son los actuales publicados, no una fotografía histórica. Solo consulta: los cambios se realizan en la investigación del responsable.</p>';
+}
+let lastCorporateReportType='reliability';
+function showCorporateReport(type,printAfter=false){
+ if(!corporateIsAdmin()||!corporateSelection())return alert('Esta función requiere acceso de administrador a una compañía.');
+ lastCorporateReportType=type;
+ $('#corpReportPreviewTitle').textContent=type==='reliability'?'Informe corporativo de confiabilidad':'Informe corporativo de compromisos';
+ $('#corpReportSheet').innerHTML=type==='reliability'?corporateReliabilityReportHtml():corporateCommitmentReportHtml();
+ navigate('corporateReportPreview');
+ if(printAfter)printCorporateReport();
+}
+function printCorporateReport(){
+ const style=document.getElementById('acrPrintPageSize')||document.createElement('style');
+ style.id='acrPrintPageSize';
+ style.textContent='@media print{@page{size:A4 landscape;margin:11mm}}';
+ document.head.appendChild(style);
+ document.body.classList.add('corp-report-print');
+ const cleanup=()=>{
+  document.body.classList.remove('corp-report-print');
+  window.removeEventListener('afterprint',cleanup);
+ };
+ window.addEventListener('afterprint',cleanup,{once:true});
+ window.print();
+}
+$('#corpRelPreview').onclick=()=>showCorporateReport('reliability');
+$('#corpRelPdf').onclick=()=>showCorporateReport('reliability',true);
+$('#corpCommitPreview').onclick=()=>showCorporateReport('commitments');
+$('#corpCommitPdf').onclick=()=>showCorporateReport('commitments',true);
+$('#corpReportBack').onclick=()=>navigate('organizaciones');
+$('#corpReportSavePdf').onclick=printCorporateReport;
+$('#corpReportPrint').onclick=printCorporateReport;
 async function loadCorporateOverview(){
  const orgId=corporateSelection();
  if(!orgId||!corporateIsAdmin()||!activeUser)return;
