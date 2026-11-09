@@ -457,7 +457,7 @@ await page.locator('#organizationSelect').selectOption('cccccccc-cccc-4ccc-8ccc-
 await page.waitForFunction(()=>document.querySelector('#orgCaseCount')?.textContent==='0',{timeout:15000});
 assert.equal(await page.locator('#orgUserCount').innerText(),'0','Nueva empresa no hereda los usuarios de la anterior');
 assert.equal(await page.locator('#corpEvents').innerText(),'0','Nueva empresa no hereda eventos del tablero');
-assert.equal(await page.locator('#orgCasesTable').innerText(),'Todavía no hay investigaciones corporativas publicadas.','Nueva empresa no hereda investigaciones');
+assert.equal(await page.locator('#orgCasesTable').innerText(),'No hay ACR corporativos publicados en esta compañía. Los usuarios deben confirmar la publicación de sus informes para que el administrador pueda verlos.','Nueva empresa no hereda investigaciones');
 await page.locator('button[data-page="inicio"]').click();
 
 
