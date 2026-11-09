@@ -366,6 +366,25 @@ assert.equal(mockCompanyCases[0].owner_id,testOwnerId,'Propietario queda registr
 await page.locator('#refreshOrganizations').click();
 await page.waitForFunction(()=>document.querySelector('#orgCaseCount')?.textContent==='1',{timeout:15000});
 assert.ok((await page.locator('#orgCasesTable').innerText()).includes('CT-11C'),'Administrador ve los ACR corporativos');
+
+assert.equal(await page.locator('#corpEvents').innerText(),'1','Tablero corporativo semanal muestra una falla publicada');
+assert.equal(await page.locator('#corpMttr').innerText(),'2,00 h','MTTR corporativo usa detención de dos horas');
+assert.ok((await page.locator('#corporateParetoTable').innerText()).includes('CT-11C'),'Pareto corporativo agrupa por equipo');
+await page.locator('#corporateParetoMetric').selectOption('hours');
+assert.ok((await page.locator('#corporateParetoTable').innerText()).includes('2,00'),'Pareto por horas registradas');
+await page.locator('#corporatePeriod').selectOption('monthly');
+assert.equal(await page.locator('#corpEvents').innerText(),'1','El Pareto mensual utiliza los ACR de la compañía');
+assert.ok((await page.locator('#corporatePeriodLabel').innerText()).toLocaleLowerCase('es').includes('noviembre'),'Período mensual muestra nombre del mes');
+await page.locator('#corporatePrevious').click();
+assert.equal(await page.locator('#corpEvents').innerText(),'0','Mes anterior excluye eventos del mes actual');
+await page.locator('#corporateCurrent').click();
+assert.equal(await page.locator('#corpEvents').innerText(),'1','Restauración al mes actual');
+const monthlyDownload=page.waitForEvent('download');
+await page.locator('#corporateExportPeriod').click();
+const monthlyCsv=await monthlyDownload;
+assert.ok(monthlyCsv.suggestedFilename().endsWith('.csv'),'Descarga reporte corporativo mensual');
+assert.ok(require('node:fs').readFileSync(await monthlyCsv.path(),'utf8').includes('CT-11C'),'Reporte mensual incluye equipo');
+
 await page.locator('[data-org-case]').first().click();
 assert.ok((await page.locator('#orgCaseDetail').innerText()).includes('Protección temperatura rodamiento'),'Vista corporativa contiene investigación');
 const exportCompanyTask=page.waitForEvent('download');
@@ -381,6 +400,7 @@ await page.waitForFunction(()=>document.querySelectorAll('#organizationSelect op
 await page.locator('#organizationSelect').selectOption('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
 await page.waitForFunction(()=>document.querySelector('#orgCaseCount')?.textContent==='0',{timeout:15000});
 assert.equal(await page.locator('#orgUserCount').innerText(),'0','Nueva empresa no hereda los usuarios de la anterior');
+assert.equal(await page.locator('#corpEvents').innerText(),'0','Nueva empresa no hereda eventos del tablero');
 assert.equal(await page.locator('#orgCasesTable').innerText(),'Todavía no hay investigaciones corporativas publicadas.','Nueva empresa no hereda investigaciones');
 await page.locator('button[data-page="inicio"]').click();
 
