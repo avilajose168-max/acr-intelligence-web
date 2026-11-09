@@ -444,7 +444,7 @@ function setAuthMode(mode){
   document.getElementById('authSubtitle').textContent=signup?'Regístrate para comenzar a investigar y gestionar tus eventos.':recover?'Te enviaremos instrucciones para restablecer la contraseña.':'Ingresa con tus credenciales para acceder a tu espacio de investigación.';
   document.getElementById('authNameWrap').hidden=!signup;
   document.getElementById('authCompanyWrap').hidden=!signup;
-  if(signup)void loadSignupOrganizations();
+  if(signup){drawAuthAffiliation();void loadSignupOrganizations();}
   document.getElementById('authPassWrap').hidden=recover;
   document.getElementById('authPassword').required=!recover;
   document.getElementById('authPassword').autocomplete=signup?'new-password':'current-password';
@@ -500,6 +500,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
       const affiliation=document.getElementById('authAffiliation').value;
       const organizationId=document.getElementById('authOrganization').value;
       const role=document.getElementById('authRequestedRole').value;
+      if(affiliation==='company')await loadSignupOrganizations();
       if(affiliation==='company'&&!organizationId)throw Error('Selecciona la compañía contratante o regístrate como independiente.');
       const metadata={display_name:name};
       if(affiliation==='company'){
@@ -1200,7 +1201,7 @@ function drawOrganizationStatus(){
  }else if(membership?.status==='approved'){
   notice.textContent='Afiliación aprobada · '+org.name+' · '+(membership.role==='admin'?'Administrador de empresa':'Usuario autorizado')+'.';
  }else if(membership?.status==='pending'){
-  notice.textContent='Afiliación pendiente de aprobación para '+org.name+'. No puedes acceder a sus investigaciones corporativas todavía.';
+  notice.textContent='Afiliación pendiente de aprobación para '+org.name+(membership.requested_role==='admin'?' (solicitaste el rol de administrador).':'.')+' No puedes acceder a sus investigaciones corporativas todavía.';
  }else if(membership?.status==='rejected'){
   notice.textContent='Solicitud rechazada para '+org.name+'. Contacta al administrador de la empresa.';
  }else notice.textContent=platform
@@ -1217,7 +1218,7 @@ async function loadOrganizations(){
   const [organizations,roles,memberships]=await Promise.all([
    corporateApi(organizationApiPath('acr_organizations','?select=id,name,active&active=eq.true&order=name')),
    corporateApi(organizationApiPath('acr_platform_admins','?select=user_id')),
-   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,status,role,display_name,email&user_id=eq.'+activeUser.id))
+   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,status,role,requested_role,display_name,email&user_id=eq.'+activeUser.id))
   ]);
   if(!Array.isArray(organizations)||!Array.isArray(memberships)||!Array.isArray(roles))throw Error('La información de empresas no se pudo leer.');
   const lastOrg=corporateSelection()||localStorage.getItem('acr-org-choice-'+activeUser.id)||'';
@@ -1322,7 +1323,7 @@ async function loadCorporateOverview(){
  const initialId=orgId;
  try{
   const [members,cases]=await Promise.all([
-   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,email,display_name,status,role,created_at&organization_id=eq.'+orgId+'&order=created_at.desc')),
+   corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,email,display_name,status,role,requested_role,created_at&organization_id=eq.'+orgId+'&order=created_at.desc')),
    corporateApi(organizationApiPath('acr_corporate_investigations','?select=id,owner_id,title,equipment,payload,updated_at,local_case_id&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'))
   ]);
   if(initialId!==corporateSelection()||!corporateIsAdmin())return;
@@ -1336,7 +1337,7 @@ async function loadCorporateOverview(){
   $('#orgCommitOverdue').textContent=metric.overdue;
   $('#orgCompliance').textContent=metric.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
   $('#orgUsersTable').innerHTML=members.length?members.map(m=>
-   '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td><td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador':'Usuario')+'</td>'+
+   '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td><td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador':'Usuario')+'<div class="small">Solicita: '+esc(m.requested_role==='admin'?'Administrador':'Usuario')+'</div></td>'+
    '<td><div class="toolbar"><select data-org-member-status="'+esc(m.id)+'" aria-label="Estado de afiliación"><option value="pending"'+(m.status==='pending'?' selected':'')+'>Pendiente</option><option value="approved"'+(m.status==='approved'?' selected':'')+'>Aprobado</option><option value="rejected"'+(m.status==='rejected'?' selected':'')+'>Rechazado</option></select>'+
    '<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario"><option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option><option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select></div></td></tr>'
   ).join(''):'<tr><td colspan="5">Todavía no hay solicitudes de afiliación.</td></tr>';
@@ -1368,10 +1369,14 @@ async function changeCorporateMembership(id,changes){
  const item=corporateCtx?.orgMembers.find(m=>m.id===id);
  if(!item)return;
  if(item.user_id===activeUser.id&&changes.role==='member')return alert('No puedes retirar tu propio rol de administrador desde este panel.');
- if(!confirm('¿Actualizar permisos de '+(item.display_name||item.email)+'?')){await loadCorporateOverview();return}
+ const requestedAdmin=changes.status==='approved'&&item.requested_role==='admin';
+ const confirmMessage=requestedAdmin
+  ?'¿APROBAR como ADMINISTRADOR de esta compañía a '+(item.display_name||item.email)+'? Esta persona podrá consultar el consolidado y administrar afiliaciones.'
+  :'¿Actualizar permisos de '+(item.display_name||item.email)+'?';
+ if(!confirm(confirmMessage)){await loadCorporateOverview();return}
  try{
   await corporateApi(organizationApiPath('acr_memberships','?id=eq.'+id),'PATCH',{
-   ...changes,...(changes.status==='approved'?{approved_at:new Date().toISOString()}:{})
+   ...changes,...(requestedAdmin?{role:'admin'}:{}),...(changes.status==='approved'?{approved_at:new Date().toISOString()}:{})
   },'return=minimal');
   await loadOrganizations();
  }catch(error){alert('No se pudo actualizar el permiso: '+error.message);await loadCorporateOverview()}
