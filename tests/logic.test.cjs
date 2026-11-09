@@ -146,8 +146,8 @@ assert.ok(doc.includes('id="chancadoEquipmentGroup"')&&doc.includes('readonly pl
 console.log('OK catálogo de equipos de chancado y numeración SAP');
 
 const stackingCatalog=vm.createContext({});
-vm.runInContext(catalogSource,stackingCatalog,{timeout:1000});
-const apilamiento=stackingCatalog.APILAMIENTO_ASSETS;
+vm.runInContext(catalogSource+'\nvar stackingAssets=APILAMIENTO_ASSETS;',stackingCatalog,{timeout:1000});
+const apilamiento=stackingCatalog.stackingAssets;
 assert.equal(apilamiento.length,60,'Apilamiento incluye los 60 equipos recibidos');
 assert.equal(new Set(apilamiento.map(([name])=>name)).size,60,'No se repiten descripciones de equipos');
 assert.equal(apilamiento.find(([name])=>name==='CORREA #10')[1],'10028243');
