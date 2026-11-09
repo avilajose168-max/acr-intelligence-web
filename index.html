@@ -331,7 +331,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="corporate-command" id="corporateReliabilityPanel">
   <div class="between" style="flex-wrap:wrap;gap:12px">
     <div><div class="eyebrow">CONFIABILIDAD · EMPRESA SELECCIONADA</div><h2>Tablero corporativo de confiabilidad</h2><p class="muted">Indicadores calculados solo con los ACR publicados por esta compañía. Datos actualizados al cargar o refrescar la vista.</p></div>
-    <button type="button" class="secondary" id="corporateRefresh">↻ Actualizar tablero</button>
+    <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="primary" id="corpRelPreview">📄 Ver informe</button><button type="button" class="secondary" id="corpRelPdf">⬇ Guardar PDF</button><button type="button" class="secondary" id="corporateRefresh">↻ Actualizar tablero</button></div>
   </div>
   <div class="dashboard-toolbar corporate-toolbar">
     <label class="field">Período<select id="corporatePeriod"><option value="weekly">Semanal (lunes a domingo)</option><option value="monthly">Mensual</option></select></label>
@@ -374,7 +374,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <div class="between" style="flex-wrap:wrap;gap:12px">
     <div><div class="eyebrow">GESTIÓN DE ACCIONES · EMPRESA SELECCIONADA</div><h2>Tablero corporativo de compromisos</h2><p class="muted">Compromisos de todos los ACR publicados por integrantes de esta compañía. Información de consulta para administración.</p></div>
     <div class="toolbar" style="flex-wrap:wrap">
-      <button type="button" class="secondary" id="corpCommitRefresh">↻ Actualizar compromisos</button>
+      <button type="button" class="primary" id="corpCommitPreview">📄 Ver informe</button><button type="button" class="secondary" id="corpCommitPdf">⬇ Guardar PDF</button><button type="button" class="secondary" id="corpCommitRefresh">↻ Actualizar compromisos</button>
       <button type="button" class="secondary" id="corpCommitExport">⬇ Exportar CSV</button>
     </div>
   </div>
@@ -408,6 +408,48 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div id="orgCaseDetail" class="notice hidden" style="margin-top:14px"></div>
 <div class="notice" style="margin-top:15px">Solo se incluyen ACR publicados por usuarios de esta empresa. Las cuentas y los datos de otras organizaciones no se incluyen en este panel.</div>
 </div>
+</section>
+<style>
+#corpReportSheet{background:#fff;color:#1c3045;border-radius:10px;padding:26px;box-shadow:0 1px 8px #0002;font-size:12px;line-height:1.48}
+#corpReportSheet .corp-report-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:3px solid #c69e54;padding-bottom:14px;margin-bottom:17px}
+#corpReportSheet .corp-report-eyebrow{font-size:10px;letter-spacing:1.15px;color:#886725;font-weight:800}
+#corpReportSheet h1{font-size:23px;color:#142f47;margin:4px 0}
+#corpReportSheet h2{font-size:14px;color:#18354c;margin:14px 0 8px}
+#corpReportSheet .corp-report-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0}
+#corpReportSheet .corp-report-kpi{border:1px solid #cedae5;background:#f3f6fa;padding:12px;border-radius:6px;min-width:0}
+#corpReportSheet .corp-report-kpi span{font-size:9px;letter-spacing:.35px;text-transform:uppercase;font-weight:700;color:#45617b;display:block}
+#corpReportSheet .corp-report-kpi strong{font-size:20px;display:block;margin-top:4px;color:#153951;overflow-wrap:anywhere}
+#corpReportSheet table{width:100%;border-collapse:collapse;font-size:10px;margin:9px 0 16px}
+#corpReportSheet th{background:#dae5ef;color:#223b50;text-align:left;font-weight:800}
+#corpReportSheet td,#corpReportSheet th{padding:7px 8px;border:1px solid #cbd6e1;vertical-align:top;overflow-wrap:anywhere}
+#corpReportSheet tr{break-inside:avoid}
+#corpReportSheet .corp-report-note{font-size:10px;color:#617181;margin-top:14px}
+#corpReportSheet .corp-report-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#corpReportSheet .corp-report-breakdown>div{border:1px solid #d1dde8;border-radius:5px;padding:10px}
+#corpReportSheet .corp-report-breakdown b{display:block;color:#24435b;font-size:11px}
+#corpReportSheet .corp-report-breakdown strong{font-size:17px;color:#203c53}
+@media(max-width:680px){#corpReportSheet{padding:14px}#corpReportSheet .corp-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#corpReportSheet .corp-report-breakdown{grid-template-columns:1fr}}
+@media print{
+ body.corp-report-print .section,body.corp-report-print #reporte{display:none!important}
+ body.corp-report-print #corporateReportPreview{display:block!important;margin:0!important;padding:0!important}
+ body.corp-report-print #corpReportSheet{display:block!important;box-shadow:none!important;padding:0!important;border:0!important;border-radius:0!important;width:100%!important}
+ body.corp-report-print #corpReportSheet .corp-report-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+ body.corp-report-print #corpReportSheet .corp-report-breakdown{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body.corp-report-print #corpReportSheet thead{display:table-header-group}
+ body.corp-report-print #corpReportSheet h1,body.corp-report-print #corpReportSheet h2{break-after:avoid}
+ body.corp-report-print #corpReportSheet .corp-report-kpi{break-inside:avoid}
+}
+</style>
+<section id="corporateReportPreview" class="section">
+  <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin-bottom:15px">
+    <div><div class="eyebrow">ACR INTEGRITY · INFORME CORPORATIVO</div><h2 id="corpReportPreviewTitle">Informe corporativo</h2><p class="muted">Vista previa con los filtros actuales. Para descargar, selecciona Guardar como PDF en tu navegador.</p></div>
+    <div class="toolbar" style="flex-wrap:wrap">
+      <button class="secondary" type="button" id="corpReportBack">← Volver al panel corporativo</button>
+      <button class="primary" type="button" id="corpReportSavePdf">⬇ Guardar como PDF</button>
+      <button class="secondary" type="button" id="corpReportPrint">🖨 Imprimir</button>
+    </div>
+  </div>
+  <article id="corpReportSheet" aria-label="Informe corporativo de confiabilidad o compromisos"></article>
 </section>
 <section id="weeklyReport" class="section">
   <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
