@@ -268,7 +268,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Compromisos de mis investigaciones. Los administradores autorizados pueden consultar también los ACR publicados por su compañía.</p></div>
     <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="primary" id="previewCommitments">📄 Ver informe del período</button><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
   </div>
-  <div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter" id="commitScopeWrap" hidden>Vista<select id="commitScope"><option value="personal">Mis compromisos</option><option value="company">Compromisos de la compañía</option></select></label><button type="button" class="secondary" id="commitRefreshCompany" hidden>↻ Actualizar compañía</button><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="all">Todos los vencimientos</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
+  <p id="commitScopeMessage" class="notice" role="status" hidden></p><div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter" id="commitScopeWrap" hidden>Vista<select id="commitScope"><option value="personal">Mis compromisos</option><option value="company">Compromisos de la compañía</option></select></label><button type="button" class="secondary" id="commitRefreshCompany" hidden>↻ Actualizar compañía</button><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="all">Todos los vencimientos</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
   <div class="dashboard-kpis commitments-kpis">
     <div><span>TOTAL DE COMPROMISOS</span><strong id="commitTotal">0</strong></div>
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
@@ -1224,10 +1224,53 @@ function filteredCommitments(rows){
   return allowed && (!search||[r.caseTitle,r.equipment,r.action.description,r.action.owner].join(' ').toLocaleLowerCase('es').includes(search));
  });
 }
+let companyCommitmentsCache=[],companyCommitmentsOrg='';
+function listCompanyCommitments(){
+ const today=dashboardToday();
+ const rows=[];
+ for(const published of companyCommitmentsCache){
+  const item=published.payload||{};
+  if(!Array.isArray(item.actions))continue;
+  item.actions.forEach((action,index)=>{
+   if(!String(action?.description||'').trim())return;
+   rows.push({corporate:true,caseId:published.local_case_id,index,
+     caseTitle:item.title||published.title||'ACR corporativo',
+     equipment:item.equipment||published.equipment||'Equipo sin TAG',action,
+     status:effectiveCommitStatus(action,today)});
+  });
+ }
+ rows.sort((a,b)=>(a.action.due||'9999-12-31').localeCompare(b.action.due||'9999-12-31'));
+ return rows;
+}
+async function refreshCompanyCommitments(){
+ const scope=$('#commitScope');
+ if(scope.value!=='company'||!corporateIsAdmin()||!corporateSelection())return;
+ const orgId=corporateSelection();
+ const button=$('#commitRefreshCompany');button.disabled=true;
+ try{
+  const cases=await corporateApi(organizationApiPath('acr_corporate_investigations',
+   '?select=id,local_case_id,owner_id,title,equipment,payload&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'));
+  if(!Array.isArray(cases))throw Error('No se pudo leer el historial corporativo.');
+  if(orgId!==corporateSelection())return;
+  companyCommitmentsCache=cases;companyCommitmentsOrg=orgId;
+  drawCommitments();
+ }catch(error){
+  $('#commitScopeMessage').textContent='No se pudo actualizar el tablero corporativo: '+error.message;
+  $('#commitScopeMessage').hidden=false;
+ }finally{button.disabled=false}
+}
+function configureCommitmentScope(){
+ const available=!!corporateCtx&&corporateIsAdmin()&&!!corporateSelection();
+ $('#commitScopeWrap').hidden=!available;
+ $('#commitRefreshCompany').hidden=!available;
+ if(!available){$('#commitScope').value='personal';companyCommitmentsCache=[];companyCommitmentsOrg=''}
+ $('#commitScopeMessage').hidden=true;
+ drawCommitments();
+}
 function drawCommitments(){
  const root=$('#commitmentsDashboard');if(!root)return;
  const companyScope=$('#commitScope')?.value==='company'&&corporateIsAdmin()&&!!corporateSelection();
- const rows=periodCommitments(companyScope?listCompanyCommitments():listCommitments()),sum=commitSummary(rows);
+ const rows=periodCommitments(companyScope&&companyCommitmentsOrg===corporateSelection()?listCompanyCommitments():listCommitments()),sum=commitSummary(rows);
  drawCommitPeriodLabel();
  $('#commitTotal').textContent=sum.total;
  $('#commitComplete').textContent=sum.done;
@@ -1253,14 +1296,14 @@ function drawCommitments(){
   if(!persist()){a.status=previous;drawCommitments();return}
   drawCommitments();
  });
- $('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
- $('[data-commit-company]').forEach(el=>el.onclick=()=>navigate('organizaciones'));
+ $$('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
+ $$('[data-commit-company]').forEach(el=>el.onclick=()=>navigate('organizaciones'));
 }
 $('#commitScope').onchange=()=>{drawCommitments();if($('#commitScope').value==='company')void refreshCompanyCommitments()};
 $('#commitRefreshCompany').onclick=()=>void refreshCompanyCommitments();
 $('#commitPeriod').onchange=drawCommitments;
-$('#commitPrevious').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,-1);else selectedCommitWeek=addDays(selectedCommitWeek,-7);drawCommitments()};
-$('#commitNext').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,1);else selectedCommitWeek=addDays(selectedCommitWeek,7);drawCommitments()};
+$('#commitPrevious').onclick=()=>{if(commitPeriodType()==='all')return;if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,-1);else selectedCommitWeek=addDays(selectedCommitWeek,-7);drawCommitments()};
+$('#commitNext').onclick=()=>{if(commitPeriodType()==='all')return;if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,1);else selectedCommitWeek=addDays(selectedCommitWeek,7);drawCommitments()};
 $('#commitCurrent').onclick=()=>{selectedCommitWeek=isoWeekStart(dashboardToday());selectedCommitMonth=monthStart(dashboardToday());drawCommitments()};
 $('#commitFilter').onchange=drawCommitments;
 $('#commitSearch').oninput=drawCommitments;
@@ -1438,6 +1481,7 @@ async function loadOrganizations(){
   const fixedAdmin=assignedCorporateAdminMembership();
   select.value=fixedAdmin?.organization_id||(organizations.some(o=>o.id===lastOrg)?lastOrg:'');
   drawOrganizationStatus();
+  configureCommitmentScope();
   fillOrganizationBrandEditor();
   if(page==='registro')drawCompany();
   if(page==='reporte')drawReport();
@@ -1450,6 +1494,7 @@ async function loadOrganizations(){
 $('#organizationSelect').onchange=()=>{
  if(activeUser?.id)localStorage.setItem('acr-org-choice-'+activeUser.id,corporateSelection());
  drawOrganizationStatus();
+ configureCommitmentScope();
  fillOrganizationBrandEditor();
 };
 $('#refreshOrganizations').onclick=loadOrganizations;
