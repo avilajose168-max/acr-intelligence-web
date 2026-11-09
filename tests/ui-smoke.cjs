@@ -195,7 +195,10 @@ await page.setViewportSize({width:1440,height:900});
 await page.locator('#reportFormat').selectOption('a3');
 await page.locator('button[data-page="inicio"]').click();
 
-// V27: tablero de compromisos, cumplimiento, actualización y exportación.
+// V40: la acción vencida del ensayo pertenece a febrero de 2020; seleccionar ese mes.
+await page.locator('#commitPeriod').selectOption('monthly');
+await page.evaluate(()=>{selectedCommitMonth='2020-02-01';drawCommitments()});
+assert.ok((await page.locator('#commitPeriodLabel').innerText()).includes('2020'),'El filtro reconoce el mes histórico');
 assert.equal(await page.locator('#commitTotal').innerText(),'1','Existe un compromiso registrado');
 assert.equal(await page.locator('#commitOverdue').innerText(),'1','Se detecta fecha vencida automáticamente');
 assert.equal(await page.locator('#commitComplete').innerText(),'0','No hay acciones completadas inicialmente');
@@ -220,6 +223,13 @@ await page.locator('[data-commit-open]').first().click();
 assert.equal(await page.locator('[data-ai="0"][data-ak="status"]').inputValue(),'Completado','El ACR original conserva el estado actualizado');
 await page.locator('button[data-page="inicio"]').click();
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Una falla registrada');
+await page.locator('#reliabilityPeriod').selectOption('monthly');
+assert.ok((await page.locator('#weekLabel').innerText()).includes(new Date().getFullYear().toString()),'El resumen mensual identifica el año');
+assert.equal(await page.locator('#weekEvents').innerText(),'1','El informe mensual contabiliza la falla');
+await page.locator('#previewWeekly').click();
+assert.ok((await page.locator('#weeklyReportContent').innerText()).includes('mensual'),'El informe mensual se genera correctamente');
+await page.locator('#weeklyBack').click();
+await page.locator('#reliabilityPeriod').selectOption('weekly');
 assert.ok((await page.locator('#paretoTable').innerText()).includes('CT-11C'),'Pareto muestra caso');
 await page.locator('#reliabilityAsset').selectOption('CT-11C');
 const fromClock=await page.locator('#weekBaseAuto').innerText();
