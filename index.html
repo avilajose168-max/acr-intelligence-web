@@ -398,15 +398,6 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field">Estado<select id="corpCommitStatus"><option value="all">Todos los estados</option><option value="overdue">Vencidos</option><option value="pending">En seguimiento</option><option value="complete">Completados</option></select></label>
     <label class="field">Buscar acción, equipo o responsable<input id="corpCommitSearch" placeholder="Ej.: impulsor, inspección, supervisor"></label>
   </div>
-  <div class="dashboard-chart" style="margin:12px 0">
-    <h3>Pareto corporativo de compromisos</h3>
-    <div class="dashboard-toolbar corporate-toolbar">
-      <label class="field">Indicador<select id="corpCommitParetoMetric"><option value="count">Cantidad de compromisos</option><option value="overdue">Compromisos vencidos</option></select></label>
-      <label class="field">Agrupar por<select id="corpCommitParetoGroup"><option value="equipment">Equipo / TAG</option><option value="owner">Responsable</option><option value="area">Área</option></select></label>
-    </div>
-    <div id="corpCommitParetoChart" aria-label="Pareto de compromisos corporativos"></div>
-    <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Categoría</th><th>Acciones</th><th>Acumulado</th></tr></thead><tbody id="corpCommitParetoRows"></tbody></table></div>
-  </div>
   <div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Compromisos corporativos"><thead><tr><th>Investigación / Equipo</th><th>Acción correctiva</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>ACR</th></tr></thead><tbody id="corpCommitRows"></tbody></table></div>
   <p class="help" style="margin-top:10px">Los filtros semanal y mensual corresponden a la fecha de vencimiento. Los estados muestran la situación actual publicada por el investigador. El administrador consulta, pero no modifica el estado desde este tablero.</p>
 </div>
@@ -433,16 +424,16 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 #corpReportSheet td,#corpReportSheet th{padding:7px 8px;border:1px solid #cbd6e1;vertical-align:top;overflow-wrap:anywhere}
 #corpReportSheet tr{break-inside:avoid}
 #corpReportSheet .corp-report-note{font-size:10px;color:#617181;margin-top:14px}
-#corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:10px 12px;margin:8px 0 13px;width:50%;max-width:50%;break-inside:avoid;page-break-inside:avoid}
-#corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:200px}
+#corpReportSheet .corp-report-chart{background:#10263c;border:1px solid #254863;border-radius:8px;padding:11px 12px;margin:8px 0 13px;break-inside:avoid;page-break-inside:avoid}
+#corpReportSheet .corp-report-chart svg{display:block;width:100%;height:auto;max-height:260px}
 #corpReportSheet .corp-report-chart-label{color:#d7e4ed;font-size:10px;font-weight:700;margin:0 0 8px}
-@media print{body.corp-report-print #corpReportSheet .corp-report-chart{width:50%!important;max-width:50%!important;background:#10263c!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
+@media print{body.corp-report-print #corpReportSheet .corp-report-chart{background:#10263c!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
 
 #corpReportSheet .corp-report-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 #corpReportSheet .corp-report-breakdown>div{border:1px solid #d1dde8;border-radius:5px;padding:10px}
 #corpReportSheet .corp-report-breakdown b{display:block;color:#24435b;font-size:11px}
 #corpReportSheet .corp-report-breakdown strong{font-size:17px;color:#203c53}
-@media(max-width:680px){#corpReportSheet .corp-report-chart{width:100%;max-width:100%}#corpReportSheet{padding:14px}#corpReportSheet .corp-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#corpReportSheet .corp-report-breakdown{grid-template-columns:1fr}}
+@media(max-width:680px){#corpReportSheet{padding:14px}#corpReportSheet .corp-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#corpReportSheet .corp-report-breakdown{grid-template-columns:1fr}}
 @media print{
  body.corp-report-print .section,body.corp-report-print #reporte{display:none!important}
  body.corp-report-print #corporateReportPreview{display:block!important;margin:0!important;padding:0!important}
@@ -1887,23 +1878,6 @@ function corporateCommitmentFilteredRows(){
   return !term||[r.caseTitle,r.equipment,r.action.description,r.action.owner,r.area,r.sector,r.productionUnit].join(' ').toLocaleLowerCase('es').includes(term);
  }).sort((a,b)=>(a.action.due||'9999-12-31').localeCompare(b.action.due||'9999-12-31'));
 }
-function corporateCommitmentPareto(rows,metric='count',group='equipment'){
- const categories=new Map();
- for(const r of rows){
-  if(metric==='overdue'&&r.status!=='overdue')continue;
-  const key=group==='owner'?(r.action.owner||'Sin asignar'):group==='area'?(r.area||'Sin clasificar'):(r.equipment||'Sin equipo');
-  categories.set(key,(categories.get(key)||0)+1);
- }
- const sorted=[...categories].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
- const condensed=sorted.length>9?[...sorted.slice(0,8),{label:'Otros',value:sorted.slice(8).reduce((n,r)=>n+r.value,0)}]:sorted;
- const total=condensed.reduce((n,r)=>n+r.value,0);
- let running=0;
- return {rows:condensed.map(r=>({...r,cumulative:total?100*(running+=r.value)/total:0})),total};
-}
-function corporateCommitmentParetoHtml(pareto){
- if(!pareto.rows.length)return '<p class="dashboard-empty">No hay acciones para construir el Pareto.</p>';
- return renderParetoSvg(pareto.rows,pareto.total,'count');
-}
 function drawCorporateCommitments(){
  if(!$('#corporateCommitmentsPanel')||!corporateIsAdmin()||!corporateSelection())return;
  corporateCommitmentSubareaOptions();
@@ -1917,11 +1891,6 @@ function drawCorporateCommitments(){
  $('#corpCommitOverdue').textContent=stats.overdue;
  $('#corpCommitRate').textContent=stats.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
  const filtered=corporateCommitmentFilteredRows();
- const pareto=corporateCommitmentPareto(filtered,$('#corpCommitParetoMetric').value,$('#corpCommitParetoGroup').value);
- $('#corpCommitParetoChart').innerHTML=corporateCommitmentParetoHtml(pareto);
- $('#corpCommitParetoRows').innerHTML=pareto.rows.length?pareto.rows.map(r=>
-  '<tr><td>'+esc(r.label)+'</td><td>'+r.value+'</td><td>'+r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%</td></tr>'
- ).join(''):'<tr><td colspan="3">Sin datos para el indicador seleccionado.</td></tr>';
  $('#corpCommitRows').innerHTML=filtered.length?filtered.map(r=>
   '<tr><td><strong>'+esc(r.equipment)+'</strong><div class="small">'+esc(r.caseTitle)+'</div><div class="small">'+esc(r.area)+
   (r.area==='Área Húmeda'?' · '+esc(r.productionUnit):r.sector?' · '+esc(r.sector):'')+'</div></td>'+
@@ -1941,8 +1910,6 @@ $('#corpCommitPeriod').onchange=drawCorporateCommitments;
 $('#corpCommitArea').onchange=()=>{$('#corpCommitSubarea').value='__all__';drawCorporateCommitments()};
 $('#corpCommitSubarea').onchange=drawCorporateCommitments;
 $('#corpCommitStatus').onchange=drawCorporateCommitments;
-$('#corpCommitParetoMetric').onchange=drawCorporateCommitments;
-$('#corpCommitParetoGroup').onchange=drawCorporateCommitments;
 $('#corpCommitSearch').oninput=drawCorporateCommitments;
 $('#corpCommitPrevious').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,-1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,-7);drawCorporateCommitments()};
 $('#corpCommitNext').onclick=()=>{if($('#corpCommitPeriod').value==='all')return;if($('#corpCommitPeriod').value==='monthly')selectedCorporateCommitMonth=addMonths(selectedCorporateCommitMonth,1);else selectedCorporateCommitWeek=addDays(selectedCorporateCommitWeek,7);drawCorporateCommitments()};
@@ -2208,9 +2175,6 @@ function corporateCommitmentReportHtml(){
  const scope=(area==='__all__'?'Toda la compañía':area==='__unclassified__'?'Sin clasificar':area)+
  (sub==='__all__'?'':' / '+sub);
  const rows=corporateCommitmentFilteredRows(),totals=commitSummary(corporateCommitmentScopeRows());
- const pareto=corporateCommitmentPareto(rows,$('#corpCommitParetoMetric').value,$('#corpCommitParetoGroup').value);
- const groupNames={equipment:'Equipo / TAG',owner:'Responsable',area:'Área'};
- const metricLabel=$('#corpCommitParetoMetric').value==='overdue'?'Compromisos vencidos':'Cantidad de compromisos';
  const stateLabel=$('#corpCommitStatus').selectedOptions[0]?.textContent||'Todos los estados';
  const search=$('#corpCommitSearch').value.trim();
  return corporateReportHeader('seguimiento de compromisos',periodLabel,scope)+
@@ -2218,10 +2182,7 @@ function corporateCommitmentReportHtml(){
    ['Acciones totales',totals.total],['Completados',totals.done],['En seguimiento',totals.pending],
    ['Vencidos',totals.overdue],['Cumplimiento',totals.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%']
   ])+
-  '<h2>01 · Pareto corporativo de compromisos</h2>'+
-  corporateReportParetoChart(pareto.rows,pareto.total,'count',metricLabel+' · '+groupNames[$('#corpCommitParetoGroup').value])+
-  corporateReportTable(['Categoría','Acciones','Acumulado'],pareto.rows.map(r=>[r.label,r.value,r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%']),'Sin compromisos para el Pareto')+
-  '<h2>02 · Compromisos y responsables</h2><p>Estado consultado: <b>'+esc(stateLabel)+'</b>'+
+  '<h2>01 · Compromisos y responsables</h2><p>Estado consultado: <b>'+esc(stateLabel)+'</b>'+
   (search?' · Búsqueda: <b>'+esc(search)+'</b>':'')+'</p>'+
   corporateReportTable(['Área','Sector / unidad','Equipo / TAG','Investigación','Compromiso','Responsable','Vencimiento','Estado'],
   rows.map(r=>[r.area||'Sin clasificar',r.area==='Área Húmeda'?r.productionUnit:r.sector,r.equipment,r.caseTitle,
