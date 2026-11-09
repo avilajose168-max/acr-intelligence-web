@@ -265,10 +265,10 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <section class="card commitments-dashboard noprint" id="commitmentsDashboard" aria-label="Seguimiento de compromisos">
   <div class="between" style="flex-wrap:wrap;gap:14px">
-    <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Control de acciones correctivas de todas las investigaciones guardadas en esta cuenta y navegador.</p></div>
+    <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Compromisos de mis investigaciones. Los administradores autorizados pueden consultar también los ACR publicados por su compañía.</p></div>
     <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="primary" id="previewCommitments">📄 Ver informe del período</button><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
   </div>
-  <div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
+  <div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter" id="commitScopeWrap" hidden>Vista<select id="commitScope"><option value="personal">Mis compromisos</option><option value="company">Compromisos de la compañía</option></select></label><button type="button" class="secondary" id="commitRefreshCompany" hidden>↻ Actualizar compañía</button><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="all">Todos los vencimientos</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
   <div class="dashboard-kpis commitments-kpis">
     <div><span>TOTAL DE COMPROMISOS</span><strong id="commitTotal">0</strong></div>
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
@@ -434,7 +434,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div></div><div id="photos" class="evidence"></div><div class="notice">Fotografía el equipo en condición segura y conforme a los procedimientos del sitio. No alteres resguardos ni te acerques a partes energizadas para tomar evidencia.</div></div><div class="between noprint"><button class="secondary" id="saveReg">Guardar avance</button><button class="primary" id="nextAnalysisBottom">Ir al análisis →</button></div></section>
 <section id="analisis" class="section"><div class="between" style="flex-wrap:wrap;margin-bottom:15px"><div><div class="eyebrow">Paso 2</div><h1>Investigación guiada</h1></div><button class="primary" id="nextReport">Ver informe →</button></div><div class="card quality-card noprint"><div class="between" style="gap:12px;flex-wrap:wrap"><div><h2>Control de calidad del análisis</h2><p class="muted">Verifica si tu investigación está suficientemente documentada antes de emitir el informe.</p></div><span id="qualityBadge" class="pill">Revisión pendiente</span></div><div id="qualityChecklist" class="quality-grid" aria-live="polite"></div></div><div class="card"><div class="between"><h2>Secuencia de 5 Porqués</h2><span class="pill">No fuerces 5 niveles sin evidencia</span></div><div class="notice" style="margin-bottom:12px">Cada respuesta explica la anterior. Escribe hechos observados y continúa preguntando «¿por qué?». Si faltan antecedentes, deja el nivel pendiente: no inventes causas.</div><div id="whyFields"></div><button type="button" class="primary" id="generateWhysAnalysis">✦ Generar 5 Porqués · asistido</button> <button class="secondary" id="guide">✦ Sugerir preguntas de investigación</button><div id="guidance" class="notice hidden" style="margin-top:12px"></div></div><div class="card"><div class="toolbar" style="margin-bottom:12px"><button type="button" class="primary" id="generateHypotheses">✦ Analizar causas y redactar conclusión</button></div><div id="hypothesesFeedback" class="notice hidden" role="status"></div><div class="grid"><label class="field full">Causa básica<textarea data-k="basicCause" rows="3" placeholder="Genera una causa básica preliminar específica, breve y editable desde el relato del evento."></textarea><span class="help">La causa básica propuesta debe vincularse con lo ocurrido y validarse antes del cierre.</span></label>
 <label class="field full">Consecuencia de la causa<textarea data-k="causeConsequence" rows="3" placeholder="Consecuencia operacional directamente asociada a la causa básica: detención, daño o pérdida de función, según lo observado."></textarea></label><label class="field">Estado de la conclusión<select data-k="validationStatus"><option>Hipótesis pendiente</option><option>En validación</option><option>Causa validada por investigador</option></select></label><label class="field">Revisor técnico<input data-k="reviewer" placeholder="Nombre / cargo"></label><label class="field full">Conclusión ejecutiva<textarea data-k="conclusion" placeholder="Resumir resultado y brechas... "></textarea></label></div></div><div class="card"><div class="between"><h2>Plan de acción</h2><button class="secondary" id="addAction">+ Agregar acción</button></div><div class="actionsList" id="actionFields"></div></div><div class="between"><button class="secondary" id="backEvent">← Modificar evento</button><button class="primary" id="nextReportBottom">Ver informe →</button></div></section>
-<section id="reporte" class="section"><div class="between noprint" style="flex-wrap:wrap;margin-bottom:15px"><div><div class="eyebrow">Paso 3</div><h1>Informe listo para entregar</h1><p class="muted">Verifica la información y el tamaño de hoja antes de guardar en PDF.</p></div><div class="toolbar"><button class="secondary" id="backAnalysis">← Editar</button><button class="primary" id="downloadCasePdf">⬇ Guardar PDF (igual a vista)</button>
+<section id="reporte" class="section"><div class="between noprint" style="flex-wrap:wrap;margin-bottom:15px"><div><div class="eyebrow">Paso 3</div><h1>Informe listo para entregar</h1><p class="muted">Verifica la información y el tamaño de hoja antes de guardar en PDF.</p></div><div class="toolbar"><button class="secondary" id="backAnalysis">← Editar</button><button class="primary" id="saveAllReport">✓ Guardar todo y finalizar</button><button class="primary" id="downloadCasePdf">⬇ Guardar PDF (igual a vista)</button>
 <button class="secondary" id="shareCasePdf">↗ Compartir PDF</button>
 <button class="primary" id="shareInvestigationLink">🔗 Compartir investigación por enlace</button>
 <button class="secondary" id="print">🖨 Imprimir</button></div></div><div class="card noprint" id="reportFormatPanel" style="margin-bottom:15px">
@@ -456,7 +456,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="toolbar" style="flex-wrap:wrap"><input id="shareLinkValue" readonly aria-label="Enlace a la investigación" style="flex:1;min-width:150px"><button type="button" class="primary" id="copyInvestigationLink">Copiar enlace</button><button type="button" class="secondary" id="nativeShareInvestigation">Compartir</button></div>
 <p class="help" id="shareExpires"></p>
 <button type="button" class="danger" id="revokeInvestigationLink">Revocar este enlace</button>
-</div><div id="printDocument" class="preview reportMode-5why"></div><div class="toolbar noprint" style="margin:16px 0"><button class="primary" id="downloadCasePdfBottom">⬇ Guardar PDF (igual a vista)</button>
+</div><div id="reportSaveFeedback" class="notice noprint" role="status" aria-live="polite" hidden></div><div id="printDocument" class="preview reportMode-5why"></div><div class="toolbar noprint" style="margin:16px 0"><button class="primary" id="saveAllReportBottom">✓ Guardar todo y finalizar</button><button class="primary" id="downloadCasePdfBottom">⬇ Guardar PDF (igual a vista)</button>
 <button class="secondary" id="shareCasePdfBottom">↗ Compartir PDF</button>
 <button class="secondary" id="shareInvestigationLinkBottom">🔗 Compartir enlace ACR</button>
 <button class="secondary" id="printBottom">🖨 Imprimir</button><button class="secondary" id="exportCase">Descargar investigación JSON</button></div></section></div>
@@ -1181,10 +1181,11 @@ let selectedCommitWeek=isoWeekStart(dashboardToday()),selectedCommitMonth=monthS
 function commitPeriodType(){return $('#commitPeriod').value}
 function commitPeriodStart(){return commitPeriodType()==='monthly'?selectedCommitMonth:selectedCommitWeek}
 function periodCommitments(rows){
+ if(commitPeriodType()==='all')return rows;
  const start=commitPeriodStart(),end=periodEnd(start,commitPeriodType());
  return rows.filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.action.due||'')&&r.action.due>=start&&r.action.due<end);
 }
-function drawCommitPeriodLabel(){const el=$('#commitPeriodLabel');if(el)el.textContent=periodTitle(commitPeriodStart(),commitPeriodType())}
+function drawCommitPeriodLabel(){const el=$('#commitPeriodLabel');if(el)el.textContent=commitPeriodType()==='all'?'Todos los vencimientos (incluye acciones sin fecha)':periodTitle(commitPeriodStart(),commitPeriodType())}
 const COMMIT_STATES={Pendiente:'Pendiente', 'En curso':'En curso', Completado:'Completado'};
 function effectiveCommitStatus(action,today){
  const status=COMMIT_STATES[action.status]||'Pendiente';
@@ -1225,7 +1226,8 @@ function filteredCommitments(rows){
 }
 function drawCommitments(){
  const root=$('#commitmentsDashboard');if(!root)return;
- const rows=periodCommitments(listCommitments()),sum=commitSummary(rows);
+ const companyScope=$('#commitScope')?.value==='company'&&corporateIsAdmin()&&!!corporateSelection();
+ const rows=periodCommitments(companyScope?listCompanyCommitments():listCommitments()),sum=commitSummary(rows);
  drawCommitPeriodLabel();
  $('#commitTotal').textContent=sum.total;
  $('#commitComplete').textContent=sum.done;
@@ -1239,9 +1241,9 @@ function drawCommitments(){
   '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td>'+
   '<td class="commit-date">'+esc(r.action.due||'Sin fecha')+'</td>'+
   '<td><span class="commit-state commit-state-'+r.status+'">'+commitStatusLabel(r.status)+'</span><div style="margin-top:5px">'+
-  '<select data-commit-case="'+esc(r.caseId)+'" data-commit-index="'+r.index+'" aria-label="Cambiar estado del compromiso">'+
+  (r.corporate?'<span class="small">Estado publicado por el investigador</span>':'<select data-commit-case="'+esc(r.caseId)+'" data-commit-index="'+r.index+'" aria-label="Cambiar estado del compromiso">'+
   Object.keys(COMMIT_STATES).map(key=>'<option value="'+key+'"'+((COMMIT_STATES[r.action.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+
-  '</select></div></td><td><button type="button" class="secondary" data-commit-open="'+esc(r.caseId)+'">Ver ACR</button></td></tr>'
+  '</select>')+'</div></td><td>'+(r.corporate?'<button type="button" class="secondary" data-commit-company="1">Ver empresa</button>':'<button type="button" class="secondary" data-commit-open="'+esc(r.caseId)+'">Ver ACR</button>')+'</td></tr>'
  ).join(''):'<tr><td colspan="6" style="text-align:center;padding:18px;color:#b1c4d5">No hay compromisos para este filtro.</td></tr>';
  $$('[data-commit-case]').forEach(el=>el.onchange=()=>{
   const c=db.cases.find(x=>x.id===el.dataset.commitCase),a=c?.actions?.[Number(el.dataset.commitIndex)];
@@ -1251,15 +1253,18 @@ function drawCommitments(){
   if(!persist()){a.status=previous;drawCommitments();return}
   drawCommitments();
  });
- $$('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
+ $('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
+ $('[data-commit-company]').forEach(el=>el.onclick=()=>navigate('organizaciones'));
 }
+$('#commitScope').onchange=()=>{drawCommitments();if($('#commitScope').value==='company')void refreshCompanyCommitments()};
+$('#commitRefreshCompany').onclick=()=>void refreshCompanyCommitments();
 $('#commitPeriod').onchange=drawCommitments;
 $('#commitPrevious').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,-1);else selectedCommitWeek=addDays(selectedCommitWeek,-7);drawCommitments()};
 $('#commitNext').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,1);else selectedCommitWeek=addDays(selectedCommitWeek,7);drawCommitments()};
 $('#commitCurrent').onclick=()=>{selectedCommitWeek=isoWeekStart(dashboardToday());selectedCommitMonth=monthStart(dashboardToday());drawCommitments()};
 $('#commitFilter').onchange=drawCommitments;
 $('#commitSearch').oninput=drawCommitments;
-function commitmentsExportRows(){return filteredCommitments(periodCommitments(listCommitments()))}
+function commitmentsExportRows(){return filteredCommitments(periodCommitments($('#commitScope').value==='company'&&corporateIsAdmin()?listCompanyCommitments():listCommitments()))}
 function exportCommitmentsExcel(){
  const rows=commitmentsExportRows();
  const header=['Equipo/TAG','Investigación','Acción correctiva','Responsable','Fecha compromiso','Estado'];
@@ -1270,7 +1275,7 @@ function exportCommitmentsExcel(){
 function exportCommitmentsPdf(){
  try{
   loadExportLibrary('pdf');
-  const rows=commitmentsExportRows(),summary=commitSummary(periodCommitments(listCommitments()));
+  const rows=commitmentsExportRows(),summary=commitSummary(periodCommitments($('#commitScope').value==='company'&&corporateIsAdmin()?listCompanyCommitments():listCommitments()));
   const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const pageW=297,pageH=210,left=12,breakY=193;
   let y=0;
@@ -1313,7 +1318,7 @@ function exportCommitmentsPdf(){
  }catch(error){alert('No se pudo exportar el seguimiento a PDF: '+error.message)}
 }
 function commitmentsPreviewHtml(){
- const rows=commitmentsExportRows(), all=periodCommitments(listCommitments()), summary=commitSummary(all);
+ const rows=commitmentsExportRows(), all=periodCommitments($('#commitScope').value==='company'&&corporateIsAdmin()?listCompanyCommitments():listCommitments()), summary=commitSummary(all);
  const type=commitPeriodType(),title=periodTitle(commitPeriodStart(),type), pct=summary.rate.toLocaleString('es-CL',{maximumFractionDigits:1});
  const statusColors={overdue:'#9a2e34',complete:'#276b56',pending:'#946621',progress:'#345b80'};
  const tableRows=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.equipment)+'</td><td>'+esc(r.caseTitle)+'</td><td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td><td>'+esc(r.action.due||'Sin fecha')+'</td><td><strong style="color:'+statusColors[r.status]+'">'+esc(commitStatusLabel(r.status))+'</strong></td></tr>').join('');
