@@ -626,7 +626,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   }catch(err){authFeedback(err.message||'Ocurrió un error de autenticación.')}
   finally{btn.disabled=false}
 });
-showAuth();void validateSession();
+setAuthMode('login');showAuth();void validateSession();
 let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{localStorage.setItem(KEY,JSON.stringify(db));$('#saveStatus').textContent='● Guardado localmente';if(schedule)scheduleCorporateSync();return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
 // Dictado de voz opcional: inserta texto en el evento y utiliza el guardado existente.
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
