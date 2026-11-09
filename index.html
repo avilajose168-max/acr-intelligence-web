@@ -268,6 +268,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Control de acciones correctivas de todas las investigaciones guardadas en esta cuenta y navegador.</p></div>
     <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
   </div>
+  <div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
   <div class="dashboard-kpis commitments-kpis">
     <div><span>TOTAL DE COMPROMISOS</span><strong id="commitTotal">0</strong></div>
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
@@ -281,7 +282,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field dashboard-filter">Buscar acción, equipo o responsable<input type="search" id="commitSearch" placeholder="Ej.: CT-11C, inspección, supervisor"></label>
   </div>
   <div class="dashboard-table-wrap commitments-scroll"><table class="dashboard-table commitments-table"><thead><tr><th>Investigación / Equipo</th><th>Compromiso</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="commitmentsTable"></tbody></table></div>
-  <p class="help" style="margin-top:12px">Los estados se guardan en la acción original de cada ACR. Un compromiso pendiente con fecha anterior a hoy se marca automáticamente como vencido. Completar una acción no elimina su investigación.</p>
+  <p class="help" style="margin-top:12px">El filtro temporal utiliza la fecha de vencimiento de la acción (sin fecha, no aparece en el período). Los estados muestran la situación actual, no una fotografía histórica del cierre del mes. Completar una acción no elimina su investigación.</p>
 </section>
 <div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones se guardan localmente por usuario. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
 <section id="organizaciones" class="section">
@@ -1111,6 +1112,14 @@ function removeInvestigation(id){
  return true;
 }
 
+let selectedCommitWeek=isoWeekStart(dashboardToday()),selectedCommitMonth=monthStart(dashboardToday());
+function commitPeriodType(){return $('#commitPeriod').value}
+function commitPeriodStart(){return commitPeriodType()==='monthly'?selectedCommitMonth:selectedCommitWeek}
+function periodCommitments(rows){
+ const start=commitPeriodStart(),end=periodEnd(start,commitPeriodType());
+ return rows.filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.action.due||'')&&r.action.due>=start&&r.action.due<end);
+}
+function drawCommitPeriodLabel(){const el=$('#commitPeriodLabel');if(el)el.textContent=periodTitle(commitPeriodStart(),commitPeriodType())}
 const COMMIT_STATES={Pendiente:'Pendiente', 'En curso':'En curso', Completado:'Completado'};
 function effectiveCommitStatus(action,today){
  const status=COMMIT_STATES[action.status]||'Pendiente';
@@ -1151,7 +1160,8 @@ function filteredCommitments(rows){
 }
 function drawCommitments(){
  const root=$('#commitmentsDashboard');if(!root)return;
- const rows=listCommitments(),sum=commitSummary(rows);
+ const rows=periodCommitments(listCommitments()),sum=commitSummary(rows);
+ drawCommitPeriodLabel();
  $('#commitTotal').textContent=sum.total;
  $('#commitComplete').textContent=sum.done;
  $('#commitPending').textContent=sum.pending;
@@ -1178,20 +1188,24 @@ function drawCommitments(){
  });
  $$('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
 }
+$('#commitPeriod').onchange=drawCommitments;
+$('#commitPrevious').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,-1);else selectedCommitWeek=addDays(selectedCommitWeek,-7);drawCommitments()};
+$('#commitNext').onclick=()=>{if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,1);else selectedCommitWeek=addDays(selectedCommitWeek,7);drawCommitments()};
+$('#commitCurrent').onclick=()=>{selectedCommitWeek=isoWeekStart(dashboardToday());selectedCommitMonth=monthStart(dashboardToday());drawCommitments()};
 $('#commitFilter').onchange=drawCommitments;
 $('#commitSearch').oninput=drawCommitments;
-function commitmentsExportRows(){return filteredCommitments(listCommitments())}
+function commitmentsExportRows(){return filteredCommitments(periodCommitments(listCommitments()))}
 function exportCommitmentsExcel(){
  const rows=commitmentsExportRows();
  const header=['Equipo/TAG','Investigación','Acción correctiva','Responsable','Fecha compromiso','Estado'];
  const escapeCsv=value=>'"'+String(value||'').replace(/"/g,'""')+'"';
  const data='\uFEFF'+[header,...rows.map(r=>[r.equipment,r.caseTitle,r.action.description,r.action.owner||'',r.action.due||'',commitStatusLabel(r.status)])].map(cols=>cols.map(escapeCsv).join(';')).join('\r\n');
- download('ACR_Seguimiento_Compromisos_'+dashboardToday()+'.csv',data,'text/csv;charset=utf-8');
+ download('ACR_Compromisos_'+commitPeriodType()+'_'+commitPeriodStart()+'.csv',data,'text/csv;charset=utf-8');
 }
 function exportCommitmentsPdf(){
  try{
   loadExportLibrary('pdf');
-  const rows=commitmentsExportRows(),summary=commitSummary(listCommitments());
+  const rows=commitmentsExportRows(),summary=commitSummary(periodCommitments(listCommitments()));
   const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const pageW=297,pageH=210,left=12,breakY=193;
   let y=0;
@@ -1203,7 +1217,7 @@ function exportCommitmentsPdf(){
    doc.setFillColor(19,39,58);doc.rect(0,0,pageW,24,'F');
    doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(14);
    doc.text('ACR INTEGRITY  |  SEGUIMIENTO DE COMPROMISOS',left,12);
-   doc.setFontSize(9);doc.text('Actualizado: '+dashboardToday(),left,19);
+   doc.setFontSize(9);doc.text('Período: '+periodTitle(commitPeriodStart(),commitPeriodType())+' | Actualizado: '+dashboardToday(),left,19);
    y=34;
   };
   header();
@@ -1230,7 +1244,7 @@ function exportCommitmentsPdf(){
   if(!rows.length)write('No hay compromisos para los filtros seleccionados.',left,y,10,false,260);
   const pages=doc.getNumberOfPages();
   for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(96,110,122);doc.text('ACR Integrity | Página '+i+' de '+pages,pageW-12,pageH-7,{align:'right'})}
-  doc.save('ACR_Seguimiento_Compromisos_'+dashboardToday()+'.pdf');
+  doc.save('ACR_Compromisos_'+commitPeriodType()+'_'+commitPeriodStart()+'.pdf');
  }catch(error){alert('No se pudo exportar el seguimiento a PDF: '+error.message)}
 }
 $('#exportCommitmentsPdf').onclick=exportCommitmentsPdf;
