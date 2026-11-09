@@ -502,6 +502,19 @@ assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Vi
 assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
 assert.equal(await companyAdminPage.locator('[data-org-member-role]').count(),0,'No puede asignar administradores');
 
+assert.equal(await companyAdminPage.locator('#corporateCommitmentsPanel').isVisible(),true,'El tablero corporativo de compromisos está dentro del panel de la empresa');
+await companyAdminPage.locator('#corpCommitPeriod').selectOption('all');
+assert.equal(await companyAdminPage.locator('#corpCommitTotal').innerText(),'1','Compromiso corporativo publicado visible sin navegar al inicio');
+assert.ok((await companyAdminPage.locator('#corpCommitRows').innerText()).includes('Verificar transmisión CT-11C'),'Tabla corporativa incluye compromiso');
+await companyAdminPage.locator('#corpCommitStatus').selectOption('overdue');
+assert.equal(await companyAdminPage.locator('#corpCommitRows').locator('tr').count(),1,'Filtro de estado corporativo disponible');
+await companyAdminPage.locator('#corpCommitStatus').selectOption('all');
+const corpDownloadPromise=companyAdminPage.waitForEvent('download');
+await companyAdminPage.locator('#corpCommitExport').click();
+const corpDownload=await corpDownloadPromise;
+assert.ok(corpDownload.suggestedFilename().endsWith('.csv'),'Descarga compromisos corporativos');
+
+
 // Desglose de una misma empresa entre Área Seca y Área Húmeda.
 const wetSample=structuredClone(mockCompanyCases.find(x=>x.organization_id===testOrgId));
 assert.ok(wetSample,'Existe ACR inicial para ensayar las dos áreas');
