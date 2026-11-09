@@ -483,6 +483,25 @@ assert.equal(await companyAdminPage.locator('.nav button[data-page="organizacion
 assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Visualiza ACR de usuarios de su compañía');
 assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
 assert.equal(await companyAdminPage.locator('[data-org-member-role]').count(),0,'No puede asignar administradores');
+// Otra persona de la compañía publica un ACR con compromisos: el administrador debe verlos.
+mockCompanyCases.push({
+ id:'fffefefe-ffff-4fff-8fff-ffffffffffff',
+ organization_id:testOrgId,owner_id:'44444444-4444-4444-8444-444444444444',
+ local_case_id:'55555555-5555-4555-8555-555555555555',
+ title:'Falla de impulsor - José Andrés',equipment:'BBA AGUA CALAMA #1',
+ payload:{title:'Falla de impulsor - José Andrés',equipment:'BBA AGUA CALAMA #1',
+ actions:[{description:'Revisar impulsor y verificar montaje',owner:'José Andrés',due:'2026-11-20',status:'Pendiente'}]}
+});
+await companyAdminPage.locator('.nav button[data-page="inicio"]').click();
+await companyAdminPage.locator('#commitScopeWrap').waitFor({state:'visible'});
+await companyAdminPage.locator('#commitScope').selectOption('company');
+await companyAdminPage.waitForFunction(()=>document.querySelector('#commitmentsTable')?.textContent?.includes('Revisar impulsor y verificar montaje'),{timeout:15000});
+assert.equal(await companyAdminPage.locator('#commitTotal').innerText(),'2','Administración ve compromisos corporativos de distintos investigadores');
+assert.ok((await companyAdminPage.locator('#commitmentsTable').innerText()).includes('José Andrés'),'Muestra el compromiso publicado por otro investigador');
+assert.equal(await companyAdminPage.locator('[data-commit-case]').count(),0,'Los compromisos de otro usuario son de solo lectura');
+await companyAdminPage.locator('.nav button[data-page="organizaciones"]').click();
+mockCompanyCases.pop();
+
 await companyAdminPage.locator('[data-org-case]').first().click();
 const fullCase=await companyAdminPage.locator('#orgCaseDetail').innerText();
 assert.ok(fullCase.includes('Protección temperatura rodamiento'),'Puede abrir los ACR de los usuarios');
