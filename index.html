@@ -221,9 +221,9 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <section id="inicio" class="section active"><div class="card"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
   <div><div class="eyebrow">ACR INTEGRITY · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
-  <div class="dashboard-toolbar">
+  <div class="dashboard-toolbar"><label class="field dashboard-filter">Período<select id="reliabilityPeriod"><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label>
     <button type="button" class="secondary" id="weekPrevious" aria-label="Semana anterior">← Anterior</button>
-    <button type="button" class="secondary" id="weekCurrent">Esta semana</button>
+    <button type="button" class="secondary" id="weekCurrent">Período actual</button>
     <button type="button" class="secondary" id="weekNext" aria-label="Semana siguiente">Siguiente →</button>
   </div>
 </div>
@@ -611,11 +611,18 @@ function isoWeekNumber(monday){
  return {year,week:1+Math.floor((d-jan4)/(7*86400000))};
 }
 function dashboardToday(){const now=new Date();return String(now.getFullYear())+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')}
-let selectedDashboardWeek=isoWeekStart(dashboardToday());
+let selectedDashboardWeek=isoWeekStart(dashboardToday()),selectedDashboardMonth=dashboardToday().slice(0,7)+'-01';
+function monthStart(d){return String(d).slice(0,7)+'-01'}
+function addMonths(d,n){const [y,m]=monthStart(d).split('-').map(Number);return dateKeyUTC(new Date(Date.UTC(y,m-1+n,1,12)))}
+function reportPeriodType(){return $('#reliabilityPeriod').value}
+function reportPeriodStart(){return reportPeriodType()==='monthly'?selectedDashboardMonth:selectedDashboardWeek}
+function periodEnd(d,type){return type==='monthly'?addMonths(d,1):addDays(d,7)}
+function periodTitle(d,type){return type==='monthly'?parseDateKey(d).toLocaleDateString('es-CL',{month:'long',year:'numeric',timeZone:'UTC'})+' | '+d+' — '+addDays(periodEnd(d,type),-1):dashboardWeekLabel(d)}
+
 function caseEventDate(c){return (parseDateKey(c.stopStart)||parseDateKey(c.datetime))?dateKeyUTC(parseDateKey(c.stopStart)||parseDateKey(c.datetime)):''}
 function validDashboardCase(c){return c&&Boolean(normalizeText(c.equipment)||normalizeText(c.title)||normalizeText(c.description))}
-function casesInWeek(cases,monday){
- const end=addDays(monday,7);
+function casesInWeek(cases,monday,type='weekly'){
+ const end=periodEnd(monday,type);
  return (cases||[]).filter(c=>validDashboardCase(c)&&caseEventDate(c)>=monday&&caseEventDate(c)<end);
 }
 function dashboardGroupKey(c,group){
@@ -623,12 +630,12 @@ function dashboardGroupKey(c,group){
  return name || (group==='failure'?'Falla sin título':'Equipo sin identificar');
 }
 function sumDashboardHours(c){const value=Number(c.downtime);return Number.isFinite(value)&&value>=0?value:0}
-function weeklyPareto(cases,monday,metric,group,now=new Date()){
- const records=casesInWeek(cases,monday),map=new Map();
+function weeklyPareto(cases,monday,metric,group,now=new Date(),type='weekly'){
+ const records=casesInWeek(cases,monday,type),map=new Map();
  for(const c of records){
    const key=dashboardGroupKey(c,group);
    const entry=map.get(key)||{label:key,events:0,hours:0};
-   entry.events++;entry.hours+=(investigationDowntime(c,weekTimeBounds(monday,now))?.hours??sumDashboardHours(c));map.set(key,entry);
+   entry.events++;entry.hours+=(investigationDowntime(c,periodTimeBounds(monday,now,type))?.hours??sumDashboardHours(c));map.set(key,entry);
  }
  const sorted=[...map.values()].map(x=>({...x,value:metric==='hours'?x.hours:x.events}))
    .filter(x=>x.value>0).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'es'));
@@ -636,7 +643,7 @@ function weeklyPareto(cases,monday,metric,group,now=new Date()){
  const total=entries.reduce((sum,x)=>sum+x.value,0);
  let running=0;
  const rows=entries.map(x=>{running+=x.value;return {...x,cumulative:total>0?100*running/total:0}});
- return {records,rows,total,hours:records.reduce((n,c)=>n+(investigationDowntime(c,weekTimeBounds(monday,now))?.hours??sumDashboardHours(c)),0),assets:new Set(records.map(c=>dashboardGroupKey(c,'equipment'))).size};
+ return {records,rows,total,hours:records.reduce((n,c)=>n+(investigationDowntime(c,periodTimeBounds(monday,now,type))?.hours??sumDashboardHours(c)),0),assets:new Set(records.map(c=>dashboardGroupKey(c,'equipment'))).size};
 }
 function dashboardMetricText(value,metric){return metric==='hours'?value.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}):String(value)}
 function dashboardWeekLabel(monday){
@@ -686,14 +693,21 @@ function renderWeeklyTrend(cases,monday,metric){
  parts.push('<text x="350" y="259" fill="#a9c1d1" text-anchor="middle" font-size="11">Semanas anteriores a la seleccionada, inclusive</text></svg>');
  return parts.join('');
 }
+function renderMonthlyTrend(cases,month,metric){
+ const series=Array.from({length:8},(_,i)=>{const d=addMonths(month,i-7),rows=casesInWeek(cases,d,'monthly');return {label:d.slice(5,7)+'/'+d.slice(2,4),value:metric==='hours'?rows.reduce((a,c)=>a+sumDashboardHours(c),0):rows.length}});
+ const max=Math.max(1,...series.map(r=>r.value)),parts=['<svg viewBox="0 0 700 265" role="img" aria-label="Tendencia mensual">'];
+ for(let i=0;i<=4;i++){let y=215-195*i/4;parts.push('<line x1="20" x2="675" y1="'+y+'" y2="'+y+'" stroke="#31516b"/>')}
+ series.forEach((r,i)=>{const h=195*r.value/max,x=20+i*80+18;parts.push('<rect x="'+x+'" y="'+(215-h)+'" width="44" height="'+h+'" fill="'+(i===7?'#e1bd75':'#456d87')+'"/>');parts.push('<text x="'+(x+22)+'" y="233" fill="#b0c8d9" text-anchor="middle" font-size="11">'+r.label+'</text>');parts.push('<text x="'+(x+22)+'" y="'+Math.max(12,207-h)+'" fill="#dce8f3" text-anchor="middle" font-size="11">'+dashboardMetricText(r.value,metric)+'</text>')});
+ return parts.join('')+'</svg>';
+}
 const ALL_ASSETS='__all__';
 function dashboardAssets(){return [...new Set(db.cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
 function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
 
-function weekTimeBounds(monday,now=new Date()){
+function periodTimeBounds(monday,now=new Date(),type='weekly'){
  const [year,month,day]=monday.split('-').map(Number);
  const start=new Date(year,month-1,day,0,0,0,0);
- const end=new Date(year,month-1,day+7,0,0,0,0);
+ const end=type==='monthly'?new Date(year,month,1,0,0,0,0):new Date(year,month-1,day+7,0,0,0,0);
  const cutoff=new Date(Math.max(start.getTime(),Math.min(end.getTime(),now.getTime())));
  return {start,end,cutoff,baseHours:Math.max(0,(cutoff-start)/3600000),active:now>=start&&now<end,future:now<start};
 }
@@ -716,8 +730,8 @@ function investigationDowntime(c,bounds){
  if(endMs<=startMs)return {hours:0,from:startMs,to:startMs};
  return {hours:(endMs-startMs)/3600000,from:startMs,to:endMs};
 }
-function dashboardAnalysisEvents(cases,monday,asset,now=new Date()){
- const bounds=weekTimeBounds(monday,now);
+function dashboardAnalysisEvents(cases,monday,asset,now=new Date(),type='weekly'){
+ const bounds=periodTimeBounds(monday,now,type);
  const records=scopedCases(cases,asset).filter(c=>{
   if(!validDashboardCase(c))return false;
   const start=investigationStart(c);
@@ -725,8 +739,8 @@ function dashboardAnalysisEvents(cases,monday,asset,now=new Date()){
  });
  return {bounds,records};
 }
-function weeklyIndicators(cases,monday,asset,now=new Date()){
- const {bounds,records}=dashboardAnalysisEvents(cases,monday,asset,now);
+function weeklyIndicators(cases,monday,asset,now=new Date(),type='weekly'){
+ const {bounds,records}=dashboardAnalysisEvents(cases,monday,asset,now,type);
  const assets=asset===ALL_ASSETS
   ?[...new Set(records.map(c=>normalizeText(c.equipment)||'Equipo sin identificar'))]
   :[asset];
@@ -782,9 +796,11 @@ function drawDashboard(){
  select.value=assets.includes(existing)?existing:ALL_ASSETS;
  const asset=select.value,metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
  const now=new Date();
- const kpi=weeklyIndicators(db.cases,selectedDashboardWeek,asset,now);
- const data=weeklyPareto(kpi.records,selectedDashboardWeek,metric,group);
- $('#weekLabel').textContent=dashboardWeekLabel(selectedDashboardWeek);
+ const type=reportPeriodType(),start=reportPeriodStart();
+ const kpi=weeklyIndicators(db.cases,start,asset,now,type);
+ const data=weeklyPareto(kpi.records,start,metric,group,now,type);
+ $('#weekLabel').textContent=periodTitle(start,type);
+ $('#previewWeekly').textContent='📄 Ver informe '+(type==='monthly'?'del mes':'de la semana');
  $('#weekEvents').textContent=String(kpi.events);
  $('#weekHours').textContent=dashboardReliabilityFormat(kpi.downtime);
  $('#weekOperatingTotal').textContent=dashboardReliabilityFormat(kpi.operating);
@@ -794,7 +810,7 @@ function drawDashboard(){
  $('#availabilityFill').style.width=(kpi.availability===null?0:Math.max(0,Math.min(100,kpi.availability)))+'%';
  $('#weekBaseAuto').textContent=dashboardReliabilityFormat(kpi.baseHours);
  const clock=now.toLocaleString('es-CL',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
- $('#weekClockLabel').textContent=kpi.bounds.future?'Semana aún no iniciada':kpi.bounds.active?'Desde el lunes 00:00 hasta ahora · '+clock:'Semana cerrada · Lunes 00:00 a domingo 24:00';
+ $('#weekClockLabel').textContent=kpi.bounds.future?'Período no iniciado':kpi.bounds.active?'Desde el inicio del período hasta ahora · '+clock:'Período cerrado';
  $('#reliabilityBaseNote').textContent=asset===ALL_ASSETS
   ?'Se calcula una base de 24 h/día por cada uno de los '+kpi.assets+' equipos con fallas en la semana. Selecciona un equipo para el MTBF individual.'
   :'Equipo '+asset+' · 24 horas continuas por día, acumuladas solo hasta el corte indicado.';
@@ -806,12 +822,14 @@ function drawDashboard(){
  $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
- $('#weeklyTrend').innerHTML=renderWeeklyTrend(scopedCases(db.cases,asset),selectedDashboardWeek,metric);
+ $('#weeklyTrend').innerHTML=type==='monthly'?renderMonthlyTrend(scopedCases(db.cases,asset),start,metric):renderWeeklyTrend(scopedCases(db.cases,asset),start,metric);
+ $('#weeklyTrendTitle').textContent=type==='monthly'?'Tendencia · últimos 8 meses':'Tendencia · últimas 8 semanas';
  $('#paretoTable').innerHTML=data.rows.length?data.rows.map((entry,i)=>'<tr><td>'+(i+1)+'. '+esc(entry.label)+'</td><td>'+dashboardMetricText(entry.value,metric)+'</td><td>'+entry.cumulative.toFixed(1).replace('.',',')+'%</td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;color:#a8bfd0">Sin registros para esta semana</td></tr>';
 }
-$('#weekPrevious').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,-7);drawDashboard()};
-$('#weekNext').onclick=()=>{selectedDashboardWeek=addDays(selectedDashboardWeek,7);drawDashboard()};
-$('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday());drawDashboard()};
+$('#weekPrevious').onclick=()=>{if(reportPeriodType()==='monthly')selectedDashboardMonth=addMonths(selectedDashboardMonth,-1);else selectedDashboardWeek=addDays(selectedDashboardWeek,-7);drawDashboard()};
+$('#weekNext').onclick=()=>{if(reportPeriodType()==='monthly')selectedDashboardMonth=addMonths(selectedDashboardMonth,1);else selectedDashboardWeek=addDays(selectedDashboardWeek,7);drawDashboard()};
+$('#weekCurrent').onclick=()=>{selectedDashboardWeek=isoWeekStart(dashboardToday());selectedDashboardMonth=monthStart(dashboardToday());drawDashboard()};
+$('#reliabilityPeriod').onchange=drawDashboard;
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
 $('#reliabilityAsset').onchange=drawDashboard;
@@ -824,15 +842,14 @@ setInterval(()=>{if(document.visibilityState==='visible'){
 let lastDashboardCurrentWeek=isoWeekStart(dashboardToday());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.querySelector('#inicio.section.active'))drawDashboard()});
 function weeklyReportData(){
- const metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=selectedDashboardWeek,asset=activeDashboardScope();
- const now=new Date();
- const reliability=weeklyIndicators(db.cases,monday,asset,now);
- const result=weeklyPareto(reliability.records,monday,metric,group);
- return {monday,metric,group,asset,period:dashboardWeekLabel(monday),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
+ const type=reportPeriodType(),metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=reportPeriodStart(),asset=activeDashboardScope();
+ const now=new Date(),reliability=weeklyIndicators(db.cases,monday,asset,now,type);
+ const result=weeklyPareto(reliability.records,monday,metric,group,now,type);
+ return {monday,type,metric,group,asset,period:periodTitle(monday,type),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
 }
 function weekExportName(data,ext){
- const week=isoWeekNumber(data.monday);
- return 'ACR_Pareto_Semana_'+String(week.week).padStart(2,'0')+'_'+week.year+'_'+(data.metric==='hours'?'Horas':'Fallas')+'.'+ext;
+ const week=isoWeekNumber(data.monday),stamp=data.type==='monthly'?'Mes_'+data.monday.slice(0,7):'Semana_'+String(week.week).padStart(2,'0')+'_'+week.year;
+ return 'ACR_Pareto_'+stamp+'_'+(data.metric==='hours'?'Horas':'Fallas')+'.'+ext;
 }
 function reportValue(data,number){return dashboardMetricText(number,data.metric)}
 function displayEventDate(c){return (c.stopStart||c.datetime||'').replace('T',' ').slice(0,16)||'Sin fecha'}
@@ -847,7 +864,7 @@ function weeklyReportHtml(data){
  ).join('');
  const top=data.rows[0];
  return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTEGRITY · RELIABILITY DASHBOARD</div>'+
-  '<h1>Informe semanal de fallas · Pareto</h1><p>'+esc(data.period)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
+  '<h1>Informe '+(data.type==='monthly'?'mensual':'semanal')+' de fallas · Pareto</h1><p>'+esc(data.period)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
   '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Fallas registradas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.downtime)+'</strong><span>Horas detenidas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.operating)+'</strong><span>Horas operativas</span></div>'+
@@ -913,7 +930,7 @@ function exportPdfWeekly(){
    str(title,margin,22,13,[246,245,241],true);
    str(sub,margin,35,9,[70,88,110]);
  }
- header('PARETO SEMANAL DE FALLAS',data.period+' | Corte '+data.cutoff);
+ header('PARETO '+(data.type==='monthly'?'MENSUAL':'SEMANAL')+' DE FALLAS',data.period+' | Corte '+data.cutoff);
  const summary=weeklySummary(data);
  summary.slice(0,3).forEach((k,i)=>{
    const x=margin+i*91,y=42;
@@ -1002,7 +1019,7 @@ async function exportPptWeekly(){
  ppt.lang='es-CL';
  const metric=data.metric==='hours'?'Horas de detención':'Cantidad de fallas';
  const base={fontFace:'Aptos',color:'E9F1F6'};
- const slide=pptBaseSlide(ppt,'Informe semanal de fallas',data.period+' | Corte '+data.cutoff);
+ const slide=pptBaseSlide(ppt,'Informe '+(data.type==='monthly'?'mensual':'semanal')+' de fallas',data.period+' | Corte '+data.cutoff);
  const kpis=weeklySummary(data);
  kpis.slice(0,3).forEach((k,i)=>{
   const x=.7+i*4.15;
