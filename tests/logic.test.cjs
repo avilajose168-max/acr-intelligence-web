@@ -153,9 +153,9 @@ assert.equal(new Set(apilamiento.map(([name])=>name)).size,60,'No se repiten des
 assert.equal(apilamiento.find(([name])=>name==='CORREA #10')[1],'10028243');
 assert.equal(apilamiento.find(([name])=>name==='CORREA TRIPPER #12C')[1],'10085161');
 assert.equal(apilamiento.find(([name])=>name==='CORREA PORTATIL #52')[1],'10027639');
-assert.ok(apilamiento.every(([,sap])=>/^\\d{8}$/.test(sap)),'Todos los SAP tienen ocho dígitos');
-assert.ok(script.includes("if(c.sector==='Apilamiento')return APILAMIENTO_ASSETS;"),'El sector Apilamiento utiliza su propio catálogo');
-assert.ok(script.includes("if(c.sector==='Chancado')return CHANCADO_ASSETS;"),'El sector Chancado conserva su catálogo');
+assert.ok(apilamiento.every(([,sap])=>String(sap).length===8&&[...sap].every(ch=>ch>='0'&&ch<='9')),'Todos los SAP tienen ocho dígitos');
+assert.ok(script.includes("c.sector==='Apilamiento')return APILAMIENTO_ASSETS.map"),'El sector Apilamiento utiliza su propio catálogo');
+assert.ok(script.includes("c.sector==='Chancado')return CHANCADO_ASSETS.map"),'El sector Chancado conserva su catálogo');
 
 
 // V58: orden real de lectura de los campos en el formulario de evento.
@@ -171,3 +171,17 @@ for(const field of orderedFields){
 }
 assert.ok(eventMarkup.indexOf('data-k="datetime"')>previousPosition,'La fecha y el resto deben ir después del SAP');
 console.log('OK orden de formulario: área, sector, equipo, SAP automático y título');
+
+const wetStart=script.indexOf('const AREA_HUMEDA_ASSETS=');
+const wetEnd=script.indexOf('function isLomasBayasAreaCatalog(){',wetStart);
+assert.ok(wetStart>=0&&wetEnd>wetStart,'Catálogo de Área Húmeda disponible');
+const wetScope=vm.createContext({});
+vm.runInContext(script.slice(wetStart,wetEnd).replace('const AREA_HUMEDA_ASSETS=','var AREA_HUMEDA_ASSETS='),wetScope,{timeout:1000});
+const wet=wetScope.AREA_HUMEDA_ASSETS;
+assert.equal(Object.keys(wet).length,13,'Área Húmeda contiene 13 unidades de producción');
+assert.equal(Object.values(wet).reduce((n,arr)=>n+arr.length,0),89,'Área Húmeda contiene 89 equipos con TAG SAP');
+assert.equal(wet['AGUAS CALAMA'][0][0],'51 PMP001');
+assert.equal(wet['ACIDULADO ROM II'].find(x=>x[0]==='464ILM202')[1],'MEZCLADOR;ÁCIDO');
+assert.ok(doc.includes('id="wetUnitSelect"'),'Selección de Unidad de producción');
+assert.ok(script.includes('value:sap'),'Catálogo húmedo usa TAG SAP como valor único cuando existen descripciones repetidas');
+console.log('OK 13 unidades y 89 equipos del Área Húmeda con TAG SAP');
