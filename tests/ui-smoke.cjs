@@ -500,6 +500,11 @@ assert.ok((await companyAdminPage.locator('#corporateViewTitle').innerText()).in
 assert.equal(await companyAdminPage.locator('.nav button[data-page="organizaciones"]').innerText(),'🏢 Mi compañía','La navegación es personalizada');
 assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Visualiza ACR de usuarios de su compañía');
 assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
+assert.ok((await companyAdminPage.locator('#companyReportsStatus').innerText()).includes('informe(s) de falla publicado(s)'),'El administrador ve el estado de publicación de los ACR');
+await companyAdminPage.locator('#companyViewUserReports').click();
+assert.ok(await companyAdminPage.locator('#orgCasesTable [data-org-case]').count()>0,'La tabla muestra informes de falla de usuarios');
+await companyAdminPage.locator('#orgCasesTable [data-org-case]').first().click();
+assert.ok((await companyAdminPage.locator('#orgCaseDetail').innerText()).includes('ACR corporativo'),'El administrador de empresa puede abrir ACR completo en modo lectura');
 assert.equal(await companyAdminPage.locator('[data-org-member-role]').count(),0,'No puede asignar administradores');
 
 assert.equal(await companyAdminPage.locator('#corporateCommitmentsPanel').isVisible(),true,'El tablero corporativo de compromisos está dentro del panel de la empresa');
@@ -520,6 +525,7 @@ await companyAdminPage.locator('#corpRelPreview').click();
 await companyAdminPage.locator('#corpReportSheet').waitFor({state:'visible'});
 let reportContents=await companyAdminPage.locator('#corpReportSheet').innerText();
 assert.ok(reportContents.includes('Informe corporativo de confiabilidad')&&reportContents.includes('CT-11C'),'Vista previa corporativa de confiabilidad refleja los eventos publicados');
+assert.ok(await companyAdminPage.locator('#corpReportSheet .corp-report-chart svg').count()>0,'El informe de confiabilidad muestra gráfico Pareto, no solo tabla');
 await companyAdminPage.emulateMedia({media:'print'});
 await companyAdminPage.evaluate(()=>document.body.classList.add('corp-report-print'));
 assert.equal(await companyAdminPage.locator('#corporateReportPreview').evaluate(el=>getComputedStyle(el).display),'block','Se imprime únicamente el informe corporativo');
@@ -532,6 +538,7 @@ await companyAdminPage.locator('#corpReportBack').click();
 await companyAdminPage.locator('#corpCommitPreview').click();
 reportContents=await companyAdminPage.locator('#corpReportSheet').innerText();
 assert.ok(reportContents.includes('Informe corporativo de seguimiento de compromisos')&&reportContents.includes('Verificar transmisión CT-11C'),'Vista previa de compromisos conserva las acciones publicadas');
+assert.ok(await companyAdminPage.locator('#corpReportSheet .corp-report-chart svg').count()>0,'El informe de compromisos muestra gráfico Pareto');
 await companyAdminPage.evaluate(()=>{window.__corporatePrintCalls=0;window.print=()=>{window.__corporatePrintCalls++}});
 await companyAdminPage.locator('#corpReportSavePdf').click();
 assert.equal(await companyAdminPage.evaluate(()=>window.__corporatePrintCalls),1,'Guardar PDF invoca la impresión fiel de la vista previa');
