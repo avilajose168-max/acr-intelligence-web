@@ -294,8 +294,17 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <h2>Afiliación y organización</h2><p class="muted">Selecciona la compañía a la que perteneces. La afiliación requiere aprobación de su administrador. Tus investigaciones personales no se transfieren automáticamente.</p>
 <div class="toolbar" style="flex-wrap:wrap;align-items:end">
 <label class="field" style="min-width:220px;flex:1">Compañía<select id="organizationSelect"><option value="">Seleccionar organización…</option></select></label>
-<button type="button" class="secondary" id="requestOrganizationMembership">Solicitar afiliación</button><button type="button" class="secondary" id="deleteOrganization" hidden disabled>🗑 Eliminar empresa</button></div>
+<button type="button" class="secondary" id="requestOrganizationMembership">Solicitar afiliación</button><button type="button" class="secondary" id="editOrganization" hidden disabled>✎ Editar empresa</button><button type="button" class="secondary" id="deleteOrganization" hidden disabled>🗑 Eliminar empresa</button></div>
 <div id="orgMembershipStatus" class="notice" aria-live="polite" style="margin-top:12px">Selecciona una compañía para consultar su estado.</div>
+<dialog id="editOrganizationDialog" aria-labelledby="editOrganizationTitle" style="border:1px solid #34516a;border-radius:16px;background:#102337;color:#fff;padding:24px;width:min(95vw,520px);max-height:90vh;box-shadow:0 18px 55px #0009">
+<form id="editOrganizationForm" style="display:grid;gap:14px">
+<h2 id="editOrganizationTitle" style="margin:0">Editar empresa</h2>
+<label class="field">Nombre legal de la compañía<input id="editOrganizationName" maxlength="120" required minlength="3"></label>
+<label class="field">Cambiar logo (opcional)<input id="editOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<div id="editOrganizationLogoPreview" class="logoPreview">Sin logo.</div>
+<div class="toolbar" style="justify-content:flex-end;flex-wrap:wrap"><button id="cancelEditOrganization" type="button" class="secondary">Cancelar</button><button id="saveOrganizationBrand" type="submit" class="primary">Guardar cambios</button></div>
+</form>
+</dialog>
 </div>
 <div id="approvedCompanyPanel" class="card" hidden>
 <div class="between" style="flex-wrap:wrap"><div><h2>Mis investigaciones corporativas</h2><p class="muted">Cuando publicas un ACR en esta compañía, el administrador autorizado puede visualizarlo, junto con sus fotografías, acciones e indicadores. El registro local se conserva.</p></div><button type="button" class="primary" id="publishCompanyCases">Publicar / actualizar mis ACR en esta compañía</button></div>
@@ -1328,10 +1337,11 @@ function corporateBrandPreview(org){
 }
 function fillOrganizationBrandEditor(){
  const org=corporateCtx?.organizations?.find(o=>o.id===corporateSelection()&&o.active);
- const button=$('#deleteOrganization');
- if(!button)return;
- button.hidden=!corporateCtx?.platform;
- button.disabled=!corporateCtx?.platform||!org;
+ for(const id of ['#editOrganization','#deleteOrganization']){
+  const button=$(id);
+  button.hidden=!corporateCtx?.platform;
+  button.disabled=!corporateCtx?.platform||!org;
+ }
 }
 async function readCorporateLogo(file){
  if(!file)return '';
@@ -1360,6 +1370,42 @@ $('#createOrganization').onclick=async()=>{
   await loadOrganizations();
   alert('Compañía e identidad corporativa registradas.');
  }catch(error){alert('No se pudo crear la compañía: '+error.message)}
+};
+$('#editOrganization').onclick=()=>{
+ if(!corporateCtx?.platform)return alert('Solo el administrador general puede editar empresas.');
+ const org=corporateCtx.organizations.find(o=>o.id===corporateSelection()&&o.active);
+ if(!org)return alert('Selecciona una empresa activa.');
+ $('#editOrganizationName').value=org.name;
+ $('#editOrganizationLogo').value='';
+ $('#editOrganizationLogoPreview').innerHTML=corporateBrandPreview(org);
+ $('#editOrganizationDialog').showModal();
+};
+$('#cancelEditOrganization').onclick=()=>$('#editOrganizationDialog').close();
+$('#editOrganizationLogo').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{$('#editOrganizationLogoPreview').innerHTML='<img alt="Nuevo logo seleccionado" src="'+await readCorporateLogo(file)+'">'}
+ catch(error){e.target.value='';alert(error.message)}
+};
+$('#editOrganizationForm').onsubmit=async e=>{
+ e.preventDefault();
+ if(!corporateCtx?.platform)return alert('Solo el administrador general puede editar empresas.');
+ const org=corporateCtx.organizations.find(o=>o.id===corporateSelection()&&o.active);
+ if(!org)return alert('Selecciona una empresa activa.');
+ const name=$('#editOrganizationName').value.trim();
+ if(name.length<3)return alert('El nombre debe tener al menos tres caracteres.');
+ const save=$('#saveOrganizationBrand');save.disabled=true;
+ try{
+  const changes={name};
+  const file=$('#editOrganizationLogo').files?.[0];
+  if(file)changes.logo_data=await readCorporateLogo(file);
+  const updated=await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+encodeURIComponent(org.id)),'PATCH',changes,'return=representation');
+  if(!Array.isArray(updated)||updated.length!==1||updated[0].id!==org.id)throw Error('La base de datos no confirmó los cambios.');
+  if(activeUser?.id)localStorage.setItem('acr-org-choice-'+activeUser.id,org.id);
+  $('#editOrganizationDialog').close();
+  await loadOrganizations();
+  alert('Empresa actualizada correctamente.');
+ }catch(error){alert('No se pudo actualizar la empresa: '+error.message)}
+ finally{save.disabled=false}
 };
 $('#deleteOrganization').onclick=async()=>{
  if(!corporateCtx?.platform)return alert('Solo el administrador general puede eliminar empresas.');
