@@ -145,6 +145,19 @@ assert.ok(doc.includes('id="chancadoEquipmentSelect"')&&doc.includes('id="chanca
 assert.ok(doc.includes('id="chancadoEquipmentGroup"')&&doc.includes('readonly placeholder="Se completa automáticamente"'),'SAP automático de solo lectura');
 console.log('OK catálogo de equipos de chancado y numeración SAP');
 
+const stackingCatalog=vm.createContext({});
+vm.runInContext(catalogSource,stackingCatalog,{timeout:1000});
+const apilamiento=stackingCatalog.APILAMIENTO_ASSETS;
+assert.equal(apilamiento.length,60,'Apilamiento incluye los 60 equipos recibidos');
+assert.equal(new Set(apilamiento.map(([name])=>name)).size,60,'No se repiten descripciones de equipos');
+assert.equal(apilamiento.find(([name])=>name==='CORREA #10')[1],'10028243');
+assert.equal(apilamiento.find(([name])=>name==='CORREA TRIPPER #12C')[1],'10085161');
+assert.equal(apilamiento.find(([name])=>name==='CORREA PORTATIL #52')[1],'10027639');
+assert.ok(apilamiento.every(([,sap])=>/^\\d{8}$/.test(sap)),'Todos los SAP tienen ocho dígitos');
+assert.ok(script.includes("if(c.sector==='Apilamiento')return APILAMIENTO_ASSETS;"),'El sector Apilamiento utiliza su propio catálogo');
+assert.ok(script.includes("if(c.sector==='Chancado')return CHANCADO_ASSETS;"),'El sector Chancado conserva su catálogo');
+
+
 // V58: orden real de lectura de los campos en el formulario de evento.
 const eventStart=html.indexOf('<section id="registro"');
 const eventEnd=html.indexOf('<div class="downtimeCard"',eventStart);
