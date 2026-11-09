@@ -347,7 +347,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
 </div>
 <h3>Afiliaciones y roles</h3>
-<div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Estado</th><th>Rol</th><th>Administrar</th></tr></thead><tbody id="orgUsersTable"></tbody></table></div>
+<div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Estado</th><th>Rol</th><th>ACR publicados</th><th>Administrar</th></tr></thead><tbody id="orgUsersTable"></tbody></table></div>
 <h3 style="margin-top:24px">Investigaciones por usuario</h3>
 <div class="dashboard-table-wrap"><table class="dashboard-table org-admin-table"><thead><tr><th>Usuario / equipo</th><th>Investigación</th><th>Actualizado</th><th>Compromisos</th><th>Detalle</th></tr></thead><tbody id="orgCasesTable"></tbody></table></div>
 <div id="orgCaseDetail" class="notice hidden" style="margin-top:14px"></div>
@@ -1576,13 +1576,13 @@ async function loadCorporateOverview(){
    return '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td>'+
     '<td>'+esc(m.status)+'</td><td>'+esc(m.role==='admin'?'Administrador de empresa':'Usuario')+
     '<div class="small">Solicita: '+esc(m.requested_role==='admin'?'Administrador':'Usuario')+'</div></td>'+
-    '<td>'+controls+'</td></tr>';
+    '<td>'+cases.filter(c=>c.owner_id===m.user_id).length+'</td><td>'+controls+'</td></tr>';
   }).join('');
   $('#orgUsersTable').innerHTML=
-   '<tr><td colspan="5"><strong>ADMINISTRADORES DE LA COMPAÑÍA</strong> · Solo el administrador general de ACR Intelligence puede autorizar estos accesos.</td></tr>'+
-   (admins.length?tableRows(admins):'<tr><td colspan="5" class="small">Sin administradores ni solicitudes de administración.</td></tr>')+
-   '<tr><td colspan="5"><strong>USUARIOS DE LA COMPAÑÍA</strong> · El administrador de esta compañía aprueba o rechaza sus solicitudes.</td></tr>'+
-   (users.length?tableRows(users):'<tr><td colspan="5" class="small">Sin usuarios registrados.</td></tr>');
+   '<tr><td colspan="6"><strong>ADMINISTRADORES DE LA COMPAÑÍA</strong> · Solo el administrador general de ACR Intelligence puede autorizar estos accesos.</td></tr>'+
+   (admins.length?tableRows(admins):'<tr><td colspan="6" class="small">Sin administradores ni solicitudes de administración.</td></tr>')+
+   '<tr><td colspan="6"><strong>USUARIOS DE LA COMPAÑÍA</strong> · El administrador de esta compañía aprueba o rechaza sus solicitudes.</td></tr>'+
+   (users.length?tableRows(users):'<tr><td colspan="6" class="small">Sin usuarios registrados.</td></tr>');
   $$('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
   $$('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
   $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
@@ -1593,18 +1593,41 @@ async function loadCorporateOverview(){
     '<td>'+count+'</td><td><button type="button" class="secondary" data-org-case="'+i+'">Ver ACR</button></td></tr>'
   }).join(''):'<tr><td colspan="5">Todavía no hay investigaciones corporativas publicadas.</td></tr>';
   $$('[data-org-case]').forEach(el=>el.onclick=()=>{
-   const item=corporateCtx.cases[Number(el.dataset.orgCase)]?.payload;
+   const record=corporateCtx.cases[Number(el.dataset.orgCase)];
+   const item=record?.payload;
    if(!item)return;
    const content=$('#orgCaseDetail');
-   const photos=Array.isArray(item.photos)?item.photos:[];
-   content.innerHTML='<h3>'+esc(item.title||'Investigación')+'</h3><p><b>Equipo:</b> '+esc(item.equipment||'—')+'</p>'+
-    '<p><b>Descripción:</b> '+esc(item.description||'—')+'</p>'+
-    '<p><b>5 Porqués:</b></p><ol>'+((item.whys||[]).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join(''))+'</ol>'+
-    '<p><b>Causa básica:</b> '+esc(item.basicCause||'—')+'</p><p><b>Conclusión:</b> '+esc(item.conclusion||'—')+'</p>'+
-    '<p><b>Acciones correctivas:</b></p><ol>'+((item.actions||[]).filter(a=>a.description).map(a=>'<li>'+esc(a.description)+' · '+esc(a.owner||'')+' · '+esc(a.status||'Pendiente')+'</li>').join(''))+'</ol>'+
-    '<div class="shared-gallery">'+photos.map(p=>{const src=safeSharedPicture(p.data);return '<div class="shared-photo">'+(src?'<img src="'+src+'" alt="Evidencia">':'')+'<p>'+esc(p.caption||'Fotografía')+'</p></div>'}).join('')+'</div>';
+   const member=corporateCtx.orgMembers.find(m=>m.user_id===record.owner_id);
+   const field=(label,value)=>'<p><b>'+label+':</b> '+esc(value||'—').replace(/\n/g,'<br>')+'</p>';
+   const photoGallery=(photos,label)=>!Array.isArray(photos)||!photos.length?'':(
+     '<h4>'+label+'</h4><div class="shared-gallery">'+photos.map((p,i)=>{
+       const src=safeSharedPicture(p.data);
+       return '<div class="shared-photo">'+(src?'<img src="'+src+'" alt="'+esc(label)+' '+(i+1)+'">':'')+
+        '<p>'+esc(p.caption||'Fotografía '+(i+1))+'</p></div>';
+     }).join('')+'</div>'
+   );
+   content.innerHTML='<div class="between"><h3>ACR corporativo · '+esc(item.title||'Investigación')+'</h3><span class="chip">Solo lectura</span></div>'+
+    field('Investigador',member?.display_name||member?.email||'Usuario')+
+    field('Equipo',item.equipment)+field('Área',item.area)+field('Fecha y hora',item.datetime)+
+    field('Orden de trabajo',item.workorder)+field('Horas de detención',item.downtime)+
+    field('Inicio de detención',item.stopStart)+field('Término de detención',item.stopEnd)+
+    field('Severidad',item.severity)+field('Descripción del evento',item.description)+
+    field('Cronología / antecedentes',item.timeline)+
+    field('Condición de seguridad',item.safetyCondition)+
+    field('Descripción de seguridad',item.safetyDescription)+
+    field('Acción de seguridad',item.safetyAction)+
+    photoGallery(item.safetyPhotos,'Evidencia de seguridad')+
+    '<h4>Análisis de los 5 Porqués</h4><ol>'+((item.whys||[]).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
+    field('Causa básica',item.basicCause)+field('Consecuencia de la causa',item.causeConsequence)+
+    field('Causa raíz',item.rootCause)+field('Estado de validación',item.validationStatus)+
+    field('Revisor técnico',item.reviewer)+field('Conclusión ejecutiva',item.conclusion)+
+    '<h4>Compromisos correctivos</h4><ol>'+((item.actions||[]).filter(a=>a.description).map(a=>
+      '<li>'+esc(a.description)+' · Responsable: '+esc(a.owner||'Sin asignar')+
+      ' · Fecha: '+esc(a.due||'Sin fecha')+' · Estado: '+esc(a.status||'Pendiente')+'</li>').join('')+'</ol>'+
+    photoGallery(item.photos,'Fotografías de evidencia');
    content.classList.remove('hidden');content.scrollIntoView({block:'nearest',behavior:'smooth'});
   });
+
  }catch(error){$('#companyAdminTitle').textContent='No se pudo consultar el consolidado: '+error.message}
 }
 async function changeCorporateMembership(id,changes){
