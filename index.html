@@ -377,6 +377,16 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
   <article id="weeklyReportContent" class="weekly-sheet" aria-label="Informe semanal de confiabilidad"></article>
 </section>
+<style>
+@media print{
+ body.commitments-print #reporte{display:none!important}
+ body.commitments-print #commitmentsReport{display:block!important;page:weeklyPage}
+ body.commitments-print #commitmentsReport .weekly-sheet{padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;max-width:none!important}
+ body.commitments-print #commitmentsReport table{font-size:9px}
+ body.commitments-print #commitmentsReport th,body.commitments-print #commitmentsReport td{padding:5px 4px!important;overflow-wrap:anywhere}
+ body.commitments-print #commitmentsReport tr{break-inside:avoid}
+}
+</style>
 <section id="commitmentsReport" class="section">
  <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
   <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h1 id="commitmentsReportTitle">Informe de compromisos</h1><p class="muted">Vista previa del período seleccionado antes de descargar.</p></div>
@@ -1285,6 +1295,9 @@ $('#commitmentsReportBack').onclick=()=>navigate('inicio');
 $('#commitmentsReportPdf').onclick=exportCommitmentsPdf;
 $('#commitmentsReportCsv').onclick=exportCommitmentsExcel;
 $('#commitmentsReportPrint').onclick=()=>{
+ document.body.classList.add('commitments-print');
+ const cleanup=()=>{document.body.classList.remove('commitments-print');window.removeEventListener('afterprint',cleanup)};
+ window.addEventListener('afterprint',cleanup,{once:true});
  window.print();
 };
 $('#exportCommitmentsPdf').onclick=exportCommitmentsPdf;
