@@ -288,7 +288,9 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="between" style="flex-wrap:wrap;gap:12px;margin-bottom:17px"><div><div class="eyebrow" id="corporateViewEyebrow">ACR INTEGRITY · ADMINISTRACIÓN</div><h1 id="corporateViewTitle">Centro de administración corporativa</h1><p class="muted" id="corporateViewSubtitle">Selecciona la empresa para revisar sus usuarios, investigaciones e indicadores.</p></div><button type="button" id="refreshOrganizations" class="secondary">↻ Actualizar</button></div>
 <div class="card" id="platformAdminPanel" hidden>
 <div class="eyebrow">ADMINISTRACIÓN GENERAL · PLATAFORMA</div><h2>Crear una organización</h2><p class="help">Solo el administrador general puede crear empresas en ACR Integrity. Ningún usuario se convierte en administrador por escribir el nombre de una compañía.</p>
-<div class="toolbar" style="flex-wrap:wrap"><input id="newOrganizationName" placeholder="Nombre legal de la compañía" maxlength="120" style="flex:1;min-width:230px"><button type="button" id="createOrganization" class="primary">Crear compañía</button></div></div>
+<div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre legal de la compañía<input id="newOrganizationName" placeholder="Nombre legal de la compañía" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Logo corporativo (PNG, JPG o WEBP)<input id="newOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="createOrganization" class="primary">Crear compañía</button></div><div class="logoPreview" id="newOrganizationLogoPreview">Sin logo seleccionado.</div>
+<div style="margin-top:16px"><h3>Actualizar identidad de una compañía</h3><p class="help">Selecciona una compañía en el listado inferior para editar su nombre o logo. Los informes de sus usuarios aprobados mostrarán los cambios automáticamente.</p>
+<div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre corporativo<input id="editOrganizationName" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Sustituir logo<input id="editOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button id="saveOrganizationBrand" type="button" class="secondary">Guardar identidad</button></div><div id="editOrganizationLogoPreview" class="logoPreview">Selecciona una compañía.</div><button id="clearOrganizationLogo" type="button" class="secondary">Quitar logo corporativo</button></div></div>
 <div class="card" id="corporateAffiliationPanel">
 <h2>Afiliación y organización</h2><p class="muted">Selecciona la compañía a la que perteneces. La afiliación requiere aprobación de su administrador. Tus investigaciones personales no se transfieren automáticamente.</p>
 <div class="toolbar" style="flex-wrap:wrap;align-items:end">
@@ -366,7 +368,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
   <article id="weeklyReportContent" class="weekly-sheet" aria-label="Informe semanal de confiabilidad"></article>
 </section>
-<section id="registro" class="section"><div class="bar" style="margin-bottom:18px;flex-wrap:wrap"><div><div class="eyebrow">Paso 1</div><h1>Registro de falla en terreno</h1></div><div class="toolbar"><button class="secondary" id="backHome">Mis investigaciones</button><button class="primary" id="nextAnalysis">Continuar →</button></div></div><div class="card"><h2>🏢 Personalización del informe</h2><p class="muted">Agrega el nombre y logo de tu empresa. Se incluirán automáticamente en todos los informes PDF.</p><div class="grid"><label class="field">Nombre de la empresa<input id="companyName" placeholder="Ej.: Mi empresa minera"></label><label class="field">Logo de la empresa (PNG, JPG o WEBP)<input type="file" id="companyLogo" accept="image/png,image/jpeg,image/webp"></label></div><div class="logoPreview" id="logoPreview" style="margin-top:12px"></div><button class="secondary" id="removeLogo" type="button" style="margin-top:10px">Quitar logo</button></div><div class="card"><div class="grid"><label class="field">Título del evento<input data-k="title" placeholder="Ej.: Pérdida de presión del clamping"></label><label class="field">Equipo / TAG<input data-k="equipment" placeholder="MP1000 · CH3 L1"></label><label class="field">Área / proceso<input data-k="area" placeholder="Chancado terciario"></label><label class="field">Fecha y hora<input data-k="datetime" type="datetime-local"></label><label class="field">Severidad<select data-k="severity"><option>Media</option><option>Baja</option><option>Alta</option><option>Crítica</option></select></label><label class="field">Nombre del investigador<input data-k="author" placeholder="Ingeniero / supervisor"></label><label class="field">OT / aviso SAP (opcional)<input data-k="workorder" placeholder="OT-0000"></label><div class="downtimeCard" style="grid-column:1/-1"><h3>⏱ Tiempo de detención del equipo</h3><div class="grid"><label class="field">Inicio de detención<input type="datetime-local" data-k="stopStart" id="stopStart"></label><label class="field">Término de detención<input type="datetime-local" data-k="stopEnd" id="stopEnd"></label><label class="field">Total de horas de detención (cálculo automático)<input type="number" min="0" step="0.01" data-k="downtime" id="downtime" readonly aria-readonly="true" placeholder="Se calculará automáticamente"></label></div><div class="durationHint" id="durationHint">Ingresa el inicio y el término: el sistema calcula automáticamente la duración, incluso si cruza la medianoche.</div></div><label class="field full">¿Qué ocurrió? (hechos observados)<textarea data-k="description" placeholder="Describe el síntoma, la secuencia y las condiciones sin anticipar la causa raíz."></textarea></label><div class="voicebar"><button type="button" class="primary" id="startVoice">🎙 Dictar descripción</button><button type="button" class="secondary" id="stopVoice" disabled>■ Detener</button><span class="voice-status" id="voiceStatus" role="status" aria-live="polite">Presiona el micrófono y cuenta qué ocurrió.</span><div class="voice-tip">Habla con naturalidad: equipo, síntomas, alarmas y qué se observó. Revisa la transcripción antes de mejorar la redacción o generar los 5 Porqués. El reconocimiento puede requerir Internet y usar el servicio de voz del navegador; evita datos confidenciales sin autorización.</div></div><div class="full assist-panel"><div class="between" style="flex-wrap:wrap;gap:9px"><div><b>✦ Asistente de redacción y análisis</b><div class="help">Redacta los hechos y utiliza el asistente para mejorar la claridad técnica. Con IA externa activada, el texto se enviará al proveedor; sin ella, funciona el análisis local.</div></div><div class="toolbar"><button type="button" class="secondary" id="improveDescription">✍ Mejorar redacción técnica</button></div></div><div id="descriptionFeedback" class="notice hidden" style="margin-top:12px" aria-live="polite"></div></div><div class="field full safety-panel" id="safetyPanel">
+<section id="registro" class="section"><div class="bar" style="margin-bottom:18px;flex-wrap:wrap"><div><div class="eyebrow">Paso 1</div><h1>Registro de falla en terreno</h1></div><div class="toolbar"><button class="secondary" id="backHome">Mis investigaciones</button><button class="primary" id="nextAnalysis">Continuar →</button></div></div><div class="card" id="reportBrandPanel"><h2>🏢 Personalización del informe</h2><p class="muted" id="reportBrandHelp">Si eres independiente, agrega tu nombre o el de tu empresa y adjunta un logo. Si perteneces a una compañía, se utiliza su identidad aprobada automáticamente.</p><div class="grid"><label class="field">Nombre de la empresa<input id="companyName" placeholder="Ej.: Mi empresa minera"></label><label class="field">Logo de la empresa (PNG, JPG o WEBP)<input type="file" id="companyLogo" accept="image/png,image/jpeg,image/webp"></label></div><div class="logoPreview" id="logoPreview" style="margin-top:12px"></div><button class="secondary" id="removeLogo" type="button" style="margin-top:10px">Quitar logo</button></div><div class="card"><div class="grid"><label class="field">Título del evento<input data-k="title" placeholder="Ej.: Pérdida de presión del clamping"></label><label class="field">Equipo / TAG<input data-k="equipment" placeholder="MP1000 · CH3 L1"></label><label class="field">Área / proceso<input data-k="area" placeholder="Chancado terciario"></label><label class="field">Fecha y hora<input data-k="datetime" type="datetime-local"></label><label class="field">Severidad<select data-k="severity"><option>Media</option><option>Baja</option><option>Alta</option><option>Crítica</option></select></label><label class="field">Nombre del investigador<input data-k="author" placeholder="Ingeniero / supervisor"></label><label class="field">OT / aviso SAP (opcional)<input data-k="workorder" placeholder="OT-0000"></label><div class="downtimeCard" style="grid-column:1/-1"><h3>⏱ Tiempo de detención del equipo</h3><div class="grid"><label class="field">Inicio de detención<input type="datetime-local" data-k="stopStart" id="stopStart"></label><label class="field">Término de detención<input type="datetime-local" data-k="stopEnd" id="stopEnd"></label><label class="field">Total de horas de detención (cálculo automático)<input type="number" min="0" step="0.01" data-k="downtime" id="downtime" readonly aria-readonly="true" placeholder="Se calculará automáticamente"></label></div><div class="durationHint" id="durationHint">Ingresa el inicio y el término: el sistema calcula automáticamente la duración, incluso si cruza la medianoche.</div></div><label class="field full">¿Qué ocurrió? (hechos observados)<textarea data-k="description" placeholder="Describe el síntoma, la secuencia y las condiciones sin anticipar la causa raíz."></textarea></label><div class="voicebar"><button type="button" class="primary" id="startVoice">🎙 Dictar descripción</button><button type="button" class="secondary" id="stopVoice" disabled>■ Detener</button><span class="voice-status" id="voiceStatus" role="status" aria-live="polite">Presiona el micrófono y cuenta qué ocurrió.</span><div class="voice-tip">Habla con naturalidad: equipo, síntomas, alarmas y qué se observó. Revisa la transcripción antes de mejorar la redacción o generar los 5 Porqués. El reconocimiento puede requerir Internet y usar el servicio de voz del navegador; evita datos confidenciales sin autorización.</div></div><div class="full assist-panel"><div class="between" style="flex-wrap:wrap;gap:9px"><div><b>✦ Asistente de redacción y análisis</b><div class="help">Redacta los hechos y utiliza el asistente para mejorar la claridad técnica. Con IA externa activada, el texto se enviará al proveedor; sin ella, funciona el análisis local.</div></div><div class="toolbar"><button type="button" class="secondary" id="improveDescription">✍ Mejorar redacción técnica</button></div></div><div id="descriptionFeedback" class="notice hidden" style="margin-top:12px" aria-live="polite"></div></div><div class="field full safety-panel" id="safetyPanel">
   <h3>🛡️ Condición de seguridad para las personas</h3>
   <p class="muted">¿Se identificó alguna condición que pudiera afectar la seguridad de las personas durante el evento o la intervención?</p>
   <div class="safety-options" role="group" aria-label="Declarar condición de seguridad">
@@ -1284,7 +1286,7 @@ async function loadOrganizations(){
  if(!activeUser?.id||!session?.access_token||!$('#organizationSelect'))return;
  try{
   const [organizations,roles,memberships]=await Promise.all([
-   corporateApi(organizationApiPath('acr_organizations','?select=id,name,active&active=eq.true&order=name')),
+   corporateApi(organizationApiPath('acr_organizations','?select=id,name,logo_data,active&active=eq.true&order=name')),
    corporateApi(organizationApiPath('acr_platform_admins','?select=user_id')),
    corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,status,role,requested_role,display_name,email&user_id=eq.'+activeUser.id))
   ]);
@@ -1297,6 +1299,9 @@ async function loadOrganizations(){
   const fixedAdmin=assignedCorporateAdminMembership();
   select.value=fixedAdmin?.organization_id||(organizations.some(o=>o.id===lastOrg)?lastOrg:'');
   drawOrganizationStatus();
+  fillOrganizationBrandEditor();
+  if(page==='registro')drawCompany();
+  if(page==='reporte')drawReport();
   if(fixedAdmin&&page!=='organizaciones')navigate('organizaciones');
 
  }catch(error){
@@ -1306,19 +1311,84 @@ async function loadOrganizations(){
 $('#organizationSelect').onchange=()=>{
  if(activeUser?.id)localStorage.setItem('acr-org-choice-'+activeUser.id,corporateSelection());
  drawOrganizationStatus();
+ fillOrganizationBrandEditor();
 };
 $('#refreshOrganizations').onclick=loadOrganizations;
+
+function activeCorporateBrand(){
+ if(!corporateCtx?.organizations||corporateCtx.platform)return null;
+ const approved=(corporateCtx.memberships||[]).filter(m=>m.status==='approved');
+ const member=approved.find(m=>m.role==='admin')||approved.find(m=>m.organization_id===corporateSelection())||approved[0];
+ const org=corporateCtx.organizations.find(o=>o.id===member?.organization_id&&o.active);
+ return org?{name:org.name,logo:org.logo_data||'',id:org.id}:null;
+}
+function effectiveReportBrand(){return activeCorporateBrand()||{name:db.settings.companyName||'',logo:db.settings.logo||''}}
+function corporateBrandPreview(org){
+ return org?.logo_data?'<img alt="Logo corporativo" src="'+org.logo_data+'"><span class="small">Logo corporativo de '+esc(org.name)+'</span>':
+  '<span class="small">Esta compañía aún no tiene logo. Puedes cargar uno.</span>';
+}
+function fillOrganizationBrandEditor(){
+ const org=corporateCtx?.organizations?.find(o=>o.id===corporateSelection());
+ $('#editOrganizationName').value=org?.name||'';
+ $('#editOrganizationLogoPreview').innerHTML=org?corporateBrandPreview(org):'Selecciona una compañía.';
+}
+async function readCorporateLogo(file){
+ if(!file)return '';
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('El logo debe ser PNG, JPG o WEBP.');
+ if(file.size>8*1024*1024)throw Error('El archivo no debe superar 8 MB.');
+ const data=await resizeLogo(file);
+ if(data.length>700000)throw Error('El logo comprimido aún es demasiado grande. Usa una imagen más sencilla.');
+ return data;
+}
+$('#newOrganizationLogo').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{$('#newOrganizationLogoPreview').innerHTML='<img src="'+await readCorporateLogo(file)+'" alt="Logo seleccionado">'}
+ catch(error){e.target.value='';$('#newOrganizationLogoPreview').textContent=error.message}
+};
+$('#editOrganizationLogo').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{$('#editOrganizationLogoPreview').innerHTML='<img src="'+await readCorporateLogo(file)+'" alt="Nuevo logo seleccionado">'}
+ catch(error){e.target.value='';$('#editOrganizationLogoPreview').textContent=error.message}
+};
 $('#createOrganization').onclick=async()=>{
  const name=$('#newOrganizationName').value.trim();
  if(name.length<3)return alert('Indica un nombre de compañía válido.');
  if(!corporateCtx?.platform)return alert('Solo el administrador general puede crear organizaciones.');
  if(!confirm('¿Crear la organización «'+name+'»?'))return;
  try{
-  await corporateApi(organizationApiPath('acr_organizations'), 'POST',{name},'return=representation');
-  $('#newOrganizationName').value='';
+  const file=$('#newOrganizationLogo').files[0];
+  const logo_data=file?await readCorporateLogo(file):'';
+  await corporateApi(organizationApiPath('acr_organizations'),'POST',{name,logo_data},'return=representation');
+  $('#newOrganizationName').value='';$('#newOrganizationLogo').value='';
+  $('#newOrganizationLogoPreview').textContent='Sin logo seleccionado.';
   await loadOrganizations();
-  alert('Compañía registrada. Sus usuarios podrán solicitar afiliación.');
+  alert('Compañía e identidad corporativa registradas.');
  }catch(error){alert('No se pudo crear la compañía: '+error.message)}
+};
+$('#saveOrganizationBrand').onclick=async()=>{
+ if(!corporateCtx?.platform)return alert('Solo el administrador general puede modificar la identidad corporativa.');
+ const org=corporateCtx.organizations.find(o=>o.id===corporateSelection());
+ if(!org)return alert('Selecciona una compañía antes de editarla.');
+ const name=$('#editOrganizationName').value.trim();
+ if(name.length<3)return alert('El nombre de la empresa debe tener al menos 3 caracteres.');
+ try{
+  const file=$('#editOrganizationLogo').files[0];
+  const changes={name};
+  if(file)changes.logo_data=await readCorporateLogo(file);
+  await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+org.id),'PATCH',changes,'return=minimal');
+  $('#editOrganizationLogo').value='';
+  await loadOrganizations();
+  alert('Identidad corporativa actualizada. Se aplicará a los informes de los usuarios aprobados.');
+ }catch(error){alert('No se pudo actualizar la empresa: '+error.message)}
+};
+$('#clearOrganizationLogo').onclick=async()=>{
+ if(!corporateCtx?.platform)return;
+ const org=corporateCtx.organizations.find(o=>o.id===corporateSelection());
+ if(!org||!confirm('¿Quitar el logo de '+org.name+'?'))return;
+ try{
+  await corporateApi(organizationApiPath('acr_organizations','?id=eq.'+org.id),'PATCH',{logo_data:''},'return=minimal');
+  await loadOrganizations();
+ }catch(error){alert(error.message)}
 };
 $('#requestOrganizationMembership').onclick=async()=>{
  const oid=corporateSelection();
