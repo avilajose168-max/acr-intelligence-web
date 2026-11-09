@@ -149,7 +149,7 @@ console.log('OK catálogo de equipos de chancado y numeración SAP');
 const eventStart=html.indexOf('<section id="registro"');
 const eventEnd=html.indexOf('<div class="downtimeCard"',eventStart);
 const eventMarkup=html.slice(eventStart,eventEnd);
-const orderedFields=['id="miningAreaField"','id="miningSectorField"','id="eventTitleField"','id="chancadoEquipmentSelect"','id="chancadoSapNumber"'];
+const orderedFields=['id="miningAreaField"','id="miningSectorField"','id="chancadoEquipmentSelect"','id="chancadoSapNumber"','id="eventTitleField"'];
 let previousPosition=-1;
 for(const field of orderedFields){
  const at=eventMarkup.indexOf(field);
@@ -157,4 +157,4 @@ for(const field of orderedFields){
  previousPosition=at;
 }
 assert.ok(eventMarkup.indexOf('data-k="datetime"')>previousPosition,'La fecha y el resto deben ir después del SAP');
-console.log('OK orden de formulario: área, sector, título, equipo y SAP automático');
+console.log('OK orden de formulario: área, sector, equipo, SAP automático y título');
