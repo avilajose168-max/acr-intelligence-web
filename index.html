@@ -230,6 +230,9 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 #organizaciones select,#organizaciones input{background:#0b1522;color:#f2f7fc;border:1px solid #39536c;border-radius:9px;padding:11px}
 #organizaciones .dashboard-kpis{margin:14px 0 20px}
 .org-admin-table{min-width:690px}
+.org-admin-table .org-unlink-button{border:1px solid #ac6372;background:#3e2535;color:#ffdadf;font-weight:750;white-space:nowrap}
+.org-admin-table .org-unlink-button:hover{background:#633144;border-color:#e89aaa}
+.org-admin-table .org-unlink-button:disabled{opacity:.55;cursor:wait}
 .org-admin-table button,.org-admin-table select{font-size:12px;padding:7px 10px}
 .org-admin-table td{vertical-align:middle}
 .org-admin-table .help{font-size:12px}
@@ -2687,7 +2690,7 @@ async function loadCorporateOverview(){
   const users=members.filter(m=>m.requested_role!=='admin'&&m.role!=='admin');
   const tableRows=arr=>arr.map(m=>{
    const isAdminAccount=m.role==='admin'||m.requested_role==='admin';
-   const manageable=isAdminAccount?platformAdmin:companyAdmin;
+   const manageable=isAdminAccount?platformAdmin:(companyAdmin||platformAdmin);
    let controls;
    if(!manageable){
     controls='<span class="small">'+(isAdminAccount?'Solo administrador general':'Solo administrador de esta compañía')+'</span>';
@@ -2699,6 +2702,8 @@ async function loadCorporateOverview(){
       (platformAdmin?'<select data-org-member-role="'+esc(m.id)+'" aria-label="Rol de usuario">'+
        '<option value="member"'+(m.role==='member'?' selected':'')+'>Usuario</option>'+
        '<option value="admin"'+(m.role==='admin'?' selected':'')+'>Administrador</option></select>':'')+
+      (m.status==='approved'&&m.user_id!==activeUser.id?
+       '<button type="button" class="secondary org-unlink-button" data-org-unlink="'+esc(m.id)+'" aria-label="Desvincular a '+esc(m.display_name||m.email||'usuario')+' de la compañía">Desvincular</button>':'')+
      '</div>';
    }
    return '<tr><td>'+esc(m.display_name||'Usuario')+'</td><td>'+esc(m.email||'')+'</td>'+
@@ -2711,8 +2716,9 @@ async function loadCorporateOverview(){
    (admins.length?tableRows(admins):'<tr><td colspan="6" class="small">Sin administradores ni solicitudes de administración.</td></tr>')+
    '<tr><td colspan="6"><strong>USUARIOS DE LA COMPAÑÍA</strong> · El administrador de esta compañía aprueba o rechaza sus solicitudes.</td></tr>'+
    (users.length?tableRows(users):'<tr><td colspan="6" class="small">Sin usuarios registrados.</td></tr>');
-  $$('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
-  $$('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
+  $('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
+  $('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
+  $('[data-org-unlink]').forEach(el=>el.onclick=()=>void unlinkCorporateMembership(el.dataset.orgUnlink,el));
   $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
    const member=members.find(m=>m.user_id===c.owner_id);
    const count=(c.payload?.actions||[]).filter(a=>String(a?.description||'').trim()).length;
@@ -2758,6 +2764,35 @@ async function loadCorporateOverview(){
   });
 
  }catch(error){$('#companyAdminTitle').textContent='No se pudo consultar el consolidado: '+error.message}
+}
+async function unlinkCorporateMembership(id,button){
+ const orgId=corporateSelection();
+ const member=corporateCtx?.orgMembers?.find(m=>m.id===id&&m.organization_id===orgId);
+ if(!member||!orgId||!corporateIsAdmin())return;
+ const platform=!!corporateCtx.platform;
+ const privileged=member.role==='admin'||member.requested_role==='admin';
+ if(member.user_id===activeUser?.id){
+  alert('No puedes desvincularte de tu propia compañía desde este panel.');return;
+ }
+ if(privileged&&!platform){
+  alert('Solo el administrador general de ACR Integrity puede desvincular administradores.');return;
+ }
+ const companyName=corporateCtx.organizations.find(x=>x.id===orgId)?.name||'esta compañía';
+ const person=member.display_name||member.email||'este usuario';
+ if(!confirm('¿Desvincular a '+person+' de «'+companyName+'»?\\n\\nPerderá de inmediato el acceso y la posibilidad de publicar nuevos ACR en esta compañía. Su cuenta e investigaciones privadas se conservarán. Los ACR corporativos ya publicados permanecerán en el historial de la empresa. Si desea regresar, deberá solicitar afiliación nuevamente.'))return;
+ if(button)button.disabled=true;
+ try{
+  const deleted=await corporateApi(organizationApiPath('acr_memberships',
+   '?id=eq.'+encodeURIComponent(id)+'&organization_id=eq.'+encodeURIComponent(orgId)),
+   'DELETE',undefined,'return=representation');
+  if(!Array.isArray(deleted)||deleted.length!==1)throw Error('No se confirmó la desvinculación. Revisa si el registro sigue vigente.');
+  await loadCorporateOverview();
+  // La cuenta sigue activa; solo se elimina la afiliación corporativa.
+  $('#companyReportsStatus').textContent='Afiliación de '+person+' desvinculada de '+companyName+'. Sus ACR corporativos históricos se conservan.';
+ }catch(error){
+  alert('No fue posible desvincular a '+person+': '+error.message);
+  if(orgId===corporateSelection())await loadCorporateOverview();
+ }finally{if(button?.isConnected)button.disabled=false}
 }
 async function changeCorporateMembership(id,changes){
  const item=corporateCtx?.orgMembers.find(m=>m.id===id);
