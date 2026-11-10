@@ -52,6 +52,12 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
       mockMemberships.push({...obj,id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd'});
       return route.fulfill({status:201,headers,body:JSON.stringify([obj])});
     }
+    if(method==='DELETE'){
+      const memberId=request.searchParams.get('id')?.replace(/^eq\./,'');
+      const index=mockMemberships.findIndex(m=>m.id===memberId&&m.organization_id===orgId&&m.user_id!==testOwnerId);
+      const removed=index>=0?mockMemberships.splice(index,1):[];
+      return route.fulfill({status:200,headers,body:JSON.stringify(removed)});
+    }
     return route.fulfill({status:200,headers,body:JSON.stringify(mockMemberships.filter(m=>(!orgId||m.organization_id===orgId)&&(!userId||m.user_id===userId)))});
   }
   if(url.includes('/rest/v1/acr_corporate_investigations')){
@@ -616,6 +622,27 @@ await companyAdminPage.evaluate(()=>{
 await companyAdminPage.waitForTimeout(300);
 assert.ok((await companyAdminPage.locator('#corporateViewTitle').innerText()).includes(testOrgName),'No puede cambiar a otra empresa manipulando el selector oculto');
 await companyAdminPage.close();
+
+// Prueba de desvinculación: cancelar, confirmar y conservar el historial.
+const departingId='66666666-6666-4666-8666-666666666666';
+const departingMembershipId='77777777-7777-4777-8777-777777777777';
+mockMemberships.push({id:departingMembershipId,organization_id:testOrgId,user_id:departingId,
+ display_name:'Empleado de prueba',email:'empleado-test@example.com',status:'approved',role:'member',requested_role:'member'});
+await page.locator('button[data-page="organizaciones"]').click();
+await page.locator('#organizationSelect').selectOption(testOrgId);
+await page.locator('#companyRefreshUserReports').click();
+await page.waitForFunction(()=>document.querySelector('#orgUserCount')?.textContent==='2',{timeout:12000});
+assert.equal(await page.locator('[data-org-unlink="'+departingMembershipId+'"]').count(),1,'Administrador puede desvincular otro miembro aprobado');
+assert.equal(await page.locator('[data-org-unlink="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"]').count(),0,'No puede desvincularse a sí mismo');
+page.once('dialog',d=>d.dismiss());
+await page.locator('[data-org-unlink="'+departingMembershipId+'"]').click();
+assert.equal(mockMemberships.some(m=>m.id===departingMembershipId),true,'Cancelar conserva la afiliación');
+page.once('dialog',d=>d.accept());
+await page.locator('[data-org-unlink="'+departingMembershipId+'"]').click();
+await page.waitForFunction(()=>document.querySelector('#orgUserCount')?.textContent==='1',{timeout:12000});
+assert.equal(mockMemberships.some(m=>m.id===departingMembershipId),false,'Confirmar borra exclusivamente la afiliación');
+assert.equal(await page.locator('#orgCaseCount').innerText(),'1','El historial de ACR corporativos se conserva');
+assert.equal(await page.locator('[data-org-unlink="'+departingMembershipId+'"]').count(),0,'El usuario desvinculado desaparece de la lista');
 
 // V29: al crear una cuenta se elige Independiente o Empresa + rol solicitado, sin conceder privilegios.
 const signupPage=await browser.newPage({viewport:{width:430,height:890}});
