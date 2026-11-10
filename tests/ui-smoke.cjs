@@ -614,6 +614,23 @@ await companyAdminPage.locator('[data-org-case]').first().click();
 const fullCase=await companyAdminPage.locator('#orgCaseDetail').innerText();
 assert.ok(fullCase.includes('Protección temperatura rodamiento'),'Puede abrir los ACR de los usuarios');
 assert.ok(fullCase.includes('Causa básica')&&fullCase.includes('Conclusión ejecutiva'),'Vista ACR técnica de solo lectura');
+// El informe publicado debe reutilizar la presentación que ve el investigador.
+await companyAdminPage.locator('#openPublishedAcrReport').click();
+await companyAdminPage.locator('#corporateAcrPreview').waitFor({state:'visible'});
+assert.ok((await companyAdminPage.locator('#corporateAcrDocument').innerText()).includes('Protección temperatura rodamiento'),'Vista corporativa presenta el informe real');
+assert.equal(await companyAdminPage.locator('#corporateAcrDocument .report-head').count(),1,'Conserva cabecera de informe');
+assert.ok(await companyAdminPage.locator('#corporateAcrDocument .reportbox').count()>=7,'Conserva secciones y tablas de informe');
+await companyAdminPage.locator('#corporateAcrFormat').selectOption('a3');
+assert.equal(await companyAdminPage.locator('#corporateAcrDocument.reportMode-a3').count(),1,'El administrador puede visualizar A3 ejecutivo');
+await companyAdminPage.locator('#corporateAcrFormat').selectOption('acr');
+assert.equal(await companyAdminPage.locator('#corporateAcrDocument.reportMode-acr').count(),1,'Puede visualizar ACR completo');
+await companyAdminPage.evaluate(()=>{window.__corporateAcrPrintCalls=0;window.print=()=>{window.__corporateAcrPrintCalls++}});
+await companyAdminPage.locator('#corporateAcrPdf').click();
+assert.equal(await companyAdminPage.evaluate(()=>window.__corporateAcrPrintCalls),1,'Guardar PDF abre el diálogo de impresión del documento corporativo');
+assert.equal(await companyAdminPage.evaluate(()=>document.body.classList.contains('corp-acr-print')),true,'Impresión usa estilo exclusivo del ACR corporativo');
+await companyAdminPage.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+await companyAdminPage.locator('#corporateAcrBack').click();
+assert.equal(await companyAdminPage.locator('#companyAdminPanel').isVisible(),true,'Regresar conserva el contexto de compañía');
 await companyAdminPage.evaluate(()=>{
  const selector=document.querySelector('#organizationSelect');
  selector.value='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
