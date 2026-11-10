@@ -736,6 +736,33 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
   <article id="corpReportSheet" aria-label="Informe corporativo de confiabilidad o compromisos"></article>
 </section>
+<section id="corporateAcrPreview" class="section" aria-label="Informe ACR corporativo en formato original">
+ <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
+   <div><div class="eyebrow">ACR INTEGRITY · INVESTIGACIÓN PUBLICADA</div><h2>Informe completo de investigación</h2><p class="muted">Mismo formato del investigador · Consulta corporativa de solo lectura.</p></div>
+   <div class="toolbar" style="flex-wrap:wrap;gap:9px">
+     <button type="button" class="secondary" id="corporateAcrBack">← Volver a mi compañía</button>
+     <label class="field">Formato<select id="corporateAcrFormat" aria-label="Formato del informe corporativo">
+       <option value="acr">ACR completo · A4</option><option value="5why">5 Porqués · A4</option><option value="a3">A3 ejecutivo · horizontal</option>
+     </select></label>
+     <button type="button" class="primary" id="corporateAcrPdf">⬇ Guardar como PDF</button>
+     <button type="button" class="secondary" id="corporateAcrPrint">🖨 Imprimir</button>
+   </div>
+ </div>
+ <p class="help noprint" style="margin-bottom:12px">El documento no puede editarse aquí. Para guardar una copia fiel, elige «Guardar como PDF» en el diálogo de impresión.</p>
+ <article id="corporateAcrDocument" class="preview reportMode-acr" aria-label="Informe publicado en formato original"></article>
+</section>
+<style>
+#corporateAcrPreview .preview{margin:0 auto;max-width:1200px;box-sizing:border-box;background:#fff;color:#1a2c3e;box-shadow:0 8px 25px #0003}
+#corporateAcrPreview .reportbox{overflow-wrap:anywhere}
+#corporateAcrPreview #corporateAcrFormat{min-width:185px}
+@media print{
+ body.corp-acr-print .section,body.corp-acr-print #reporte,body.corp-acr-print #corporateReportPreview{display:none!important}
+ body.corp-acr-print #corporateAcrPreview{display:block!important;margin:0!important;padding:0!important}
+ body.corp-acr-print #corporateAcrDocument{display:block!important;margin:0!important;padding:0!important;max-width:none!important;width:100%!important;border:none!important;border-radius:0!important;box-shadow:none!important}
+ body.corp-acr-print #corporateAcrDocument .report-head,body.corp-acr-print #corporateAcrDocument .report-meta,body.corp-acr-print #corporateAcrDocument .reportbox{break-inside:avoid}
+ body.corp-acr-print #corporateAcrDocument .printphotos figure{break-inside:avoid}
+}
+</style>
 <section id="weeklyReport" class="section">
   <div class="between noprint" style="flex-wrap:wrap;gap:12px;margin:0 0 16px">
     <div><div class="eyebrow">Reporte de confiabilidad · Semana ISO</div><h1>Informe semanal de Pareto</h1><p class="muted">Vista previa lista para imprimir o guardar como PDF.</p></div>
@@ -2257,12 +2284,55 @@ function renderCorporateCommitDetail(scope,filtered){
   '<hr style="width:100%;border:0;border-top:1px solid #335773"><span><b>Total</b><b>'+total+'</b></span></div>';
 }
 function openCorporateCommitInvestigation(publishedId){
- const index=(corporateCtx?.cases||[]).findIndex(c=>String(c.id)===String(publishedId));
- const entry=index>=0?corporateCtx.cases[index]:null;
- const existing=index>=0?$('[data-org-case="'+index+'"]'):null;
- if(existing){existing.click();$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
- else if(entry){$('#orgCaseDetail').textContent='Investigación: '+(entry.title||'ACR')+'. Consulta el detalle en Investigaciones por usuario.';$('#orgCaseDetail').classList.remove('hidden');$('#orgCaseDetail').scrollIntoView({behavior:'smooth',block:'start'})}
+ const entry=(corporateCtx?.cases||[]).find(c=>String(c.id)===String(publishedId));
+ if(!entry||!corporateIsAdmin()||entry.organization_id!==corporateSelection()){
+  alert('Esta investigación no está disponible para la compañía seleccionada.');return;
+ }
+ showCorporateAcrReport(entry);
 }
+let corporateAcrOpenedId='';
+function showCorporateAcrReport(record){
+ if(!corporateIsAdmin()||!corporateSelection()||!record?.payload||record.organization_id!==corporateSelection()){
+  alert('No tienes acceso al informe solicitado.');return;
+ }
+ corporateAcrOpenedId=record.id;
+ const preferred=selectedReportFormat(record.payload);
+ $('#corporateAcrFormat').value=preferred;
+ renderCorporateAcrPreview();
+ navigate('corporateAcrPreview');
+}
+function renderCorporateAcrPreview(){
+ if(!corporateIsAdmin()||!corporateSelection())return;
+ const record=(corporateCtx?.cases||[]).find(c=>c.id===corporateAcrOpenedId&&c.organization_id===corporateSelection());
+ if(!record?.payload)return;
+ const source=record.payload,format=$('#corporateAcrFormat').value;
+ // Un informe publicado siempre se representa desde una copia, sin alterar los datos originales.
+ const c={...source,id:String(source.id||record.local_case_id||record.id),whys:Array.isArray(source.whys)?source.whys:['','','','',''],
+   photos:(Array.isArray(source.photos)?source.photos:[]).map(p=>({...p,data:safeSharedPicture(p?.data)})).filter(p=>p.data),
+   safetyPhotos:(Array.isArray(source.safetyPhotos)?source.safetyPhotos:[]).map(p=>({...p,data:safeSharedPicture(p?.data)})).filter(p=>p.data),
+   actions:Array.isArray(source.actions)?source.actions:[]};
+ const org=corporateCtx.organizations.find(o=>o.id===record.organization_id);
+ const brand={name:org?.name||'ACR Integrity',logo:safeSharedPicture(org?.logo_data)};
+ renderCaseReport(c,$('#corporateAcrDocument'),format,brand,false);
+}
+function printCorporateAcrReport(){
+ if(!corporateIsAdmin())return;
+ renderCorporateAcrPreview();
+ const format=$('#corporateAcrFormat').value;
+ const style=document.getElementById('acrPrintPageSize')||document.createElement('style');
+ style.id='acrPrintPageSize';
+ style.textContent='@media print{@page{size:'+(format==='a3'?'A3 landscape; margin:10mm':'A4 portrait; margin:12mm')+'}}';
+ document.head.appendChild(style);
+ document.body.classList.add('corp-acr-print');
+ const cleanup=()=>{document.body.classList.remove('corp-acr-print');window.removeEventListener('afterprint',cleanup)};
+ window.addEventListener('afterprint',cleanup,{once:true});
+ window.print();
+}
+$('#corporateAcrBack').onclick=()=>navigate('organizaciones');
+$('#corporateAcrFormat').onchange=renderCorporateAcrPreview;
+$('#corporateAcrPdf').onclick=printCorporateAcrReport;
+$('#corporateAcrPrint').onclick=printCorporateAcrReport;
+
 function drawCorporateCommitments(){
  if(!$('#corporateCommitmentsPanel')||!corporateIsAdmin()||!corporateSelection())return;
  corporateCommitmentSubareaOptions();
@@ -2741,7 +2811,8 @@ async function loadCorporateOverview(){
         '<p>'+esc(p.caption||'Fotografía '+(i+1))+'</p></div>';
      }).join('')+'</div>'
    );
-   content.innerHTML='<div class="between"><h3>ACR corporativo · '+esc(item.title||'Investigación')+'</h3><span class="chip">Solo lectura</span></div>'+
+   content.innerHTML='<div class="toolbar" style="justify-content:flex-end;margin-bottom:12px"><button type="button" class="primary" id="openPublishedAcrReport">📄 Ver informe en formato original</button></div>'+
+    '<div class="between"><h3>ACR corporativo · '+esc(item.title||'Investigación')+'</h3><span class="chip">Solo lectura</span></div>'+
     field('Investigador',member?.display_name||member?.email||'Usuario')+
     field('Equipo',item.equipment)+field('Área',item.area)+field('Fecha y hora',item.datetime)+
     field('Orden de trabajo',item.workorder)+field('Horas de detención',item.downtime)+
@@ -2760,6 +2831,7 @@ async function loadCorporateOverview(){
       '<li>'+esc(a.description)+' · Responsable: '+esc(a.owner||'Sin asignar')+
       ' · Fecha: '+esc(a.due||'Sin fecha')+' · Estado: '+esc(a.status||'Pendiente')+'</li>').join('')+'</ol>'+
     photoGallery(item.photos,'Fotografías de evidencia');
+   $('#openPublishedAcrReport').onclick=()=>showCorporateAcrReport(record);
    content.classList.remove('hidden');content.scrollIntoView({block:'nearest',behavior:'smooth'});
   });
 
@@ -3465,15 +3537,16 @@ $('#reportFormat').addEventListener('change',e=>{
  persist();
  drawReport();
 });
-function reportBox(title,html,klass=''){return `<div class="reportbox ${klass}"><h3>${title}</h3>${html}</div>`}function drawReport(){const c=current();if(!c)return;const box=$('#printDocument');const reportFormat=selectedReportFormat(c);
-$('#reportFormat').value=reportFormat;
-$('#reportFormatHint').textContent=REPORT_FORMATS[reportFormat].hint+' Los datos de esta investigación no se modifican.';
+function reportBox(title,html,klass=''){return `<div class="reportbox ${klass}"><h3>${title}</h3>${html}</div>`}function drawReport(){const c=current();if(!c)return;renderCaseReport(c,$('#printDocument'),selectedReportFormat(c),effectiveReportBrand(),true)}
+function renderCaseReport(c,box,reportFormat,brand,personal=false){
+if(personal){$('#reportFormat').value=reportFormat;
+$('#reportFormatHint').textContent=REPORT_FORMATS[reportFormat].hint+' Los datos de esta investigación no se modifican.';}
 box.className='preview reportMode-'+reportFormat;
  const printPageStyle=document.getElementById('acrPrintPageSize')||document.createElement('style');
  printPageStyle.id='acrPrintPageSize';
  printPageStyle.textContent='@media print{@page{size:'+(reportFormat==='a3'?'A3 landscape; margin:10mm':'A4 portrait; margin:12mm')+'}}';
  document.head.appendChild(printPageStyle);
-const mode=reportFormat==='a3'?'A3 EJECUTIVO':reportFormat==='acr'?'ANÁLISIS CAUSA RAÍZ':'ANÁLISIS 5 PORQUÉS';const why=c.whys.some(x=>x.trim())?`<ol>${c.whys.filter(x=>x.trim()).map(x=>`<li>${text(x)}</li>`).join('')}</ol>`:'<p>No registrado</p>';const photos=c.photos.length?`<div class="printphotos">${c.photos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>EV-${String(i+1).padStart(2,'0')} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:'<p>No se adjuntaron fotografías.</p>';const actions=c.actions.filter(a=>a.description.trim());paintQuality(c);const brand=effectiveReportBrand();box.innerHTML=`<div class="report-head"><div class="companyBrand">${brand.logo?`<img class="report-logo" alt="Logo corporativo" src="${brand.logo}">`:''}<div><div class="report-company-name">${esc(brand.name||'ACR Integrity')}</div><div class="report-company">Informe técnico de investigación de fallas</div></div><div class="right"><b style="font-size:11px">${mode}</b></div></div><div class="between"><span class="eyebrow">ACR Integrity · Informe técnico</span></div><h1>${esc(c.title||'Evento en investigación')}</h1><div class="small" style="color:#55687d">Documento ${esc(c.id.slice(0,8).toUpperCase())} · Generado ${new Date().toLocaleString('es-CL')}</div></div><div class="report-meta"><div>EQUIPO / TAG<b>${esc(c.equipment||'—')}</b></div><div>ÁREA / UNIDAD / SECTOR<b>${esc([c.area,c.area==='Área Húmeda'?c.productionUnit:c.sector].filter(Boolean).join(' · ')||'—')}</b></div><div>N.º SAP EQUIPO<b>${esc(c.equipmentSap||'—')}</b></div><div>FECHA / HORA<b>${esc((c.datetime||'—').replace('T',' '))}</b></div><div>SEVERIDAD<b>${esc(c.severity)}</b></div><div>TIEMPO DE DETENCIÓN<b>${esc(c.downtime||'0')} horas</b></div></div><div class="print-grid" style="margin-top:12px">${reportBox('01 · Situación / problema',`<p>${text(c.description)}</p><p><b>OT / Aviso:</b> ${esc(c.workorder||'—')}</p>`)}${reportBox('02 · Detención y seguridad',`<p><b>Duración:</b> ${esc(c.downtime||'0')} horas</p><p><b>Inicio:</b> ${esc((c.stopStart||'No registrado').replace('T',' '))} · <b>Término:</b> ${esc((c.stopEnd||'No registrado').replace('T',' '))}</p><p><b>Condición de seguridad:</b> ${c.safetyCondition==='si'?'Sí':c.safetyCondition==='no'?'No se identificó':'No declarada'}</p>${c.safetyCondition==='si'?`<p><b>Condición identificada:</b> ${text(c.safetyDescription)}</p><p><b>Acción correctiva de seguridad:</b> ${text(c.safetyAction||'No registrada')}</p>${(c.safetyPhotos||[]).length?`<div class="printphotos">${c.safetyPhotos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>SEG-${i+1} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:''}`:''}`)}${reportBox('03 · Cinco Porqués',why)}${reportBox('04 · Causa básica y consecuencia',`<p><b>Causa básica preliminar:</b> ${text(c.basicCause)}</p><p><b>Consecuencia de la causa:</b> ${text(c.causeConsequence)}</p><p><b>Estado:</b> ${esc(c.validationStatus)}</p>`)}${reportBox('05 · Evidencia fotográfica',photos)}${reportBox('06 · Conclusión ejecutiva',`<p>${text(c.conclusion)}</p>`)}${reportBox('07 · Acciones y responsables',actions.length?`<table class="print-table"><thead><tr><th>Acción</th><th>Responsable</th><th>Compromiso</th></tr></thead><tbody>${actions.map(a=>`<tr><td>${text(a.description)}</td><td>${esc(a.owner||'—')}</td><td>${esc(a.due||'—')}</td></tr>`).join('')}</tbody></table>`:'<p>No registradas</p>')}</div><div class="signatures"><span>Investigador: ${esc(c.author||'___________________')}</span><span>Revisión técnica: ${esc(c.reviewer||'___________________')}</span></div><div class="print-footer">Documento de trabajo. Las hipótesis requieren evidencia verificable y aprobación técnica antes de declarar una causa raíz confirmada. Reporte generado en el dispositivo.</div>`}
+const mode=reportFormat==='a3'?'A3 EJECUTIVO':reportFormat==='acr'?'ANÁLISIS CAUSA RAÍZ':'ANÁLISIS 5 PORQUÉS';const why=c.whys.some(x=>x.trim())?`<ol>${c.whys.filter(x=>x.trim()).map(x=>`<li>${text(x)}</li>`).join('')}</ol>`:'<p>No registrado</p>';const photos=c.photos.length?`<div class="printphotos">${c.photos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>EV-${String(i+1).padStart(2,'0')} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:'<p>No se adjuntaron fotografías.</p>';const actions=c.actions.filter(a=>a.description.trim());if(personal)paintQuality(c);box.innerHTML=`<div class="report-head"><div class="companyBrand">${brand.logo?`<img class="report-logo" alt="Logo corporativo" src="${brand.logo}">`:''}<div><div class="report-company-name">${esc(brand.name||'ACR Integrity')}</div><div class="report-company">Informe técnico de investigación de fallas</div></div><div class="right"><b style="font-size:11px">${mode}</b></div></div><div class="between"><span class="eyebrow">ACR Integrity · Informe técnico</span></div><h1>${esc(c.title||'Evento en investigación')}</h1><div class="small" style="color:#55687d">Documento ${esc(c.id.slice(0,8).toUpperCase())} · Generado ${new Date().toLocaleString('es-CL')}</div></div><div class="report-meta"><div>EQUIPO / TAG<b>${esc(c.equipment||'—')}</b></div><div>ÁREA / UNIDAD / SECTOR<b>${esc([c.area,c.area==='Área Húmeda'?c.productionUnit:c.sector].filter(Boolean).join(' · ')||'—')}</b></div><div>N.º SAP EQUIPO<b>${esc(c.equipmentSap||'—')}</b></div><div>FECHA / HORA<b>${esc((c.datetime||'—').replace('T',' '))}</b></div><div>SEVERIDAD<b>${esc(c.severity)}</b></div><div>TIEMPO DE DETENCIÓN<b>${esc(c.downtime||'0')} horas</b></div></div><div class="print-grid" style="margin-top:12px">${reportBox('01 · Situación / problema',`<p>${text(c.description)}</p><p><b>OT / Aviso:</b> ${esc(c.workorder||'—')}</p>`)}${reportBox('02 · Detención y seguridad',`<p><b>Duración:</b> ${esc(c.downtime||'0')} horas</p><p><b>Inicio:</b> ${esc((c.stopStart||'No registrado').replace('T',' '))} · <b>Término:</b> ${esc((c.stopEnd||'No registrado').replace('T',' '))}</p><p><b>Condición de seguridad:</b> ${c.safetyCondition==='si'?'Sí':c.safetyCondition==='no'?'No se identificó':'No declarada'}</p>${c.safetyCondition==='si'?`<p><b>Condición identificada:</b> ${text(c.safetyDescription)}</p><p><b>Acción correctiva de seguridad:</b> ${text(c.safetyAction||'No registrada')}</p>${(c.safetyPhotos||[]).length?`<div class="printphotos">${c.safetyPhotos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>SEG-${i+1} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:''}`:''}`)}${reportBox('03 · Cinco Porqués',why)}${reportBox('04 · Causa básica y consecuencia',`<p><b>Causa básica preliminar:</b> ${text(c.basicCause)}</p><p><b>Consecuencia de la causa:</b> ${text(c.causeConsequence)}</p><p><b>Estado:</b> ${esc(c.validationStatus)}</p>`)}${reportBox('05 · Evidencia fotográfica',photos)}${reportBox('06 · Conclusión ejecutiva',`<p>${text(c.conclusion)}</p>`)}${reportBox('07 · Acciones y responsables',actions.length?`<table class="print-table"><thead><tr><th>Acción</th><th>Responsable</th><th>Compromiso</th></tr></thead><tbody>${actions.map(a=>`<tr><td>${text(a.description)}</td><td>${esc(a.owner||'—')}</td><td>${esc(a.due||'—')}</td></tr>`).join('')}</tbody></table>`:'<p>No registradas</p>')}</div><div class="signatures"><span>Investigador: ${esc(c.author||'___________________')}</span><span>Revisión técnica: ${esc(c.reviewer||'___________________')}</span></div><div class="print-footer">Documento de trabajo. Las hipótesis requieren evidencia verificable y aprobación técnica antes de declarar una causa raíz confirmada. Reporte generado en el dispositivo.</div>`}
 function download(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('#export').onclick=()=>download('acr-intelligence-terreno-respaldo.json',JSON.stringify(db,null,2),'application/json');$('#exportCase').onclick=()=>download('acr-'+current().id.slice(0,8)+'.json',JSON.stringify(current(),null,2),'application/json');$('#import').onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data.cases))throw Error('Formato inválido');if(!confirm('Se reemplazarán las investigaciones locales. ¿Continuar?'))return;db=data;selected=null;persist();navigate('inicio')}catch(err){alert('No se pudo importar el respaldo: '+err.message)}e.target.value=''};
 const demo=()=>{const c=makeCase();Object.assign(c,{format,title:'Pérdida de presión de clamping',equipment:'MP1000 · CH3 L1',area:'Chancado terciario',description:'Durante la operación se detectó una caída de presión en el sistema de clamping y se detuvo el equipo para inspección.',timeline:'14:10 · Alarma de baja presión.\n14:15 · Detención controlada.\n14:30 · Revisión inicial de válvula selectora.',severity:'Alta',downtime:'1.5',author:'Ingeniero de Confiabilidad',workorder:'OT-DEMO-001',whys:['¿Por qué se detuvo? — Presión de clamping insuficiente.','¿Por qué bajó la presión? — Se investiga una configuración incorrecta de la válvula selectora.','¿Por qué estaba en esa posición? — Pendiente confirmar secuencia de operación e intervención.','',''],rootCause:'Hipótesis: posición incorrecta de válvula selectora. No validada.',validation:'Pendiente: tendencia de presión, inspección de válvula y revisión de maniobras.',validationStatus:'Hipótesis pendiente',conclusion:'Evento en investigación. Se requiere validar el mecanismo y definir acciones permanentes antes del cierre.',actions:[{description:'Revisar registros de presión y alarmas',owner:'Instrumentación',due:'',status:'Pendiente'},{description:'Inspeccionar posición y señalización de válvula selectora',owner:'Mantenimiento',due:'',status:'Pendiente'},{description:'Evaluar procedimiento y control postintervención',owner:'Confiabilidad',due:'',status:'Pendiente'}]});db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$('#nextAnalysis').onclick=$('#nextAnalysisBottom').onclick=()=>navigate('analisis');$('#nextReport').onclick=$('#nextReportBottom').onclick=()=>navigate('reporte');$('#backHome').onclick=()=>navigate('inicio');$('#backEvent').onclick=()=>navigate('registro');$('#backAnalysis').onclick=()=>navigate('analisis');$('#saveReg').onclick=()=>{persist();alert('Avance guardado en este dispositivo')};
 
