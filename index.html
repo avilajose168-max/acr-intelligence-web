@@ -2736,7 +2736,7 @@ async function loadCorporateOverview(){
  try{
   const [members,cases]=await Promise.all([
    corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,email,display_name,status,role,requested_role,created_at&organization_id=eq.'+orgId+'&order=created_at.desc')),
-   corporateApi(organizationApiPath('acr_corporate_investigations','?select=id,owner_id,title,equipment,payload,updated_at,local_case_id&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'))
+   corporateApi(organizationApiPath('acr_corporate_investigations','?select=id,organization_id,owner_id,title,equipment,payload,updated_at,local_case_id&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'))
   ]);
   if(initialId!==corporateSelection()||!corporateIsAdmin())return;
   if(!Array.isArray(members)||!Array.isArray(cases))throw Error('Datos incompletos.');
