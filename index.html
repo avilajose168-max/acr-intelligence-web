@@ -2799,7 +2799,7 @@ async function changeCorporateMembership(id,changes){
  if(!item)return;
  const platform=!!corporateCtx.platform;
  const adminAction=item.requested_role==='admin'||item.role==='admin'||changes.role==='admin';
- if(!adminAction&&!(currentCorporateMembership()?.status==='approved'&&currentCorporateMembership()?.role==='admin')){
+ if(!adminAction&&!platform&&!(currentCorporateMembership()?.status==='approved'&&currentCorporateMembership()?.role==='admin')){
   alert('Las solicitudes de usuarios deben ser aprobadas por el administrador designado de esta compañía.');
   await loadCorporateOverview();return;
  }
