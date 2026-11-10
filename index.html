@@ -261,6 +261,25 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 @media(max-width:1050px){.platform-billing-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.platform-billing-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.platform-billing-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-billing-fields{grid-template-columns:1fr}.platform-billing-fields .platform-billing-wide{grid-column:auto}}
 
+
+/* Análisis complementario de ocho períodos en la tarjeta de tendencias de Inicio */
+#reliabilityDashboard #weeklyTrendAnalysis{margin:13px 0 4px}
+#reliabilityDashboard .trend-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:11px}
+#reliabilityDashboard .trend-summary>div{padding:10px 9px;border:1px solid #315874;background:linear-gradient(145deg,#14334c,#10283d);border-radius:8px;min-width:0}
+#reliabilityDashboard .trend-summary span{font-size:10px;display:block;color:#b8d0de;line-height:1.25}
+#reliabilityDashboard .trend-summary strong{display:block;font-size:18px;color:#edc476;margin:5px 0 2px;overflow-wrap:anywhere}
+#reliabilityDashboard .trend-summary small{display:block;font-size:10px;color:#c6d9e6;line-height:1.35}
+#reliabilityDashboard .trend-analysis h4{margin:12px 0 7px;color:#e1eef7;font-size:12px}
+#reliabilityDashboard .trend-week-table{width:100%;border-collapse:collapse;font-size:11px}
+#reliabilityDashboard .trend-week-table th{text-align:left;color:#c0d9ec;background:#1b3d56;font-size:10px;font-weight:800}
+#reliabilityDashboard .trend-week-table td,#reliabilityDashboard .trend-week-table th{padding:7px 9px;border-bottom:1px solid #2b526c}
+#reliabilityDashboard .trend-week-table tbody tr:nth-child(even){background:#102f45}
+#reliabilityDashboard .trend-week-table tbody tr:last-child{background:#254963;font-weight:750}
+#reliabilityDashboard .trend-week-table .right{text-align:right}
+#reliabilityDashboard .trend-week-table .trend-current{color:#f4cb79;font-weight:800}
+#reliabilityDashboard .trend-analysis-note{margin-top:9px;color:#a9c3d4;font-size:10px;line-height:1.5}
+@media(max-width:680px){#reliabilityDashboard .trend-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#reliabilityDashboard .trend-week-table td,#reliabilityDashboard .trend-week-table th{padding:6px 5px}}
+
 .corporate-command{margin:18px 0 24px;padding:18px;border:1px solid #385068;border-radius:15px;background:#102033}
 
 /* CORPORATE RELIABILITY VISUAL REFINEMENT — visual changes only, no KPI calculation changes */
@@ -526,7 +545,9 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <div class="dashboard-charts">
   <div class="dashboard-chart"><h3>Diagrama de Pareto</h3><div id="paretoChart" role="img" aria-label="Gráfico de Pareto semanal"></div><div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Detalle de Pareto"><thead><tr><th>Equipo / falla</th><th id="paretoValueHeading">Eventos</th><th>Acum.</th></tr></thead><tbody id="paretoTable"></tbody></table></div></div>
-  <div class="dashboard-chart"><h3 id="weeklyTrendTitle">Tendencia · últimas 8 semanas</h3><div id="weeklyTrend" role="img" aria-label="Comparación de las últimas ocho semanas"></div><p class="help">Historial por semana calendario (ISO 8601). Selecciona semanas anteriores para revisar su Pareto.</p></div>
+  <div class="dashboard-chart"><h3 id="weeklyTrendTitle">Tendencia · últimas 8 semanas</h3><div id="weeklyTrend" role="img" aria-label="Comparación de las últimas ocho semanas"></div>
+   <div id="weeklyTrendAnalysis" class="trend-analysis" aria-live="polite"></div>
+   <p class="help">Los valores corresponden al mismo filtro de área, equipo y período. Elige otra semana o mes para revisar su Pareto.</p></div>
 </div>
 <p class="help" style="margin:14px 0 0">Se considera la fecha de inicio de la detención; si no está registrada, se utiliza la fecha del evento. Los datos provienen solo de investigaciones guardadas en este navegador y cuenta; no incluyen eventos de otros usuarios o sistemas externos.</p>
 </div><div class="toolbar" style="margin:13px 0 19px;flex-wrap:wrap">
@@ -1201,6 +1222,41 @@ function renderParetoSvg(rows,total,metric){
  parts.push('<text x="385" y="294" text-anchor="middle" fill="#b3c3d4" font-size="11">Barras: '+(metric==='hours'?'horas detenidas':'cantidad de fallas')+'  ·  Línea turquesa: % acumulado  ·  Números: categorías de la tabla</text></svg>');
  return parts.join('');
 }
+function trendPeriodRows(cases,start,type){
+ return Array.from({length:8},(_,i)=>{
+  const key=type==='monthly'?addMonths(start,i-7):addDays(start,(i-7)*7);
+  const data=casesInWeek(cases,key,type);
+  const hours=data.reduce((total,c)=>total+sumDashboardHours(c),0);
+  const week=isoWeekNumber(key);
+  return {key,label:type==='monthly'?key.slice(5,7)+'/'+key.slice(0,4):'S'+String(week.week).padStart(2,'0')+' · '+key.slice(8,10)+'/'+key.slice(5,7),
+   count:data.length,hours};
+ });
+}
+function renderTrendAnalysis(cases,start,type,metric){
+ const rows=trendPeriodRows(cases,start,type),current=rows[7],prior=rows[6];
+ const totalCount=rows.reduce((n,r)=>n+r.count,0),totalHours=rows.reduce((n,r)=>n+r.hours,0);
+ const value=r=>metric==='hours'?r.hours:r.count;
+ const total=metric==='hours'?totalHours:totalCount;
+ const average=total/8;
+ const peak=rows.reduce((best,r)=>value(r)>value(best)?r:best,rows[0]);
+ const format=v=>dashboardMetricText(v,metric)+(metric==='hours'?' h':'');
+ const delta=value(current)-value(prior),comparison=value(prior)===0
+  ?value(current)===0?'Sin cambios respecto al período anterior':'Sin base para variación porcentual (anterior: 0)'
+  :((delta>0?'+':'')+(100*delta/value(prior)).toLocaleString('es-CL',{maximumFractionDigits:1})+'% frente al anterior');
+ const period=type==='monthly'?'mes':'semana';
+ return '<div class="trend-summary">'+
+  '<div><span>Total de 8 '+(type==='monthly'?'meses':'semanas')+'</span><strong>'+format(total)+'</strong><small>'+totalCount+' fallas · '+dashboardMetricText(totalHours,'hours')+' h detenidas</small></div>'+
+  '<div><span>Promedio por '+period+'</span><strong>'+format(average)+'</strong><small>Considera los 8 períodos</small></div>'+
+  '<div><span>Mayor registro</span><strong>'+format(value(peak))+'</strong><small>'+esc(peak.label)+'</small></div></div>'+
+  '<h4>Detalle por '+period+' · '+(metric==='hours'?'Horas de detención':'Cantidad de fallas')+'</h4>'+
+  '<div class="dashboard-table-wrap"><table class="trend-week-table"><thead><tr><th>'+(type==='monthly'?'Mes':'Semana / inicio')+'</th>'+
+  '<th class="right">Fallas</th><th class="right">Detención (h)</th></tr></thead><tbody>'+
+  rows.map((r,i)=>'<tr'+(i===7?' class="trend-current"':'')+'><td>'+esc(r.label)+(i===7?' · seleccionada':'')+'</td>'+
+   '<td class="right">'+r.count+'</td><td class="right">'+dashboardMetricText(r.hours,'hours')+'</td></tr>').join('')+
+  '</tbody></table></div>'+
+  '<p class="trend-analysis-note"><b>Última '+(type==='monthly'?'mensualidad':'semana')+':</b> '+format(value(current))+
+  ' · '+esc(comparison)+'. Este análisis incluye solo los ACR registrados en la selección actual; un cero significa que no hay fallas registradas.</p>';
+}
 function renderWeeklyTrend(cases,monday,metric){
  const weeks=Array.from({length:8},(_,i)=>addDays(monday,(i-7)*7));
  const series=weeks.map(start=>{
@@ -1378,7 +1434,9 @@ function drawDashboard(){
  $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
- $('#weeklyTrend').innerHTML=type==='monthly'?renderMonthlyTrend(scopedCases(scopeCases,asset),start,metric):renderWeeklyTrend(scopedCases(scopeCases,asset),start,metric);
+ const trendCases=scopedCases(scopeCases,asset);
+ $('#weeklyTrend').innerHTML=type==='monthly'?renderMonthlyTrend(trendCases,start,metric):renderWeeklyTrend(trendCases,start,metric);
+ $('#weeklyTrendAnalysis').innerHTML=renderTrendAnalysis(trendCases,start,type,metric);
  $('#weeklyTrendTitle').textContent=type==='monthly'?'Tendencia · últimos 8 meses':'Tendencia · últimas 8 semanas';
  $('#paretoTable').innerHTML=data.rows.length?data.rows.map((entry,i)=>'<tr><td>'+(i+1)+'. '+esc(entry.label)+'</td><td>'+dashboardMetricText(entry.value,metric)+'</td><td>'+entry.cumulative.toFixed(1).replace('.',',')+'%</td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;color:#a8bfd0">Sin registros para esta semana</td></tr>';
 }
