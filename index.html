@@ -170,6 +170,45 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 @media(max-width:1000px){#commitmentsDashboard .commit-detail-layout{grid-template-columns:1fr 1fr}#commitmentsDashboard .commit-detail-card:last-child{grid-column:1/-1}}
 @media(max-width:680px){#commitmentsDashboard .commit-detail-layout{grid-template-columns:1fr}#commitmentsDashboard .commit-detail-card:last-child{grid-column:auto}#commitmentsDashboard .commitments-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* Vista ejecutiva corporativa de compromisos */
+#corporateCommitmentsPanel{background:linear-gradient(145deg,#102d48,#07192b 73%);border:1px solid #326b8b;box-shadow:0 15px 35px #0003}
+#corporateCommitmentsPanel h2{font-size:clamp(21px,2.2vw,29px)}
+#corporateCommitmentsPanel .commitments-kpis>div{border:1px solid #315d7c;border-radius:12px;background:linear-gradient(145deg,#193b56,#0c2339);padding:16px 12px;min-width:0}
+#corporateCommitmentsPanel .commitments-kpis>div:nth-child(2){border-color:#078c70;background:linear-gradient(140deg,#064339,#102b3b)}
+#corporateCommitmentsPanel .commitments-kpis>div:nth-child(4){border-color:#ae5963}
+#corporateCommitmentsPanel .commitments-kpis span{font-size:10px;line-height:1.35}
+#corporateCommitmentsPanel .commitments-kpis strong{font-size:clamp(19px,2.3vw,29px)}
+#corporateCommitmentsPanel .commitment-filterbar{gap:10px;flex-wrap:wrap;align-items:end}
+#corporateCommitmentsPanel .commitment-filterbar .dashboard-filter{min-width:155px;max-width:260px}
+#corporateCommitmentsPanel .commitments-scroll{border:1px solid #285878;border-radius:10px;max-height:450px;overflow:auto}
+#corporateCommitmentsPanel .commitments-table{min-width:1050px}
+#corporateCommitmentsPanel .commitments-table tbody tr{cursor:pointer}
+#corporateCommitmentsPanel .commitments-table tbody tr:hover{background:#244762}
+#corporateCommitmentsPanel .commitments-table tbody tr.commit-selected{background:#1b526e;box-shadow:inset 3px 0 #27c9ff}
+#corporateCommitmentsPanel .commit-priority{display:inline-block;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:750;background:#28455a;color:#dceaf5}
+#corporateCommitmentsPanel .commit-priority-high{background:#6c2630;color:#ffd4c7}
+#corporateCommitmentsPanel .commit-priority-medium{background:#594416;color:#ffe2a0}
+#corporateCommitmentsPanel .commit-priority-low{background:#174b49;color:#a7f0dc}
+#corporateCommitmentsPanel .commit-detail-layout{display:grid;grid-template-columns:1fr 1.1fr .9fr;gap:12px;margin-top:17px}
+#corporateCommitmentsPanel .commit-detail-card{border:1px solid #2187ae;border-radius:11px;background:linear-gradient(135deg,#113650,#091c2e);min-width:0;overflow:hidden}
+#corporateCommitmentsPanel .commit-detail-card h3{background:#103d59;border-bottom:1px solid #267aa4;padding:13px 15px;font-size:14px;margin:0;color:#f2f8ff}
+#corporateCommitmentsPanel .commit-detail-body{padding:13px;font-size:12px;line-height:1.55}
+#corporateCommitmentsPanel .commit-detail-body p{margin:6px 0}
+#corporateCommitmentsPanel .commit-selected-title{border:1px solid #295d7b;background:#173952;padding:8px 10px;border-radius:7px;color:#e2f4ff;font-weight:750;margin-bottom:10px}
+#corporateCommitmentsPanel .commit-action-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid #294b61}
+#corporateCommitmentsPanel .commit-action-item:last-child{border-bottom:0}
+#corporateCommitmentsPanel .commit-action-item .commit-state{font-size:10px}
+#corporateCommitmentsPanel .commit-donut{width:min(165px,75%);aspect-ratio:1;border-radius:50%;margin:8px auto 13px;display:grid;place-items:center}
+#corporateCommitmentsPanel .commit-donut-inner{background:#0a2033;border-radius:50%;width:75%;height:75%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#corporateCommitmentsPanel .commit-donut-inner strong{font-size:28px;color:#fff}
+#corporateCommitmentsPanel .commit-donut-inner small{color:#b8c9d8;font-size:10px}
+#corporateCommitmentsPanel .commit-legend{display:grid;gap:6px}
+#corporateCommitmentsPanel .commit-legend span{display:flex;justify-content:space-between;gap:8px}
+#corporateCommitmentsPanel .commit-legend i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px}
+@media(max-width:1000px){#corporateCommitmentsPanel .commit-detail-layout{grid-template-columns:1fr 1fr}#corporateCommitmentsPanel .commit-detail-card:last-child{grid-column:1/-1}}
+@media(max-width:680px){#corporateCommitmentsPanel .commit-detail-layout{grid-template-columns:1fr}#corporateCommitmentsPanel .commit-detail-card:last-child{grid-column:auto}#corporateCommitmentsPanel .commitments-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
 .commitments-dashboard{margin:17px 0 18px}
 .commitments-kpis{grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 9px}
 .commitments-kpis strong{font-size:24px}
@@ -424,7 +463,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <div class="corporate-command" id="corporateCommitmentsPanel" style="margin-top:18px">
   <div class="between" style="flex-wrap:wrap;gap:12px">
-    <div><div class="eyebrow">GESTIÓN DE ACCIONES · EMPRESA SELECCIONADA</div><h2>Tablero corporativo de compromisos</h2><p class="muted">Compromisos de todos los ACR publicados por integrantes de esta compañía. Información de consulta para administración.</p></div>
+    <div><div class="eyebrow">GESTIÓN DE ACCIONES · EMPRESA SELECCIONADA</div><h2>Gestión Corporativa de Acciones y Compromisos</h2><p class="muted">Compromisos de todos los ACR publicados por integrantes de esta compañía. Información de consulta para administración.</p></div>
     <div class="toolbar" style="flex-wrap:wrap">
       <button type="button" class="primary" id="corpCommitPreview">📄 Ver informe</button><button type="button" class="secondary" id="corpCommitPdf">⬇ Guardar PDF</button><button type="button" class="secondary" id="corpCommitRefresh">↻ Actualizar compromisos</button>
       <button type="button" class="secondary" id="corpCommitExport">⬇ Exportar CSV</button>
@@ -439,18 +478,25 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <label class="field" id="corpCommitSubareaWrap" hidden>Sector / unidad<select id="corpCommitSubarea"><option value="__all__">Todos</option></select></label>
   </div>
   <div id="corpCommitPeriodLabel" class="dashboard-week" aria-live="polite"></div>
-  <div class="dashboard-kpis corporate-reliability-kpis" style="margin-top:12px">
+  <div class="dashboard-kpis corporate-reliability-kpis commitments-kpis" style="margin-top:12px">
     <div class="kpi-pane"><span>TOTAL</span><strong id="corpCommitTotal">0</strong><small>Acciones registradas</small></div>
     <div class="kpi-pane"><span>COMPLETADOS</span><strong id="corpCommitComplete">0</strong><small>Acciones cerradas</small></div>
     <div class="kpi-pane"><span>EN SEGUIMIENTO</span><strong id="corpCommitPending">0</strong><small>Pendientes o en curso</small></div>
     <div class="kpi-pane"><span>VENCIDOS</span><strong id="corpCommitOverdue">0</strong><small>Fuera de plazo</small></div>
-    <div class="kpi-pane"><span>CUMPLIMIENTO</span><strong id="corpCommitRate">0%</strong><small>Completados / total</small></div>
+    <div class="kpi-pane"><span>PRÓXIMOS 7 DÍAS</span><strong id="corpCommitUpcoming">0</strong><small>Cumplimiento: <b id="corpCommitRate">0%</b></small></div>
   </div>
-  <div class="dashboard-toolbar corporate-toolbar" style="margin:15px 0">
+  <div class="dashboard-toolbar corporate-toolbar commitment-filterbar" style="margin:15px 0">
+    <label class="field">Equipo<select id="corpCommitEquipment"><option value="all">Todos los equipos</option></select></label>
+    <label class="field">Prioridad<select id="corpCommitPriority"><option value="all">Todas las prioridades</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option><option value="none">Sin asignar</option></select></label>
     <label class="field">Estado<select id="corpCommitStatus"><option value="all">Todos los estados</option><option value="overdue">Vencidos</option><option value="pending">En seguimiento</option><option value="complete">Completados</option></select></label>
     <label class="field">Buscar acción, equipo o responsable<input id="corpCommitSearch" placeholder="Ej.: impulsor, inspección, supervisor"></label>
   </div>
-  <div class="dashboard-table-wrap"><table class="dashboard-table" aria-label="Compromisos corporativos"><thead><tr><th>Investigación / Equipo</th><th>Acción correctiva</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>ACR</th></tr></thead><tbody id="corpCommitRows"></tbody></table></div>
+  <div class="dashboard-table-wrap commitments-scroll"><table class="dashboard-table commitments-table" aria-label="Compromisos corporativos"><thead><tr><th>Investigación / Equipo</th><th>Compromiso / Acción</th><th>Responsable</th><th>Prioridad</th><th>Vencimiento</th><th>Estado</th><th>ACR</th></tr></thead><tbody id="corpCommitRows"></tbody></table></div>
+  <div class="commit-detail-layout">
+    <section class="commit-detail-card"><h3>▤ Investigación relacionada</h3><div id="corpCommitSelectedInvestigation" class="commit-detail-body"></div></section>
+    <section class="commit-detail-card"><h3>⚒ Acciones correctivas asociadas</h3><div id="corpCommitSelectedActions" class="commit-detail-body"></div></section>
+    <section class="commit-detail-card"><h3>◫ Estado de compromisos</h3><div id="corpCommitStatusChart" class="commit-detail-body"></div></section>
+  </div>
   <p class="help" style="margin-top:10px">Los filtros semanal y mensual corresponden a la fecha de vencimiento. Los estados muestran la situación actual publicada por el investigador. El administrador consulta, pero no modifica el estado desde este tablero.</p>
 </div>
 <h3>Afiliaciones y roles</h3>
