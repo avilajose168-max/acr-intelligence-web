@@ -1960,6 +1960,112 @@ async function corporateApi(path,method='GET',body=undefined,prefer=''){
  if(!response.ok)throw Error(data?.message||data?.error||data?.hint||'Error de acceso corporativo ('+response.status+').');
  return data;
 }
+
+let clientSubscriptions=[],clientMemberships=[],billingEditOrgId='',billingLoading=false;
+const subscriptionLabels={trial:'Beta / prueba',active:'Activo',past_due:'Pago pendiente',suspended:'Suspendido',cancelled:'Cancelado'};
+function clientSubscriptionRow(orgId){return clientSubscriptions.find(x=>x.organization_id===orgId)||null}
+function billNum(value){return Number(value||0).toLocaleString('es-CL',{maximumFractionDigits:2})}
+function billDate(value){if(!value)return 'Sin registrar';const [y,m,d]=value.split('-');return d+'/'+m+'/'+y}
+function billingStatus(item,today){
+ if(!item)return {label:'Sin contrato registrado',status:'trial'};
+ if(item.contract_end&&item.contract_end<today&&['trial','active'].includes(item.subscription_status))
+  return {label:'Contrato vencido',status:'past_due'};
+ return {label:subscriptionLabels[item.subscription_status]||'Sin estado',status:item.subscription_status};
+}
+async function loadClientSubscriptions(){
+ if(!corporateCtx?.platform||billingLoading)return;
+ billingLoading=true;
+ try{
+  const [subscriptions,memberships]=await Promise.all([
+   corporateApi(organizationApiPath('acr_client_subscriptions','?select=*&order=updated_at.desc')),
+   corporateApi(organizationApiPath('acr_memberships','?select=organization_id,user_id,status'))
+  ]);
+  if(!corporateCtx?.platform)return;
+  if(!Array.isArray(subscriptions)||!Array.isArray(memberships))throw Error('No se pudieron obtener los clientes y suscripciones.');
+  clientSubscriptions=subscriptions;clientMemberships=memberships;
+  renderClientSubscriptions();
+  $('#billingNotice').textContent='Datos guardados en la cuenta de administrador general. Los cupos y el consumo manual de IA no limitan solicitudes automáticamente.';
+ }catch(error){
+  $('#billingNotice').textContent='No se pudieron cargar las suscripciones: '+error.message;
+ }finally{billingLoading=false}
+}
+function renderClientSubscriptions(){
+ if(!corporateCtx?.platform)return;
+ const orgs=corporateCtx.organizations||[],today=new Date().toISOString().slice(0,10);
+ const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()+30);
+ const end=cutoff.toISOString().slice(0,10);
+ const joined=orgs.map(org=>({org,sub:clientSubscriptionRow(org.id),
+  seats:new Set(clientMemberships.filter(m=>m.organization_id===org.id&&m.status==='approved').map(m=>m.user_id)).size}));
+ $('#billingCompanies').textContent=orgs.length;
+ $('#billingActive').textContent=joined.filter(x=>x.sub&&x.sub.subscription_status==='active'&&(!x.sub.contract_end||x.sub.contract_end>=today)).length;
+ $('#billingExpiring').textContent=joined.filter(x=>x.sub?.contract_end&&x.sub.contract_end>=today&&x.sub.contract_end<=end&&['trial','active'].includes(x.sub.subscription_status)).length;
+ $('#billingSeats').textContent=joined.reduce((n,x)=>n+x.seats,0);
+ $('#billingAdvisory').textContent=billNum(joined.reduce((n,x)=>n+Math.max(0,Number(x.sub?.advisory_hours_included||0)-Number(x.sub?.advisory_hours_used||0)),0))+' h';
+ const status=$('#billingFilter').value,term=$('#billingSearch').value.toLocaleLowerCase('es').trim();
+ const visible=joined.filter(({org,sub})=>(status==='all'||(sub?.subscription_status||'trial')===status)&&
+  (!term||[org.name,sub?.plan_name,sub?.contract_reference].join(' ').toLocaleLowerCase('es').includes(term)));
+ $('#billingRows').innerHTML=visible.length?visible.map(({org,sub,seats})=>{
+  const statusInfo=billingStatus(sub,today);
+  const aiLimit=sub?.ai_monthly_limit;
+  const aiText=sub?(billNum(sub.ai_usage_reported)+' / '+(aiLimit===null?'Sin cupo':billNum(aiLimit))):'Sin reporte';
+  const advisory=sub?billNum(sub.advisory_hours_used)+' / '+billNum(sub.advisory_hours_included)+' h':'Sin asignar';
+  return '<tr><td><b>'+esc(org.name)+'</b><div class="small">'+esc(sub?.plan_name||'Sin plan configurado')+'</div></td>'+
+   '<td>'+esc(sub?.contract_reference||'Sin referencia')+'<div class="small">Vence: '+billDate(sub?.contract_end)+'</div></td>'+
+   '<td>'+seats+' / '+(sub?.seat_limit==null?'Sin límite registrado':billNum(sub.seat_limit))+'</td>'+
+   '<td>'+esc(aiText)+'<div class="small">'+(sub?.ai_usage_month?esc(String(sub.ai_usage_month).slice(0,7)):'Mes no definido')+'</div></td>'+
+   '<td>'+esc(advisory)+'</td><td><span class="chip">'+esc(statusInfo.label)+'</span></td>'+
+   '<td><button type="button" class="secondary" data-billing-edit="'+esc(org.id)+'">Gestionar</button></td></tr>';
+ }).join(''):'<tr><td colspan="7">Sin clientes que coincidan con los filtros.</td></tr>';
+ $$('[data-billing-edit]').forEach(el=>el.onclick=()=>openBillingEditor(el.dataset.billingEdit));
+}
+function openBillingEditor(orgId){
+ if(!corporateCtx?.platform)return;
+ const org=corporateCtx.organizations.find(o=>o.id===orgId);if(!org)return;
+ billingEditOrgId=orgId;const sub=clientSubscriptionRow(orgId)||{},form=$('#billingEditor');
+ $('#billingEditorTitle').textContent='Contrato · '+org.name;
+ for(const key of ['plan_name','contract_reference','contract_start','contract_end','subscription_status','seat_limit','ai_monthly_limit','ai_usage_reported','advisory_hours_included','advisory_hours_used','advisory_notes','internal_notes']){
+  const input=form.elements.namedItem(key);if(!input)continue;
+  input.value=sub[key]??(key==='plan_name'?'Beta gratuita':key==='subscription_status'?'trial':key==='ai_usage_reported'||key.startsWith('advisory_hours_')?'0':'');
+ }
+ form.elements.namedItem('ai_usage_month').value=sub.ai_usage_month?String(sub.ai_usage_month).slice(0,7):'';
+ form.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('#billingEditorClose').onclick=()=>{$('#billingEditor').hidden=true;billingEditOrgId=''};
+$('#platformBillingRefresh').onclick=()=>void loadClientSubscriptions();
+$('#billingFilter').onchange=renderClientSubscriptions;
+$('#billingSearch').oninput=renderClientSubscriptions;
+$('#billingEditor').onsubmit=async ev=>{
+ ev.preventDefault();
+ if(!corporateCtx?.platform||!billingEditOrgId||!activeUser?.id)return;
+ const form=$('#billingEditor'),input=k=>form.elements.namedItem(k).value.trim();
+ const start=input('contract_start'),end=input('contract_end');
+ if(start&&end&&end<start){alert('El vencimiento no puede ser anterior al inicio del contrato.');return}
+ const nullableInt=k=>input(k)===''?null:Number(input(k));
+ const payload={
+  organization_id:billingEditOrgId,plan_name:input('plan_name'),contract_reference:input('contract_reference'),
+  contract_start:start||null,contract_end:end||null,subscription_status:input('subscription_status'),
+  seat_limit:nullableInt('seat_limit'),ai_monthly_limit:nullableInt('ai_monthly_limit'),
+  ai_usage_reported:Number(input('ai_usage_reported')||0),ai_usage_month:input('ai_usage_month')?input('ai_usage_month')+'-01':null,
+  advisory_hours_included:Number(input('advisory_hours_included')||0),advisory_hours_used:Number(input('advisory_hours_used')||0),
+  advisory_notes:input('advisory_notes'),internal_notes:input('internal_notes'),
+  updated_at:new Date().toISOString(),updated_by:activeUser.id
+ };
+ if(payload.seat_limit!==null&&(!Number.isInteger(payload.seat_limit)||payload.seat_limit<1)||
+  payload.ai_monthly_limit!==null&&(!Number.isInteger(payload.ai_monthly_limit)||payload.ai_monthly_limit<0)||
+  !Number.isInteger(payload.ai_usage_reported)||payload.ai_usage_reported<0||
+  payload.advisory_hours_included<0||payload.advisory_hours_used<0){
+  alert('Revisa los valores de usuarios, IA y asesoría.');return;
+ }
+ const btn=$('#billingSave');btn.disabled=true;
+ try{
+  await corporateApi(organizationApiPath('acr_client_subscriptions','?on_conflict=organization_id'),
+   'POST',payload,'resolution=merge-duplicates,return=minimal');
+  $('#billingEditor').hidden=true;billingEditOrgId='';
+  await loadClientSubscriptions();
+  $('#billingNotice').textContent='Contrato guardado correctamente. No se realizó ningún cargo ni se alteraron los permisos de acceso.';
+ }catch(error){alert('No se pudo guardar el contrato: '+error.message)}
+ finally{btn.disabled=false}
+};
 function assignedCorporateAdminMembership(){
  if(!corporateCtx||corporateCtx.platform)return null;
  return corporateCtx.memberships.find(m=>m.role==='admin'&&m.status==='approved'&&
