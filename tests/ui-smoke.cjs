@@ -288,6 +288,8 @@ await page.locator('#reliabilityArea').selectOption('__all__');
 assert.equal(await page.locator('#weekEvents').innerText(),'1','Todas las áreas recupera la falla sin clasificar');
 
 await page.locator('#reliabilityPeriod').selectOption('monthly');
+assert.equal(await page.locator('#weeklyTrendAnalysis .trend-week-table tbody tr').count(),8,'Detalle se adapta a ocho meses');
+assert.ok((await page.locator('#weeklyTrendAnalysis').innerText()).includes('Promedio por mes'),'Promedio cambia al período mensual');
 assert.ok((await page.locator('#weekLabel').innerText()).includes(new Date().getFullYear().toString()),'El resumen mensual identifica el año');
 assert.equal(await page.locator('#weekEvents').innerText(),'1','El informe mensual contabiliza la falla');
 await page.locator('#previewWeekly').click();
@@ -312,6 +314,9 @@ assert.equal(await page.locator('#weekBaseAuto').innerText(),fromClock,'Semana a
 await page.locator('#reliabilityAsset').selectOption('__all__');
 
 await page.locator('#paretoMetric').selectOption('hours');
+assert.equal(await page.locator('#weeklyTrendAnalysis .trend-week-table tbody tr').count(),8,'Detalle de tendencia muestra ocho semanas');
+assert.ok((await page.locator('#weeklyTrendAnalysis').innerText()).includes('2,00'),'Resumen semanal utiliza horas reales de detención');
+assert.ok((await page.locator('#weeklyTrendAnalysis').innerText()).includes('Promedio por semana'),'Resumen incluye promedio por semana');
 assert.ok((await page.locator('#weekHours').innerText()).includes('2,00'),'Debe calcular horas detenidas');
 assert.ok((await page.locator('#paretoChart').innerText()).length>0,'El gráfico de horas debe aparecer');
 await page.locator('#paretoGroup').selectOption('failure');
