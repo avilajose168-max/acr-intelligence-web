@@ -611,6 +611,7 @@ assert.equal(await companyAdminPage.locator('[data-commit-case]').count(),0,'Los
 await companyAdminPage.locator('.nav button[data-page="organizaciones"]').click();
 mockCompanyCases.pop();
 
+if(await companyAdminPage.locator('#orgCaseDetail').isVisible())await companyAdminPage.locator('#collapsePublishedAcr').click();
 await companyAdminPage.locator('[data-org-case]').first().click();
 assert.equal(await companyAdminPage.locator('#collapsePublishedAcr').count(),1,'El detalle corporativo incluye botón para ocultarlo');
 await companyAdminPage.locator('#collapsePublishedAcr').click();
