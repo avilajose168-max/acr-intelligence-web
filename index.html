@@ -2802,6 +2802,13 @@ async function loadCorporateOverview(){
    const item=record?.payload;
    if(!item)return;
    const content=$('#orgCaseDetail');
+   if(!content.classList.contains('hidden')&&content.dataset.openCaseId===String(record.id)){
+    content.classList.add('hidden');content.replaceChildren();content.removeAttribute('data-open-case-id');
+    el.textContent='Ver ACR';el.setAttribute('aria-expanded','false');return;
+   }
+   $('[data-org-case]').forEach(button=>{button.textContent='Ver ACR';button.setAttribute('aria-expanded','false')});
+   content.dataset.openCaseId=String(record.id);
+   el.textContent='Ocultar ACR';el.setAttribute('aria-expanded','true');
    const member=corporateCtx.orgMembers.find(m=>m.user_id===record.owner_id);
    const field=(label,value)=>'<p><b>'+label+':</b> '+esc(value||'—').replace(/\n/g,'<br>')+'</p>';
    const photoGallery=(photos,label)=>!Array.isArray(photos)||!photos.length?'':(
@@ -2811,7 +2818,7 @@ async function loadCorporateOverview(){
         '<p>'+esc(p.caption||'Fotografía '+(i+1))+'</p></div>';
      }).join('')+'</div>'
    );
-   content.innerHTML='<div class="toolbar" style="justify-content:flex-end;margin-bottom:12px"><button type="button" class="primary" id="openPublishedAcrReport">📄 Ver informe en formato original</button></div>'+
+   content.innerHTML='<div class="toolbar" style="justify-content:flex-end;margin-bottom:12px"><button type="button" class="primary" id="openPublishedAcrReport">📄 Ver informe en formato original</button><button type="button" class="secondary" id="collapsePublishedAcr" aria-label="Ocultar investigación">▲ Ocultar investigación</button></div>'+
     '<div class="between"><h3>ACR corporativo · '+esc(item.title||'Investigación')+'</h3><span class="chip">Solo lectura</span></div>'+
     field('Investigador',member?.display_name||member?.email||'Usuario')+
     field('Equipo',item.equipment)+field('Área',item.area)+field('Fecha y hora',item.datetime)+
@@ -2832,6 +2839,11 @@ async function loadCorporateOverview(){
       ' · Fecha: '+esc(a.due||'Sin fecha')+' · Estado: '+esc(a.status||'Pendiente')+'</li>').join('')+'</ol>'+
     photoGallery(item.photos,'Fotografías de evidencia');
    $('#openPublishedAcrReport').onclick=()=>showCorporateAcrReport(record);
+   $('#collapsePublishedAcr').onclick=()=>{
+    content.classList.add('hidden');content.replaceChildren();content.removeAttribute('data-open-case-id');
+    $('[data-org-case]').forEach(button=>{button.textContent='Ver ACR';button.setAttribute('aria-expanded','false')});
+    $('#companyUserReportsHeading').scrollIntoView({behavior:'smooth',block:'start'});
+   };
    content.classList.remove('hidden');content.scrollIntoView({block:'nearest',behavior:'smooth'});
   });
 
