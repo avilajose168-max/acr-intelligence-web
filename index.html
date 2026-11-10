@@ -319,7 +319,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
     <div><span>EN SEGUIMIENTO</span><strong id="commitPending">0</strong></div>
     <div><span>VENCIDOS</span><strong id="commitOverdue">0</strong></div>
-    <div><span>PRÓXIMOS 7 DÍAS</span><strong id="commitUpcoming">0</strong></div>
+    <div><span>PRÓXIMOS 7 DÍAS</span><strong id="commitUpcoming">0</strong><span id="commitRate" class="small" style="display:block;margin-top:5px">0% cumplimiento</span></div>
   </div>
   <div class="commitments-progress"><div id="commitProgressFill"></div></div>
   <div class="dashboard-toolbar commitment-filterbar" style="margin:14px 0">
@@ -1511,6 +1511,7 @@ function drawCommitments(){
  $('#commitComplete').textContent=sum.done;
  $('#commitPending').textContent=sum.pending;
  $('#commitOverdue').textContent=sum.overdue;
+ $('#commitRate').textContent=sum.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'% cumplimiento';
  const today=dashboardToday(),tomorrow=new Date(today+'T12:00:00'),cutoff=new Date(tomorrow.getTime()+7*86400000);
  const until=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
  $('#commitUpcoming').textContent=rows.filter(r=>r.status!=='complete'&&r.action.due>=today&&r.action.due<until).length;
@@ -2720,10 +2721,11 @@ function drawWhys(){
 }
 function drawActions(){
  const c=current();if(!c)return;
- $('#actionFields').innerHTML=(c.actions||[]).map((a,i)=>'<div class="actionLine" style="grid-template-columns:1.4fr .7fr .65fr .68fr auto">'+
+ $('#actionFields').innerHTML=(c.actions||[]).map((a,i)=>'<div class="actionLine" style="grid-template-columns:1.4fr .7fr .65fr .6fr .68fr auto">'+
   '<label class="field">Acción '+(i+1)+'<input data-ai="'+i+'" data-ak="description" value="'+esc(a.description||'')+'" placeholder="Acción verificable"></label>'+
   '<label class="field">Responsable<input data-ai="'+i+'" data-ak="owner" value="'+esc(a.owner||'')+'"></label>'+
   '<label class="field">Fecha<input type="date" data-ai="'+i+'" data-ak="due" value="'+esc(a.due||'')+'"></label>'+
+  '<label class="field">Prioridad<select data-ai="'+i+'" data-ak="priority">'+['','Alta','Media','Baja'].map(key=>'<option value="'+key+'"'+((a.priority||'')===key?' selected':'')+'>'+(key||'Sin asignar')+'</option>').join('')+'</select></label>'+ 
   '<label class="field">Estado<select data-ai="'+i+'" data-ak="status">'+Object.keys(COMMIT_STATES).map(key=>
     '<option value="'+key+'"'+((COMMIT_STATES[a.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+'</select></label>'+
   '<button class="secondary" data-del="'+i+'" title="Eliminar acción">✕</button></div>'
@@ -2736,7 +2738,7 @@ function drawActions(){
  });
 }
 $('#addAction').onclick=()=>{
- current().actions.push({description:'',owner:'',due:'',status:'Pendiente'});persist();drawActions();
+ current().actions.push({description:'',owner:'',due:'',priority:'',status:'Pendiente'});persist();drawActions();
 };
 function drawPhotos(){const c=current();$('#photos').innerHTML=c.photos.length?c.photos.map((p,i)=>`<div class="photo"><img src="${p.data}" alt="Evidencia ${i+1}"><label class="field">Descripción<input data-caption="${i}" value="${esc(p.caption)}" placeholder="Qué muestra"></label><button class="danger" data-remove="${i}">Eliminar</button></div>`).join(''):'<p class="muted">Aún no has agregado fotografías.</p>';$$('[data-caption]').forEach(el=>el.oninput=()=>{c.photos[+el.dataset.caption].caption=el.value;persist()});$$('[data-remove]').forEach(el=>el.onclick=()=>{if(confirm('¿Eliminar esta foto de la investigación?')){c.photos.splice(+el.dataset.remove,1);persist();drawPhotos()}})}
 
