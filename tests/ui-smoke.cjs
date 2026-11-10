@@ -62,6 +62,7 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
   }
   if(url.includes('/rest/v1/acr_corporate_investigations')){
     const request=new URL(url),method=route.request().method();
+    if(method==='GET')assert.ok((request.searchParams.get('select')||'').split(',').includes('organization_id'),'La consulta corporativa debe traer organization_id para verificar permisos al abrir el informe');
     if(method==='POST'){
       const incoming=route.request().postDataJSON();
       const existing=mockCompanyCases.find(x=>x.organization_id===incoming.organization_id&&x.owner_id===incoming.owner_id&&x.local_case_id===incoming.local_case_id);
