@@ -244,6 +244,23 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .auth-company-block #authCompanyFields{display:grid;gap:12px}
 .auth-company-help{font-size:11px;line-height:1.55;margin:0;color:#aebfd1}
 
+
+/* Clientes y Suscripciones: solo administración general */
+.platform-billing{border:1px solid #345e78;background:linear-gradient(145deg,#102c43,#0b1e32);padding:17px;border-radius:13px;margin:18px 0}
+.platform-billing-kpis{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:15px}
+.platform-billing-kpis>div{background:#173750;border:1px solid #376784;border-radius:9px;padding:13px 11px}
+.platform-billing-kpis span{display:block;font-size:10px;color:#bdd7eb;letter-spacing:.3px}
+.platform-billing-kpis strong{display:block;font-size:24px;color:#f2c776;margin-top:5px}
+.platform-billing-table{min-width:950px}
+.platform-billing-table td,.platform-billing-table th{padding:10px 9px!important}
+.platform-billing-editor{margin-top:18px;padding:18px;border-radius:12px;border:1px solid #427b94;background:#10293f}
+.platform-billing-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.platform-billing-fields .field{min-width:0}
+.platform-billing-fields .platform-billing-wide{grid-column:span 2}
+.platform-billing-fields input,.platform-billing-fields select,.platform-billing-fields textarea{width:100%;box-sizing:border-box}
+@media(max-width:1050px){.platform-billing-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.platform-billing-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.platform-billing-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-billing-fields{grid-template-columns:1fr}.platform-billing-fields .platform-billing-wide{grid-column:auto}}
+
 .corporate-command{margin:18px 0 24px;padding:18px;border:1px solid #385068;border-radius:15px;background:#102033}
 
 /* CORPORATE RELIABILITY VISUAL REFINEMENT — visual changes only, no KPI calculation changes */
@@ -553,6 +570,52 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <div class="card" id="platformAdminPanel" hidden>
 <div class="eyebrow">ADMINISTRACIÓN GENERAL · PLATAFORMA</div><h2>Crear una organización</h2><p class="help">Solo el administrador general puede crear empresas en ACR Integrity. Ningún usuario se convierte en administrador por escribir el nombre de una compañía.</p>
 <div class="toolbar" style="flex-wrap:wrap;align-items:end"><label class="field" style="flex:1;min-width:220px">Nombre legal de la compañía<input id="newOrganizationName" placeholder="Nombre legal de la compañía" maxlength="120"></label><label class="field" style="flex:1;min-width:220px">Logo corporativo (PNG, JPG o WEBP)<input id="newOrganizationLogo" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="createOrganization" class="primary">Crear compañía</button></div><div class="logoPreview" id="newOrganizationLogoPreview">Sin logo seleccionado.</div>
+</div>
+
+<div class="platform-billing" id="platformBillingModule">
+ <div class="between" style="gap:12px;flex-wrap:wrap">
+  <div><div class="eyebrow">ADMINISTRACIÓN GENERAL · GESTIÓN COMERCIAL</div><h2>Clientes y Suscripciones</h2>
+  <p class="help">Control de contratos, usuarios, cupos y asesorías. Solo visible para la administración general. No procesa cobros.</p></div>
+  <button class="secondary" type="button" id="platformBillingRefresh">↻ Actualizar clientes</button>
+ </div>
+ <div class="dashboard-kpis platform-billing-kpis">
+  <div><span>COMPAÑÍAS</span><strong id="billingCompanies">0</strong></div>
+  <div><span>CONTRATOS VIGENTES</span><strong id="billingActive">0</strong></div>
+  <div><span>POR VENCER · 30 DÍAS</span><strong id="billingExpiring">0</strong></div>
+  <div><span>USUARIOS APROBADOS</span><strong id="billingSeats">0</strong></div>
+  <div><span>ASESORÍAS PENDIENTES</span><strong id="billingAdvisory">0 h</strong></div>
+ </div>
+ <div class="dashboard-toolbar corporate-toolbar" style="margin-top:14px">
+  <label class="field">Buscar compañía<input type="search" id="billingSearch" placeholder="Nombre o referencia de contrato"></label>
+  <label class="field">Estado<select id="billingFilter">
+   <option value="all">Todos</option><option value="trial">Beta / prueba</option><option value="active">Activo</option>
+   <option value="past_due">Pago pendiente</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option>
+  </select></label>
+ </div>
+ <div class="dashboard-table-wrap"><table class="dashboard-table platform-billing-table">
+ <thead><tr><th>Cliente / plan</th><th>Contrato y vencimiento</th><th>Usuarios</th><th>IA (reporte manual)</th><th>Asesoría</th><th>Estado</th><th>Gestionar</th></tr></thead>
+ <tbody id="billingRows"><tr><td colspan="7">Cargando clientes…</td></tr></tbody></table></div>
+ <p id="billingNotice" role="status" class="help">Los cupos no bloquean el acceso automáticamente. Consumo de IA: dato manual hasta habilitar medición real.</p>
+ <form id="billingEditor" class="platform-billing-editor" hidden>
+  <div class="between"><h3 id="billingEditorTitle">Editar contrato</h3><button type="button" id="billingEditorClose" class="secondary">✕ Cerrar</button></div>
+  <div class="platform-billing-fields">
+   <label class="field">Plan<input name="plan_name" maxlength="100" required></label>
+   <label class="field">Referencia contrato<input name="contract_reference" maxlength="160"></label>
+   <label class="field">Inicio<input type="date" name="contract_start"></label>
+   <label class="field">Vencimiento<input type="date" name="contract_end"></label>
+   <label class="field">Estado<select name="subscription_status"><option value="trial">Beta / prueba</option><option value="active">Activo</option><option value="past_due">Pago pendiente</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option></select></label>
+   <label class="field">Máximo usuarios (vacío = sin límite registrado)<input name="seat_limit" type="number" min="1" step="1" placeholder="No establecido"></label>
+   <label class="field">Cupo mensual de solicitudes IA<input name="ai_monthly_limit" type="number" min="0" step="1" placeholder="No establecido"></label>
+   <label class="field">Solicitudes IA reportadas (manual)<input name="ai_usage_reported" type="number" min="0" step="1"></label>
+   <label class="field">Mes de reporte IA<input name="ai_usage_month" type="month"></label>
+   <label class="field">Horas de asesoría incluidas<input name="advisory_hours_included" type="number" min="0" step="0.25"></label>
+   <label class="field">Horas de asesoría utilizadas<input name="advisory_hours_used" type="number" min="0" step="0.25"></label>
+   <label class="field platform-billing-wide">Servicios de asesoría incluidos<textarea name="advisory_notes" rows="2" maxlength="2000"></textarea></label>
+   <label class="field platform-billing-wide">Observaciones internas<textarea name="internal_notes" rows="2" maxlength="2000"></textarea></label>
+  </div>
+  <div class="toolbar" style="margin-top:12px"><button class="primary" type="submit" id="billingSave">Guardar contrato</button>
+  <span class="help">Solo registro administrativo; no activa cobros ni suspende automáticamente cuentas.</span></div>
+ </form>
 </div>
 <div class="card" id="corporateAffiliationPanel">
 <h2>Afiliación y organización</h2><p class="muted">Selecciona la compañía a la que perteneces. La afiliación requiere aprobación de su administrador. Tus investigaciones personales no se transfieren automáticamente.</p>
@@ -1936,6 +1999,8 @@ function drawOrganizationStatus(){
  const platform=!!corporateCtx?.platform;
  configureCorporateRoleLayout();
  $('#platformAdminPanel').hidden=!platform;
+ $('#platformBillingModule').hidden=!platform;
+ if(platform)void loadClientSubscriptions();
  const notice=$('#orgMembershipStatus');
  if(!org){
   notice.textContent='Selecciona una compañía. Si aún no está registrada, solicítala al administrador general de ACR Integrity.';
