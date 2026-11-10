@@ -1385,7 +1385,7 @@ function listCommitments(){
   if(!Array.isArray(c.actions))continue;
   c.actions.forEach((a,i)=>{
    if(!String(a?.description||'').trim())return;
-   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',action:a,status:effectiveCommitStatus(a,today)});
+   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',area:c.area||c.sector||'Sin clasificar',sourceCase:c,action:a,status:effectiveCommitStatus(a,today)});
   });
  }
  rows.sort((a,b)=>{
@@ -1403,11 +1403,58 @@ function commitSummary(rows){
 }
 function filteredCommitments(rows){
  const filter=$('#commitFilter').value,search=normalizeText($('#commitSearch').value).toLocaleLowerCase('es');
+ const area=$('#commitArea')?.value||'all',equipment=$('#commitEquipment')?.value||'all',priority=$('#commitPriority')?.value||'all';
  return rows.filter(r=>{
   const allowed=filter==='all'||filter==='overdue'&&r.status==='overdue'||
    filter==='complete'&&r.status==='complete'||filter==='pending'&&r.status!=='complete'&&r.status!=='overdue';
-  return allowed && (!search||[r.caseTitle,r.equipment,r.action.description,r.action.owner].join(' ').toLocaleLowerCase('es').includes(search));
+  const p=r.action.priority||'';
+  return allowed&&(area==='all'||r.area===area)&&(equipment==='all'||r.equipment===equipment)&&
+   (priority==='all'||(priority==='none'?!p:p===priority))&&
+   (!search||[r.caseTitle,r.equipment,r.action.description,r.action.owner,r.area].join(' ').toLocaleLowerCase('es').includes(search));
  });
+}
+function syncCommitSelect(id,values){
+ const el=$(id);if(!el)return;
+ const old=el.value;
+ el.innerHTML='<option value="all">'+(id==='#commitArea'?'Todas las áreas':'Todos los equipos')+'</option>'+
+  values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+ el.value=values.includes(old)?old:'all';
+}
+let selectedCommitKey='';
+function renderCommitDetail(rows,filtered){
+ const focused=filtered.find(r=>r.caseId+':'+r.index===selectedCommitKey)||filtered[0];
+ if(focused)selectedCommitKey=focused.caseId+':'+focused.index;else selectedCommitKey='';
+ const investigation=$('#commitSelectedInvestigation'),actions=$('#commitSelectedActions'),chart=$('#commitStatusChart');
+ if(!focused){
+  investigation.innerHTML='<p class="muted">Selecciona una acción de la tabla para consultar su investigación.</p>';
+  actions.innerHTML='<p class="muted">Sin acciones para los filtros actuales.</p>';
+ }else{
+  const c=focused.sourceCase||{};
+  investigation.innerHTML='<div class="commit-selected-title">'+esc(focused.caseTitle)+'</div>'+
+   '<p><b>Equipo:</b> '+esc(focused.equipment)+'</p><p><b>Área:</b> '+esc(focused.area)+'</p>'+
+   '<p><b>Fecha:</b> '+esc(c.startDate||c.eventDate||c.date||'No registrada')+'</p>'+
+   '<p><b>Causa básica:</b> '+esc(c.basicCause||c.rootCause||c.cause||'No registrada')+'</p>'+
+   (focused.corporate?'<p class="muted">ACR publicado por la compañía · consulta de solo lectura</p>':
+   '<button type="button" class="secondary" id="commitDetailOpen">Ver investigación completa</button>');
+  const group=rows.filter(r=>r.caseId===focused.caseId);
+  actions.innerHTML=group.map((r,i)=>
+   '<div class="commit-action-item"><span>'+(r.status==='complete'?'🟢':r.status==='overdue'?'🔴':'🔵')+'</span>'+
+   '<div><b>'+esc(r.action.description)+'</b><div class="small">'+esc(r.action.owner||'Sin responsable')+
+   ' · '+esc(r.action.due||'Sin vencimiento')+'</div></div>'+
+   '<span class="commit-state commit-state-'+r.status+'">'+commitStatusLabel(r.status)+'</span></div>'
+  ).join('');
+  if(!focused.corporate){const btn=$('#commitDetailOpen');if(btn)btn.onclick=()=>{selected=focused.caseId;navigate('analisis')}}
+ }
+ const total=rows.length,done=rows.filter(r=>r.status==='complete').length,
+ overdue=rows.filter(r=>r.status==='overdue').length,active=rows.filter(r=>r.status!=='complete'&&r.status!=='overdue').length;
+ const donePct=total?done/total*100:0,activePct=total?active/total*100:0;
+ chart.innerHTML='<div class="commit-donut" style="background:conic-gradient(#19c991 0% '+donePct+'%,#279fdb '+donePct+'% '+(donePct+activePct)+'%,#ed6978 '+(donePct+activePct)+'% 100%)">'+
+  '<div class="commit-donut-inner"><strong>'+donePct.toLocaleString('es-CL',{maximumFractionDigits:1})+'%</strong><small>Cumplimiento</small></div></div>'+
+  '<div class="commit-legend">'+
+  '<span><span><i style="background:#19c991"></i>Completados</span><b>'+done+'</b></span>'+
+  '<span><span><i style="background:#279fdb"></i>En seguimiento</span><b>'+active+'</b></span>'+
+  '<span><span><i style="background:#ed6978"></i>Vencidos</span><b>'+overdue+'</b></span>'+
+  '<hr style="width:100%;border:0;border-top:1px solid #335773"><span><b>Total</b><b>'+total+'</b></span></div>';
 }
 let companyCommitmentsCache=[],companyCommitmentsOrg='';
 function listCompanyCommitments(){
@@ -1420,7 +1467,7 @@ function listCompanyCommitments(){
    if(!String(action?.description||'').trim())return;
    rows.push({corporate:true,caseId:published.local_case_id,index,
      caseTitle:item.title||published.title||'ACR corporativo',
-     equipment:item.equipment||published.equipment||'Equipo sin TAG',action,
+     equipment:item.equipment||published.equipment||'Equipo sin TAG',area:item.area||item.sector||'Sin clasificar',sourceCase:item,action,
      status:effectiveCommitStatus(action,today)});
   });
  }
@@ -1458,29 +1505,37 @@ function drawCommitments(){
  const companyScope=$('#commitScope')?.value==='company'&&corporateIsAdmin()&&!!corporateSelection();
  const rows=periodCommitments(companyScope?(companyCommitmentsOrg===corporateSelection()?listCompanyCommitments():[]):listCommitments()),sum=commitSummary(rows);
  drawCommitPeriodLabel();
+ syncCommitSelect('#commitArea',[...new Set(rows.map(r=>r.area).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+ syncCommitSelect('#commitEquipment',[...new Set(rows.filter(r=>$('#commitArea').value==='all'||r.area===$('#commitArea').value).map(r=>r.equipment))].sort((a,b)=>a.localeCompare(b,'es')));
  $('#commitTotal').textContent=sum.total;
  $('#commitComplete').textContent=sum.done;
  $('#commitPending').textContent=sum.pending;
  $('#commitOverdue').textContent=sum.overdue;
- $('#commitRate').textContent=sum.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
+ const today=dashboardToday(),tomorrow=new Date(today+'T12:00:00'),cutoff=new Date(tomorrow.getTime()+7*86400000);
+ const until=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
+ $('#commitUpcoming').textContent=rows.filter(r=>r.status!=='complete'&&r.action.due>=today&&r.action.due<until).length;
  $('#commitProgressFill').style.width=sum.rate+'%';
  const filtered=filteredCommitments(rows);
  $('#commitmentsTable').innerHTML=filtered.length?filtered.map(r=>
-  '<tr><td><span class="commit-name">'+esc(r.equipment)+'</span><div class="small">'+esc(r.caseTitle)+'</div></td>'+
+  '<tr data-commit-select="'+esc(r.caseId)+':'+r.index+'" class="'+(selectedCommitKey===r.caseId+':'+r.index?'commit-selected':'')+'"><td><span class="commit-name">'+esc(r.equipment)+'</span><div class="small">'+esc(r.caseTitle)+'</div></td>'+
   '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td>'+
+  '<td><span class="commit-priority commit-priority-'+({Alta:'high',Media:'medium',Baja:'low'}[r.action.priority]||'none')+'">'+esc(r.action.priority||'Sin asignar')+'</span></td>'+
   '<td class="commit-date">'+esc(r.action.due||'Sin fecha')+'</td>'+
   '<td><span class="commit-state commit-state-'+r.status+'">'+commitStatusLabel(r.status)+'</span><div style="margin-top:5px">'+
-  (r.corporate?'<span class="small">Estado publicado por el investigador</span>':'<select data-commit-case="'+esc(r.caseId)+'" data-commit-index="'+r.index+'" aria-label="Cambiar estado del compromiso">'+
+  (r.corporate?'<span class="small">Solo lectura</span>':'<select data-commit-case="'+esc(r.caseId)+'" data-commit-index="'+r.index+'" aria-label="Cambiar estado del compromiso">'+
   Object.keys(COMMIT_STATES).map(key=>'<option value="'+key+'"'+((COMMIT_STATES[r.action.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+
   '</select>')+'</div></td><td>'+(r.corporate?'<button type="button" class="secondary" data-commit-company="1">Ver empresa</button>':'<button type="button" class="secondary" data-commit-open="'+esc(r.caseId)+'">Ver ACR</button>')+'</td></tr>'
- ).join(''):'<tr><td colspan="6" style="text-align:center;padding:18px;color:#b1c4d5">No hay compromisos para este filtro.</td></tr>';
+ ).join(''):'<tr><td colspan="7" style="text-align:center;padding:18px;color:#b1c4d5">No hay compromisos para este filtro.</td></tr>';
+ renderCommitDetail(rows,filtered);
+ $$('[data-commit-select]').forEach(el=>el.onclick=event=>{
+  if(event.target.closest('select,button'))return;
+  selectedCommitKey=el.dataset.commitSelect;renderCommitDetail(rows,filtered);
+  $$('[data-commit-select]').forEach(row=>row.classList.toggle('commit-selected',row.dataset.commitSelect===selectedCommitKey));
+ });
  $$('[data-commit-case]').forEach(el=>el.onchange=()=>{
-  const c=db.cases.find(x=>x.id===el.dataset.commitCase),a=c?.actions?.[Number(el.dataset.commitIndex)];
-  if(!a)return;
-  const previous=a.status;
-  a.status=el.value;
-  if(!persist()){a.status=previous;drawCommitments();return}
-  drawCommitments();
+  const c=db.cases.find(x=>x.id===el.dataset.commitCase),a=c?.actions?.[Number(el.dataset.commitIndex)];if(!a)return;
+  const previous=a.status;a.status=el.value;
+  if(!persist()){a.status=previous;drawCommitments();return}drawCommitments();
  });
  $$('[data-commit-open]').forEach(el=>el.onclick=()=>{selected=el.dataset.commitOpen;navigate('analisis')});
  $$('[data-commit-company]').forEach(el=>el.onclick=()=>navigate('organizaciones'));
@@ -1491,6 +1546,9 @@ $('#commitPeriod').onchange=drawCommitments;
 $('#commitPrevious').onclick=()=>{if(commitPeriodType()==='all')return;if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,-1);else selectedCommitWeek=addDays(selectedCommitWeek,-7);drawCommitments()};
 $('#commitNext').onclick=()=>{if(commitPeriodType()==='all')return;if(commitPeriodType()==='monthly')selectedCommitMonth=addMonths(selectedCommitMonth,1);else selectedCommitWeek=addDays(selectedCommitWeek,7);drawCommitments()};
 $('#commitCurrent').onclick=()=>{selectedCommitWeek=isoWeekStart(dashboardToday());selectedCommitMonth=monthStart(dashboardToday());drawCommitments()};
+$('#commitArea').onchange=drawCommitments;
+$('#commitEquipment').onchange=drawCommitments;
+$('#commitPriority').onchange=drawCommitments;
 $('#commitFilter').onchange=drawCommitments;
 $('#commitSearch').oninput=drawCommitments;
 function commitmentsExportRows(){return filteredCommitments(periodCommitments($('#commitScope').value==='company'&&corporateIsAdmin()?listCompanyCommitments():listCommitments()))}
