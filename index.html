@@ -319,7 +319,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
     <div><span>EN SEGUIMIENTO</span><strong id="commitPending">0</strong></div>
     <div><span>VENCIDOS</span><strong id="commitOverdue">0</strong></div>
-    <div><span>PRÓXIMOS 7 DÍAS</span><strong id="commitUpcoming">0</strong><span id="commitRate" class="small" style="display:block;margin-top:5px">0% cumplimiento</span></div>
+    <div><span>PRÓXIMOS 7 DÍAS</span><strong id="commitUpcoming">0</strong><span class="small" style="display:block;margin-top:5px">Cumplimiento <b id="commitRate">0%</b></span></div>
   </div>
   <div class="commitments-progress"><div id="commitProgressFill"></div></div>
   <div class="dashboard-toolbar commitment-filterbar" style="margin:14px 0">
@@ -1511,7 +1511,7 @@ function drawCommitments(){
  $('#commitComplete').textContent=sum.done;
  $('#commitPending').textContent=sum.pending;
  $('#commitOverdue').textContent=sum.overdue;
- $('#commitRate').textContent=sum.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'% cumplimiento';
+ $('#commitRate').textContent=sum.rate.toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
  const today=dashboardToday(),tomorrow=new Date(today+'T12:00:00'),cutoff=new Date(tomorrow.getTime()+7*86400000);
  const until=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
  $('#commitUpcoming').textContent=rows.filter(r=>r.status!=='complete'&&r.action.due>=today&&r.action.due<until).length;
