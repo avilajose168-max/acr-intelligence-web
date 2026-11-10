@@ -429,7 +429,7 @@ await page.locator('#organizationSelect').selectOption(testOrgId);
 await page.locator('#companyAdminPanel').waitFor({state:'visible'});
 await page.waitForFunction(()=>document.querySelector('#orgUserCount')?.textContent==='1',{timeout:15000});
 assert.equal(await page.locator('#platformAdminPanel').isVisible(),true,'La cuenta designada es administradora de la plataforma');
-await page.waitForFunction(()=>document.querySelector('#billingRows')?.textContent?.includes(testOrgName),{timeout:12000});
+await page.waitForFunction(name=>document.querySelector('#billingRows')?.textContent?.includes(name),testOrgName,{timeout:12000});
 assert.equal(await page.locator('#platformBillingModule').isVisible(),true,'Solo el administrador general ve clientes y suscripciones');
 await page.locator('[data-billing-edit="'+testOrgId+'"]').click();
 await page.locator('#billingEditor [name="plan_name"]').fill('Beta corporativa');
