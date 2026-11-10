@@ -17,6 +17,7 @@ const testOrgName='Compañía Minera de Prueba';
 const mockOrganizations=[{id:testOrgId,name:testOrgName,active:true}];
 const mockMemberships=[{id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',organization_id:testOrgId,user_id:testOwnerId,display_name:'Supervisor Administrador',email:'test@example.com',status:'approved',role:'admin'}];
 const mockCompanyCases=[];
+const mockSubscriptions=[];
 
 await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
   const url=route.request().url();
@@ -27,6 +28,16 @@ await page.route('https://tfrgnqcspdlimdzluxds.supabase.co/**',async route=>{
     user:{id:'11111111-1111-4111-8111-111111111111',email:'test@example.com'}
   })});
 
+  if(url.includes('/rest/v1/acr_client_subscriptions')){
+   const method=route.request().method();
+   if(method==='POST'){
+    const entry=route.request().postDataJSON();
+    const index=mockSubscriptions.findIndex(x=>x.organization_id===entry.organization_id);
+    if(index>=0)mockSubscriptions[index]=entry;else mockSubscriptions.push(entry);
+    return route.fulfill({status:201,headers,body:'{}'});
+   }
+   return route.fulfill({status:200,headers,body:JSON.stringify(mockSubscriptions)});
+  }
   if(url.includes('/rest/v1/acr_platform_admins'))return route.fulfill({status:200,headers,body:JSON.stringify([{user_id:testOwnerId}])});
   if(url.includes('/rest/v1/acr_organizations')){
     const method=route.request().method();
@@ -418,6 +429,21 @@ await page.locator('#organizationSelect').selectOption(testOrgId);
 await page.locator('#companyAdminPanel').waitFor({state:'visible'});
 await page.waitForFunction(()=>document.querySelector('#orgUserCount')?.textContent==='1',{timeout:15000});
 assert.equal(await page.locator('#platformAdminPanel').isVisible(),true,'La cuenta designada es administradora de la plataforma');
+await page.waitForFunction(()=>document.querySelector('#billingRows')?.textContent?.includes(testOrgName),{timeout:12000});
+assert.equal(await page.locator('#platformBillingModule').isVisible(),true,'Solo el administrador general ve clientes y suscripciones');
+await page.locator('[data-billing-edit="'+testOrgId+'"]').click();
+await page.locator('#billingEditor [name="plan_name"]').fill('Beta corporativa');
+await page.locator('#billingEditor [name="contract_reference"]').fill('TEST-2026');
+await page.locator('#billingEditor [name="seat_limit"]').fill('10');
+await page.locator('#billingEditor [name="ai_monthly_limit"]').fill('300');
+await page.locator('#billingEditor [name="ai_usage_reported"]').fill('22');
+await page.locator('#billingEditor [name="advisory_hours_included"]').fill('8');
+await page.locator('#billingEditor [name="advisory_hours_used"]').fill('2');
+await page.locator('#billingSave').click();
+await page.waitForFunction(()=>document.querySelector('#billingRows')?.textContent?.includes('Beta corporativa'),{timeout:12000});
+assert.equal(mockSubscriptions[0].organization_id,testOrgId,'El contrato se guarda para la empresa correcta');
+assert.equal(mockSubscriptions[0].ai_usage_reported,22,'Registro manual de consumo IA');
+assert.equal(await page.locator('#billingAdvisory').innerText(),'6 h','Saldo de horas de asesoría calculado');
 assert.ok((await page.locator('#companyAdminTitle').innerText()).includes(testOrgName),'Consolidado solo de compañía seleccionada');
 assert.equal(await page.locator('#orgCaseCount').innerText(),'0','Los ACR locales no se exponen sin publicación');
 page.once('dialog',d=>d.accept());
@@ -512,6 +538,7 @@ assert.equal(await companyAdminPage.locator('#platformAdminPanel').isVisible(),f
 assert.ok((await companyAdminPage.locator('#corporateViewTitle').innerText()).includes(testOrgName),'Se abre su compañía directamente');
 assert.equal(await companyAdminPage.locator('.nav button[data-page="organizaciones"]').innerText(),'🏢 Mi compañía','La navegación es personalizada');
 assert.equal(await companyAdminPage.locator('#orgCaseCount').innerText(),'1','Visualiza ACR de usuarios de su compañía');
+assert.equal(await companyAdminPage.locator('#platformBillingModule').isVisible(),false,'Administradores locales no pueden ver contratos de clientes');
 assert.ok((await companyAdminPage.locator('#orgUsersTable').innerText()).includes('1'),'Ve cantidad de ACR por usuario');
 assert.ok((await companyAdminPage.locator('#companyReportsStatus').innerText()).includes('informe(s) de falla publicado(s)'),'El administrador ve el estado de publicación de los ACR');
 await companyAdminPage.locator('#companyViewUserReports').click();
