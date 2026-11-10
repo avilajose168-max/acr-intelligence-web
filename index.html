@@ -456,6 +456,65 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .corporate-toolbar select{width:100%;padding:9px}
 #corporateRecentCases{font-size:12px}
 @media(max-width:850px){.corporate-reliability-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.corporate-command{padding:12px}}
+
+/* AC R INTEGRITY DISPLAY CLARITY V1 */
+/* Prefer true vector text, high contrast and legible chart labels. Screen only:
+   the white ACR/PDF document and print styles stay unchanged. */
+@media screen {
+ :root { -webkit-font-smoothing:auto; text-rendering:optimizeLegibility; }
+ #reliabilityDashboard {
+   color:#f4f8fd;
+   border:1.25px solid #5a8cac;
+   background:linear-gradient(145deg,#112e48 0%,#0a2036 60%,#0b253e 100%);
+ }
+ #reliabilityDashboard h2 {color:#fff;font-size:clamp(21px,1.8vw,27px);line-height:1.22;letter-spacing:-.25px}
+ #reliabilityDashboard h3 {color:#f6faff;font-size:clamp(15px,1.22vw,18px);line-height:1.35;font-weight:800}
+ #reliabilityDashboard .eyebrow {color:#ffd17d;font-size:12px;letter-spacing:.65px}
+ #reliabilityDashboard .dashboard-week {color:#ffda90;font-size:14px;line-height:1.5}
+ #reliabilityDashboard .muted,
+ #reliabilityDashboard .help,
+ #reliabilityDashboard .small {color:#c5d6e6;line-height:1.55}
+ #reliabilityDashboard .help {font-size:12px}
+ #reliabilityDashboard .reliability-controls {border:1px solid #4e7d9c;background:#102e49;box-shadow:inset 0 1px #ffffff0a}
+ #reliabilityDashboard .reliability-controls .field,
+ #reliabilityDashboard .dashboard-toolbar .field {color:#e0ebf6;font-size:12px;font-weight:700}
+ #reliabilityDashboard select,
+ #reliabilityDashboard input {color:#f8fbff;border-color:#6894b3;background-color:#092039;font-size:13px;font-weight:650;min-height:42px}
+ #reliabilityDashboard select:focus-visible,
+ #reliabilityDashboard input:focus-visible,
+ #reliabilityDashboard button:focus-visible {outline:2px solid #f5cb77;outline-offset:2px}
+ #reliabilityDashboard .dashboard-kpis>div {background:linear-gradient(135deg,#143a58,#0d2b45);border:1px solid #5484a4;box-shadow:0 2px 10px #0002}
+ #reliabilityDashboard .dashboard-kpis span {font-size:12px;font-weight:750;color:#d5e5f1;letter-spacing:.15px}
+ #reliabilityDashboard .dashboard-kpis strong {font-size:clamp(24px,2.1vw,31px);font-weight:850;letter-spacing:-.4px;color:#ffce70}
+ #reliabilityDashboard .dashboard-kpis .muted,
+ #reliabilityDashboard .dashboard-kpis small {color:#c7d9e8;font-size:12px}
+ #reliabilityDashboard .dashboard-chart {background:linear-gradient(160deg,#102e49,#092138);border:1px solid #4e82a3;box-shadow:0 5px 17px #0003}
+ #reliabilityDashboard .dashboard-chart svg {display:block;width:100%;height:auto;overflow:visible}
+ #reliabilityDashboard .dashboard-chart svg text {font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:12.5px;font-weight:650;fill:#e5eff8;text-rendering:geometricPrecision}
+ #reliabilityDashboard .dashboard-chart svg line {stroke:#50708c;stroke-width:1;shape-rendering:geometricPrecision}
+ #reliabilityDashboard #paretoChart svg path {stroke-width:3.4;stroke-linejoin:round;stroke-linecap:round}
+ #reliabilityDashboard .dashboard-table,
+ #reliabilityDashboard .trend-week-table {font-size:12.5px;color:#eaf3fc;line-height:1.35}
+ #reliabilityDashboard .dashboard-table th,
+ #reliabilityDashboard .trend-week-table th {color:#e1edf8;background:#19405e;font-size:12px;font-weight:800;border-bottom:1px solid #5983a0}
+ #reliabilityDashboard .dashboard-table td,
+ #reliabilityDashboard .dashboard-table th {padding:10px 8px;border-bottom:1px solid #395b76}
+ #reliabilityDashboard .trend-week-table td,
+ #reliabilityDashboard .trend-week-table th {padding:9px 8px;border-bottom:1px solid #395b76}
+ #reliabilityDashboard .trend-summary>div {border-color:#537d9e;background:linear-gradient(145deg,#183e5b,#102f49)}
+ #reliabilityDashboard .trend-summary span {color:#d0e1ef;font-size:11px}
+ #reliabilityDashboard .trend-summary strong {font-size:20px;color:#ffd17d}
+ #reliabilityDashboard .trend-summary small,
+ #reliabilityDashboard .trend-analysis-note {color:#c8d9e8;font-size:11px}
+ #reliabilityDashboard .dashboard-table tbody tr:hover,
+ #reliabilityDashboard .trend-week-table tbody tr:hover {background:#24506b}
+}
+@media screen and (max-width:700px) {
+ #reliabilityDashboard .dashboard-kpis span {font-size:10.5px}
+ #reliabilityDashboard .dashboard-kpis strong {font-size:23px}
+ #reliabilityDashboard .dashboard-chart svg text {font-size:12px}
+ #reliabilityDashboard .dashboard-chart {padding:11px}
+}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
