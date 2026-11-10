@@ -2716,9 +2716,9 @@ async function loadCorporateOverview(){
    (admins.length?tableRows(admins):'<tr><td colspan="6" class="small">Sin administradores ni solicitudes de administración.</td></tr>')+
    '<tr><td colspan="6"><strong>USUARIOS DE LA COMPAÑÍA</strong> · El administrador de esta compañía aprueba o rechaza sus solicitudes.</td></tr>'+
    (users.length?tableRows(users):'<tr><td colspan="6" class="small">Sin usuarios registrados.</td></tr>');
-  $('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
-  $('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
-  $('[data-org-unlink]').forEach(el=>el.onclick=()=>void unlinkCorporateMembership(el.dataset.orgUnlink,el));
+  $$('[data-org-member-status]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberStatus,{status:el.value}));
+  $$('[data-org-member-role]').forEach(el=>el.onchange=()=>changeCorporateMembership(el.dataset.orgMemberRole,{role:el.value}));
+  $$('[data-org-unlink]').forEach(el=>el.onclick=()=>void unlinkCorporateMembership(el.dataset.orgUnlink,el));
   $('#orgCasesTable').innerHTML=cases.length?cases.map((c,i)=>{
    const member=members.find(m=>m.user_id===c.owner_id);
    const count=(c.payload?.actions||[]).filter(a=>String(a?.description||'').trim()).length;
