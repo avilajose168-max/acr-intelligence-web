@@ -131,6 +131,45 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .reliability-auto-period strong{font-size:22px;color:#eac884}
 .reliability-auto-period small{font-size:10px;line-height:1.4;color:#b6cad8}
 
+
+/* Gestión de compromisos: diseño ejecutivo adaptable */
+#commitmentsDashboard{background:linear-gradient(145deg,#102d48,#07192b 73%);border:1px solid #326b8b;box-shadow:0 15px 35px #0003}
+#commitmentsDashboard h2{font-size:clamp(21px,2.2vw,29px)}
+#commitmentsDashboard .commitments-kpis>div{border:1px solid #315d7c;border-radius:12px;background:linear-gradient(145deg,#193b56,#0c2339);padding:16px 12px;min-width:0}
+#commitmentsDashboard .commitments-kpis>div:nth-child(2){border-color:#078c70;background:linear-gradient(140deg,#064339,#102b3b)}
+#commitmentsDashboard .commitments-kpis>div:nth-child(4){border-color:#ae5963}
+#commitmentsDashboard .commitments-kpis span{font-size:10px;line-height:1.35}
+#commitmentsDashboard .commitments-kpis strong{font-size:clamp(19px,2.3vw,29px)}
+#commitmentsDashboard .commitment-filterbar{gap:10px;flex-wrap:wrap;align-items:end}
+#commitmentsDashboard .commitment-filterbar .dashboard-filter{min-width:155px;max-width:260px}
+#commitmentsDashboard .commitments-scroll{border:1px solid #285878;border-radius:10px;max-height:450px;overflow:auto}
+#commitmentsDashboard .commitments-table{min-width:1050px}
+#commitmentsDashboard .commitments-table tbody tr{cursor:pointer}
+#commitmentsDashboard .commitments-table tbody tr:hover{background:#244762}
+#commitmentsDashboard .commitments-table tbody tr.commit-selected{background:#1b526e;box-shadow:inset 3px 0 #27c9ff}
+#commitmentsDashboard .commit-priority{display:inline-block;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:750;background:#28455a;color:#dceaf5}
+#commitmentsDashboard .commit-priority-high{background:#6c2630;color:#ffd4c7}
+#commitmentsDashboard .commit-priority-medium{background:#594416;color:#ffe2a0}
+#commitmentsDashboard .commit-priority-low{background:#174b49;color:#a7f0dc}
+#commitmentsDashboard .commit-detail-layout{display:grid;grid-template-columns:1fr 1.1fr .9fr;gap:12px;margin-top:17px}
+#commitmentsDashboard .commit-detail-card{border:1px solid #2187ae;border-radius:11px;background:linear-gradient(135deg,#113650,#091c2e);min-width:0;overflow:hidden}
+#commitmentsDashboard .commit-detail-card h3{background:#103d59;border-bottom:1px solid #267aa4;padding:13px 15px;font-size:14px;margin:0;color:#f2f8ff}
+#commitmentsDashboard .commit-detail-body{padding:13px;font-size:12px;line-height:1.55}
+#commitmentsDashboard .commit-detail-body p{margin:6px 0}
+#commitmentsDashboard .commit-selected-title{border:1px solid #295d7b;background:#173952;padding:8px 10px;border-radius:7px;color:#e2f4ff;font-weight:750;margin-bottom:10px}
+#commitmentsDashboard .commit-action-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid #294b61}
+#commitmentsDashboard .commit-action-item:last-child{border-bottom:0}
+#commitmentsDashboard .commit-action-item .commit-state{font-size:10px}
+#commitmentsDashboard .commit-donut{width:min(165px,75%);aspect-ratio:1;border-radius:50%;margin:8px auto 13px;display:grid;place-items:center}
+#commitmentsDashboard .commit-donut-inner{background:#0a2033;border-radius:50%;width:75%;height:75%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#commitmentsDashboard .commit-donut-inner strong{font-size:28px;color:#fff}
+#commitmentsDashboard .commit-donut-inner small{color:#b8c9d8;font-size:10px}
+#commitmentsDashboard .commit-legend{display:grid;gap:6px}
+#commitmentsDashboard .commit-legend span{display:flex;justify-content:space-between;gap:8px}
+#commitmentsDashboard .commit-legend i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px}
+@media(max-width:1000px){#commitmentsDashboard .commit-detail-layout{grid-template-columns:1fr 1fr}#commitmentsDashboard .commit-detail-card:last-child{grid-column:1/-1}}
+@media(max-width:680px){#commitmentsDashboard .commit-detail-layout{grid-template-columns:1fr}#commitmentsDashboard .commit-detail-card:last-child{grid-column:auto}#commitmentsDashboard .commitments-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 .commitments-dashboard{margin:17px 0 18px}
 .commitments-kpis{grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 9px}
 .commitments-kpis strong{font-size:24px}
@@ -271,7 +310,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <section class="card commitments-dashboard noprint" id="commitmentsDashboard" aria-label="Seguimiento de compromisos">
   <div class="between" style="flex-wrap:wrap;gap:14px">
-    <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Seguimiento de compromisos</h2><p class="muted" style="margin:4px 0 0">Compromisos de mis investigaciones. Los administradores autorizados pueden consultar también los ACR publicados por su compañía.</p></div>
+    <div><div class="eyebrow">GESTIÓN DE ACCIONES · ACR INTEGRITY</div><h2>◈ Gestión de Acciones y Compromisos</h2><p class="muted" style="margin:4px 0 0">Compromisos de mis investigaciones. Los administradores autorizados pueden consultar también los ACR publicados por su compañía.</p></div>
     <div class="toolbar" style="flex-wrap:wrap"><button type="button" class="primary" id="previewCommitments">📄 Ver informe del período</button><button type="button" class="secondary" id="exportCommitmentsPdf">⬇ Informe PDF</button><button type="button" class="secondary" id="exportCommitmentsExcel">⬇ Excel (CSV)</button></div>
   </div>
   <p id="commitScopeMessage" class="notice" role="status" hidden></p><div class="dashboard-toolbar" style="margin:14px 0;flex-wrap:wrap;align-items:end"><label class="field dashboard-filter" id="commitScopeWrap" hidden>Vista<select id="commitScope"><option value="personal">Mis compromisos</option><option value="company">Compromisos de la compañía</option></select></label><button type="button" class="secondary" id="commitRefreshCompany" hidden>↻ Actualizar compañía</button><label class="field dashboard-filter">Período<select id="commitPeriod"><option value="all">Todos los vencimientos</option><option value="weekly">Semanal</option><option value="monthly">Mensual</option></select></label><button type="button" class="secondary" id="commitPrevious">← Anterior</button><button type="button" class="secondary" id="commitCurrent">Período actual</button><button type="button" class="secondary" id="commitNext">Siguiente →</button><strong id="commitPeriodLabel" aria-live="polite"></strong></div>
@@ -280,14 +319,22 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div><span>COMPLETADOS</span><strong id="commitComplete">0</strong></div>
     <div><span>EN SEGUIMIENTO</span><strong id="commitPending">0</strong></div>
     <div><span>VENCIDOS</span><strong id="commitOverdue">0</strong></div>
-    <div><span>CUMPLIMIENTO</span><strong id="commitRate">0%</strong></div>
+    <div><span>PRÓXIMOS 7 DÍAS</span><strong id="commitUpcoming">0</strong></div>
   </div>
   <div class="commitments-progress"><div id="commitProgressFill"></div></div>
-  <div class="dashboard-toolbar" style="margin:14px 0">
+  <div class="dashboard-toolbar commitment-filterbar" style="margin:14px 0">
+    <label class="field dashboard-filter">Planta / Área<select id="commitArea"><option value="all">Todas las áreas</option></select></label>
+    <label class="field dashboard-filter">Equipo<select id="commitEquipment"><option value="all">Todos los equipos</option></select></label>
+    <label class="field dashboard-filter">Prioridad<select id="commitPriority"><option value="all">Todas las prioridades</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option><option value="none">Sin asignar</option></select></label>
     <label class="field dashboard-filter">Estado<select id="commitFilter"><option value="all">Todos los compromisos</option><option value="overdue">Vencidos</option><option value="pending">Pendientes / en curso</option><option value="complete">Completados</option></select></label>
     <label class="field dashboard-filter">Buscar acción, equipo o responsable<input type="search" id="commitSearch" placeholder="Ej.: CT-11C, inspección, supervisor"></label>
   </div>
-  <div class="dashboard-table-wrap commitments-scroll"><table class="dashboard-table commitments-table"><thead><tr><th>Investigación / Equipo</th><th>Compromiso</th><th>Responsable</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="commitmentsTable"></tbody></table></div>
+  <div class="dashboard-table-wrap commitments-scroll"><table class="dashboard-table commitments-table"><thead><tr><th>Investigación / Equipo</th><th>Compromiso / Acción</th><th>Responsable</th><th>Prioridad</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="commitmentsTable"></tbody></table></div>
+  <div class="commit-detail-layout">
+    <section class="commit-detail-card"><h3>▤ Investigación relacionada</h3><div id="commitSelectedInvestigation" class="commit-detail-body"></div></section>
+    <section class="commit-detail-card"><h3>⚒ Acciones correctivas asociadas</h3><div id="commitSelectedActions" class="commit-detail-body"></div></section>
+    <section class="commit-detail-card"><h3>◫ Estado de compromisos</h3><div id="commitStatusChart" class="commit-detail-body"></div></section>
+  </div>
   <p class="help" style="margin-top:12px">El filtro temporal utiliza la fecha de vencimiento de la acción (sin fecha, no aparece en el período). Los estados muestran la situación actual, no una fotografía histórica del cierre del mes. Completar una acción no elimina su investigación.</p>
 </section>
 <div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones se guardan localmente por usuario. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
