@@ -428,10 +428,11 @@ assert.equal(await page.locator('#corpMttr').innerText(),'2,00 h','MTTR corporat
 assert.ok((await page.locator('#corporateParetoTable').innerText()).includes('CT-11C'),'Pareto corporativo agrupa por equipo');
 assert.equal(await page.locator('#corporateTrendChart svg').count(),1,'Confiabilidad corporativa presenta tendencia de ocho semanas');
 assert.equal(await page.locator('#corporateTrendChart svg rect').count(),8,'Tendencia semanal presenta ocho barras');
-await page.locator('#corporateTrendMetric').selectOption('hours');
-assert.ok((await page.locator('#corporateTrendLabel').innerText()).includes('8 semanas'),'Tendencia corporativa permite filtrar horas detenidas');
-await page.locator('#corporateTrendMetric').selectOption('events');
+assert.equal(await page.locator('#corporateTrendMetric').count(),0,'No debe existir selector duplicado de tendencia');
+assert.equal(await page.locator('#corporateParetoMetric').count(),1,'Existe un único selector para Pareto y tendencia');
 await page.locator('#corporateParetoMetric').selectOption('hours');
+assert.ok((await page.locator('#corporateTrendLabel').innerText()).includes('8 semanas'),'Tendencia corporativa muestra ocho semanas');
+assert.equal(await page.locator('#corporateTrendChart svg rect').count(),8,'Tendencia se mantiene con ocho barras al cambiar a horas');
 assert.ok((await page.locator('#corporateParetoTable').innerText()).includes('2,00'),'Pareto por horas registradas');
 await page.locator('#corporatePeriod').selectOption('monthly');
 assert.equal(await page.locator('#corpEvents').innerText(),'1','El Pareto mensual utiliza los ACR de la compañía');
