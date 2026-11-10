@@ -612,6 +612,11 @@ await companyAdminPage.locator('.nav button[data-page="organizaciones"]').click(
 mockCompanyCases.pop();
 
 await companyAdminPage.locator('[data-org-case]').first().click();
+assert.equal(await companyAdminPage.locator('#collapsePublishedAcr').count(),1,'El detalle corporativo incluye botón para ocultarlo');
+await companyAdminPage.locator('#collapsePublishedAcr').click();
+assert.equal(await companyAdminPage.locator('#orgCaseDetail').isVisible(),false,'Ocultar investigación contrae el panel');
+await companyAdminPage.locator('[data-org-case]').first().click();
+assert.equal(await companyAdminPage.locator('#orgCaseDetail').isVisible(),true,'Ver ACR vuelve a expandir el detalle');
 const fullCase=await companyAdminPage.locator('#orgCaseDetail').innerText();
 assert.ok(fullCase.includes('Protección temperatura rodamiento'),'Puede abrir los ACR de los usuarios');
 assert.ok(fullCase.includes('Causa básica')&&fullCase.includes('Conclusión ejecutiva'),'Vista ACR técnica de solo lectura');
