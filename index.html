@@ -1383,6 +1383,7 @@ function companyWorkspace(name){
  banner.textContent=org?'Empresa seleccionada: '+org.name+' · Consultas corporativas':'Espacio personal · Investigaciones y datos de tu cuenta';
  const adminButton=document.querySelector('.nav button[data-page="administracion"]');
  if(adminButton)adminButton.hidden=!corporateIsAdmin();
+ if(name==='administracion'&&!scoped){document.querySelectorAll('.section').forEach(el=>el.classList.toggle('active',el.id==='organizaciones'))}
  if(!document.getElementById('companyInvestigationsView')){
   const heading=document.getElementById('companyUserReportsHeading'),box=document.createElement('div');box.id='companyInvestigationsView';heading.before(box);
   const description=heading.nextElementSibling,table=description.nextElementSibling,detail=document.getElementById('orgCaseDetail');
@@ -1391,7 +1392,7 @@ function companyWorkspace(name){
  if(module){
   document.querySelectorAll('.section').forEach(el=>el.classList.toggle('active',el.id==='organizaciones'));
   document.getElementById('companyAdminPanel').hidden=false;
-  if(name==='administracion')window.ACRAccessConsole?.configure({platform:corporateCtx.platform,allowed:true,orgId:corporateSelection(),userId:activeUser?.id,organizations:corporateCtx.organizations.map(o=>({id:o.id,name:o.name}))},corporateApi);
+  if(name==='administracion')window.ACRAccessConsole?.configure({platform:false,allowed:true,orgId:corporateSelection(),userId:activeUser?.id,organizations:corporateCtx.organizations.map(o=>({id:o.id,name:o.name}))},corporateApi);
  }
  return module;
 }
