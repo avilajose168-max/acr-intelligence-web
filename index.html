@@ -540,16 +540,52 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 @media screen and (min-width:751px) and (max-height:760px){
  .auth-wall{align-items:start}
 }
+</style><style>
+/* Reference-inspired industrial sign-in, retaining existing authentication controls. */
+.auth-wall{background:radial-gradient(ellipse at 8% 0%,#304d66 0,transparent 43%),radial-gradient(ellipse at 94% 95%,#81643155 0,transparent 35%),repeating-linear-gradient(138deg,transparent 0 130px,#42627c12 131px 220px,transparent 221px 360px),#071420;padding:40px}
+.auth-shell{width:min(1440px,100%);grid-template-columns:1.15fr 1fr;gap:55px;background:transparent;border:0;box-shadow:none;overflow:visible;min-height:710px}
+.auth-feature{padding:24px 0 65px;background:transparent;overflow:visible;justify-content:space-between}
+.auth-feature:before{inset:auto -15% -35px -20%;height:130px;border-radius:50%;transform:rotate(-7deg);border-top:2px solid #efc477;box-shadow:0 -8px 0 -7px #b58c48,0 -18px 0 -17px #b58c4888,0 -28px 0 -27px #b58c4866}
+.auth-wordmark{font-size:clamp(26px,3vw,42px);display:flex;align-items:center;gap:9px;flex-wrap:wrap;letter-spacing:-1px}
+.login-emblem{color:#e9bd65;font-size:56px;line-height:1}
+.auth-wordmark small{font-size:14px;font-weight:400;letter-spacing:0;border-left:1px solid #a5b4c4;padding-left:18px;margin-left:10px;line-height:1.4}
+.auth-symbol{display:none}
+.auth-feature .futuristic-overline{font-size:11px;letter-spacing:3px;color:#e8edf3;margin:45px 0 24px}
+.auth-feature h1{font-size:clamp(36px,4.2vw,62px);max-width:680px;line-height:1.1;letter-spacing:-1.6px}
+.auth-feature h1 .gold{display:block}
+.auth-feature p{font-size:19px;line-height:1.5;max-width:580px;color:#d6dee8}
+.auth-attributes{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:30px}
+.auth-attributes span{border-radius:20px;text-align:center;padding:16px 6px;font-size:12px;line-height:1.4;background:linear-gradient(140deg,#34495966,#0b1723aa);border-color:#667a8c}
+.auth-attributes b{display:block;color:#efbf61;font-size:34px;line-height:1;margin-bottom:12px}
+.auth-panel{padding:40px clamp(24px,3.5vw,58px);border:1px solid #c8ad7c;border-radius:32px;background:linear-gradient(135deg,#152636e8,#081421f5);box-shadow:0 18px 70px #0007,1px 0 20px #ecc46a20}
+.auth-panel>.futuristic-overline{color:#e1bc74;letter-spacing:2px}
+.auth-panel h2{font-size:34px;margin-top:12px}
+.auth-panel>p{font-size:15px;color:#d0dbe5}
+.auth-company-block{background:transparent;padding:0;border:0}
+.auth-panel .primary{background:linear-gradient(115deg,#ffe4a2,#dbab50 65%,#9e711c);color:#111c27;border:1px solid #f2cf80;box-shadow:0 4px 25px #e4b66022;font-size:17px}
+.auth-panel .field input,.auth-panel .field select{background:#0a1927aa;border-color:#6e8292;border-radius:11px}
+.auth-caption{font-size:10px}
+@media(max-width:950px){.auth-shell{gap:25px}.auth-wordmark small{display:none}.auth-attributes{gap:7px}.auth-feature p{font-size:16px}}
+@media(max-width:750px){
+ .auth-wall{display:block;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(30px,env(safe-area-inset-bottom))}
+ .auth-shell{display:grid;grid-template-columns:1fr;gap:20px;min-height:0}
+ .auth-feature{padding:8px 6px 15px;gap:12px}.auth-feature:before{display:none}
+ .auth-wordmark{font-size:28px}.login-emblem{font-size:37px}
+ .auth-feature .futuristic-overline{margin:15px 0;font-size:9px;letter-spacing:2px}
+ .auth-feature h1{font-size:32px;margin-bottom:12px}.auth-feature p{font-size:14px;margin:0}
+ .auth-attributes{margin-top:8px;gap:7px}.auth-attributes span{padding:11px 3px;font-size:10px;border-radius:13px}.auth-attributes b{font-size:25px;margin-bottom:7px}
+ .auth-panel{padding:25px 20px;border-radius:22px}.auth-panel h2{font-size:28px}.auth-panel input,.auth-panel select{font-size:16px}
+}
 </style></head><body>
 <div id="authWall" class="auth-wall">
   <div class="auth-shell">
     <div class="auth-feature">
-      <div class="auth-wordmark">◈ ACR <span class="gold">Integrity</span></div>
+      <div class="auth-wordmark"><span class="login-emblem">⬡</span> ACR <span class="gold">Integrity</span><small>Soluciones industriales<br>de confiabilidad</small></div>
       <div><div class="auth-symbol">⬡</div>
-      <div class="futuristic-overline">PLATAFORMA DE CONFIABILIDAD INDUSTRIAL</div>
+      <div class="futuristic-overline">PLATAFORMA DE ANÁLISIS Y MEJORA OPERACIONAL</div>
       <h1>De la falla a la <span class="gold">decisión inteligente.</span></h1>
-      <p>Investiga eventos, documenta evidencias y transforma el análisis causal en decisiones técnicas mejor fundamentadas.</p></div>
-      <div class="auth-attributes"><span>◈ 5 Porqués</span><span>◷ Detenciones</span><span>▧ Informe A3</span><span>◉ Evidencias</span></div>
+      <p>Investiga eventos, analiza causas, gestiona acciones y fortalece la confiabilidad de tus activos en cualquier industria.</p></div>
+      <div class="auth-attributes"><span><b>⌕</b>Análisis de<br>fallas</span><span><b>▥</b>Indicadores de<br>confiabilidad</span><span><b>▤</b>Informes<br>A3 / ACR</span><span><b>↗</b>Mejora<br>continua</span></div>
     </div>
     <form id="authForm" class="auth-panel" autocomplete="on">
       <div class="futuristic-overline">ACCESO A LA PLATAFORMA</div>
