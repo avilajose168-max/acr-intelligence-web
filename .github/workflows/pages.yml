@@ -32,6 +32,7 @@ jobs:
           PY
           node --check /tmp/acr-validate.js
           node tests/logic.test.cjs
+          node --test tests/cloud-workspace.test.cjs
       - name: Preparar navegador para prueba funcional
         run: |
           npm install --no-save playwright@1.57.0 jspdf@2.5.2 pptxgenjs@3.12.0
@@ -51,6 +52,7 @@ jobs:
         run: |
           mkdir -p _site/vendor
           cp index.html _site/
+          cp cloud-workspace.js _site/
           cp vendor/jspdf.umd.min.js _site/vendor/
           cp vendor/pptxgen.bundle.js _site/vendor/
           touch _site/.nojekyll
@@ -74,3 +76,4 @@ jobs:
           exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
+

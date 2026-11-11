@@ -1,0 +1,22 @@
+name: Validate personal cloud synchronization
+on:
+  pull_request:
+    paths:
+      - index.html
+      - cloud-workspace.js
+      - tests/cloud-workspace.test.cjs
+      - .github/workflows/cloud-sync-check.yml
+permissions:
+  contents: read
+jobs:
+  synchronization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate scripts and synchronization behavior
+        run: |
+          node --check cloud-workspace.js
+          node --test tests/cloud-workspace.test.cjs
+          node tests/logic.test.cjs
