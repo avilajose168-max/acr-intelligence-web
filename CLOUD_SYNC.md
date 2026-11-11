@@ -22,6 +22,6 @@ En Supabase se verificaron dentro de una transacción revertida: guardado real, 
 
 ## Antes de publicar
 
-Revisar el despliegue de Vercel y probar el acceso real desde dos navegadores con una cuenta de prueba. La conexión de Vercel utilizada durante esta implementación no mostró el proyecto `acr-integrity`; no se creó otro proyecto ni se modificó el dominio.
+La integración GitHub–Vercel generó una vista previa y confirmó su despliegue. Se inició sesión mediante el formulario seguro, se creó una investigación ficticia y se confirmó «Guardado en la nube», su presencia en Supabase y su recuperación tras recargar. La conexión MCP de Vercel no muestra el proyecto, por lo que los despliegues se verifican mediante los estados de GitHub y el navegador. Falta comprobar acceso desde un segundo equipo físico.
 
 Pendientes previos: protección de contraseñas filtradas de Supabase Auth y validación integral de registro/recuperación/PDF. Los tests de sincronización no sustituyen esas pruebas.
