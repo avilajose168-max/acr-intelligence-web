@@ -3807,22 +3807,25 @@ function generateHypotheses(){
  const c=ensureEvent();if(!c)return;
  if((normalizeText(c.basicCause)||normalizeText(c.causeConsequence)||normalizeText(c.conclusion))&&!confirm('Ya existe un análisis o conclusión. ¿Deseas reemplazarlo?'))return;
  return withBusy($('#generateHypotheses'),async()=>{
-   let causes,conclusion,source='IA generativa';
+   let causes,conclusion,basicCause,causeConsequence,source='IA generativa';
    try {
      const data=await assisted('causes',c);
      causes=String(data.causes||'').trim();
      conclusion=String(data.conclusion||'').trim();
-     if(causes.length<35||conclusion.length<60)throw new Error('El análisis de la IA no fue suficientemente completo.');
+     basicCause=String(data.basicCause||'').trim();
+     causeConsequence=String(data.causeConsequence||'').trim();
+     if(causes.length<35||conclusion.length<60||basicCause.length<15||causeConsequence.length<15)throw new Error('El análisis de la IA no fue suficientemente completo.');
    }catch(e){
+     basicCause=undefined;causeConsequence=undefined;
      causes=proposeHypotheses(c);
      conclusion=proposeConclusion(c);
      source=fallbackNotice(e);
    }
    c.rootCause=causes;
-   c.basicCause=proposeBasicCause(c);
-   c.causeConsequence=proposeCauseConsequence(c);
+   c.basicCause=basicCause||proposeBasicCause(c);
+   c.causeConsequence=causeConsequence||proposeCauseConsequence(c);
    c.conclusion=conclusion;
-   if(c.validationStatus==='Causa validada por investigador'&&!normalizeText(c.validation))c.validationStatus='En validación';
+   if(c.validationStatus==='Causa validada por investigador')c.validationStatus='En validación';
    persist();navigate('analisis');
    const target=$('#hypothesesFeedback');
    target.textContent='Causa básica y consecuencia propuestas · '+source+'. Revisa y valida técnicamente la relación causal antes del cierre.';
