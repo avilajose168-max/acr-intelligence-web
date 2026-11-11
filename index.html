@@ -637,6 +637,17 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
  #mainApp .primary,#mainApp .secondary{min-height:44px}
 }
 @media print{.workspace-logo,.workspace-step-label{display:none}}
+</style><style>
+@media screen{
+ #companyScopeBanner{margin-bottom:20px;font-weight:700}
+ #mainApp[data-company-module]:not([data-company-module=""]) #organizaciones> :not(#companyAdminPanel){display:none!important}
+ #mainApp[data-company-module]:not([data-company-module=""]) #companyAdminPanel> *{display:none!important}
+ #mainApp[data-company-module="confiabilidad"] #companyAdminPanel>#corporateReliabilityPanel{display:block!important}
+ #mainApp[data-company-module="compromisos"] #companyAdminPanel>#corporateCommitmentsPanel{display:block!important}
+ #mainApp[data-company-module="investigaciones"] #companyAdminPanel>#companyInvestigationsView{display:block!important}
+ #mainApp[data-company-module="administracion"] #organizaciones>#accessAuditPanel{display:block!important}
+ #mainApp[data-company-module="administracion"] #companyAdminPanel{display:none!important}
+}
 </style></head><body>
 <div id="authWall" class="auth-wall"><svg class="login-waves" viewBox="0 0 1500 420" preserveAspectRatio="none" fill="none" stroke="#dba94f" stroke-width="1" aria-hidden="true"><path d="M-100 150 C280 -50 330 390 650 165 S1120 50 1500 -120" opacity="0.8"/><path d="M-100 158 C280 -44 330 395 650 171 S1120 56 1500 -113" opacity="0.775"/><path d="M-100 166 C280 -38 330 400 650 177 S1120 62 1500 -106" opacity="0.75"/><path d="M-100 174 C280 -32 330 405 650 183 S1120 68 1500 -99" opacity="0.7250000000000001"/><path d="M-100 182 C280 -26 330 410 650 189 S1120 74 1500 -92" opacity="0.7000000000000001"/><path d="M-100 190 C280 -20 330 415 650 195 S1120 80 1500 -85" opacity="0.675"/><path d="M-100 198 C280 -14 330 420 650 201 S1120 86 1500 -78" opacity="0.65"/><path d="M-100 206 C280 -8 330 425 650 207 S1120 92 1500 -71" opacity="0.625"/><path d="M-100 214 C280 -2 330 430 650 213 S1120 98 1500 -64" opacity="0.6000000000000001"/><path d="M-100 222 C280 4 330 435 650 219 S1120 104 1500 -57" opacity="0.5750000000000001"/><path d="M-100 230 C280 10 330 440 650 225 S1120 110 1500 -50" opacity="0.55"/><path d="M-100 238 C280 16 330 445 650 231 S1120 116 1500 -43" opacity="0.525"/><path d="M-100 246 C280 22 330 450 650 237 S1120 122 1500 -36" opacity="0.5"/><path d="M-100 254 C280 28 330 455 650 243 S1120 128 1500 -29" opacity="0.47500000000000003"/><path d="M-100 262 C280 34 330 460 650 249 S1120 134 1500 -22" opacity="0.45"/><path d="M-100 270 C280 40 330 465 650 255 S1120 140 1500 -15" opacity="0.42500000000000004"/><path d="M-100 278 C280 46 330 470 650 261 S1120 146 1500 -8" opacity="0.4"/><path d="M-100 286 C280 52 330 475 650 267 S1120 152 1500 -1" opacity="0.375"/><path d="M-100 294 C280 58 330 480 650 273 S1120 158 1500 6" opacity="0.35000000000000003"/><path d="M-100 302 C280 64 330 485 650 279 S1120 164 1500 13" opacity="0.325"/><path d="M-100 310 C280 70 330 490 650 285 S1120 170 1500 20" opacity="0.30000000000000004"/><path d="M-100 318 C280 76 330 495 650 291 S1120 176 1500 27" opacity="0.275"/><path d="M-100 326 C280 82 330 500 650 297 S1120 182 1500 34" opacity="0.25"/><path d="M-100 334 C280 88 330 505 650 303 S1120 188 1500 41" opacity="0.22499999999999998"/></svg>
   <div class="auth-shell">
@@ -683,7 +694,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </form>
   </div>
 </div>
-<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint" aria-label="Navegación principal"><div class="workspace-logo">◈ ACR <span>Integrity</span></div><button class="active" data-page="inicio">⌂ Inicio</button><button data-page="investigaciones">▤ Investigaciones</button><button data-page="confiabilidad">▥ Confiabilidad</button><button data-page="compromisos">☑ Compromisos</button><button data-page="organizaciones">🏢 Empresas</button><div class="workspace-step-label">INVESTIGACIÓN ACTUAL</div><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · Informe PDF</button></nav><aside id="cloudSyncNotice" class="noprint" hidden style="margin:16px;padding:16px;border:1px solid #c9a660;border-radius:12px;background:#182c3b" aria-live="polite"><p id="cloudSyncMessage"></p><button id="cloudRetry" type="button">Reintentar sincronización</button> <button id="cloudBackup" type="button">Descargar respaldo pendiente</button> <button id="cloudMergeCopies" type="button" hidden>Conservar ambas copias</button></aside>
+<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint" aria-label="Navegación principal"><div class="workspace-logo">◈ ACR <span>Integrity</span></div><button class="active" data-page="inicio">⌂ Inicio</button><button data-page="organizaciones">🏢 Empresas</button><button data-page="investigaciones">▤ Investigaciones</button><button data-page="confiabilidad">▥ Confiabilidad</button><button data-page="compromisos">☑ Compromisos</button><button data-page="administracion">⚙ Administración</button><div class="workspace-step-label">INVESTIGACIÓN PERSONAL</div><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · Informe PDF</button></nav><aside id="cloudSyncNotice" class="noprint" hidden style="margin:16px;padding:16px;border:1px solid #c9a660;border-radius:12px;background:#182c3b" aria-live="polite"><p id="cloudSyncMessage"></p><button id="cloudRetry" type="button">Reintentar sincronización</button> <button id="cloudBackup" type="button">Descargar respaldo pendiente</button> <button id="cloudMergeCopies" type="button" hidden>Conservar ambas copias</button></aside>
 <section id="inicio" class="section active"><div class="card"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
   <div><div class="eyebrow">ACR INTEGRITY · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
@@ -1360,7 +1371,32 @@ function commitVoice(){const c=current();if(!c)return;const value=[voiceBase.tri
 if(!SpeechRecognitionAPI){voiceStatus('El dictado no está disponible en este navegador. Prueba Chrome o Edge actualizado, o escribe el evento.');$('#startVoice').disabled=true;}
 $('#startVoice').addEventListener('click',()=>{const c=current();if(!c){alert('Primero crea una investigación.');return;}if(!SpeechRecognitionAPI||voiceRunning)return;try{voiceRecognition=new SpeechRecognitionAPI();voiceRecognition.lang='es-CL';voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceBase=c.description||'';voiceFinal='';voiceRecognition.onstart=()=>{voiceRunning=true;voiceStatus('🔴 Escuchando… Describe la falla. Pulsa Detener al terminar.',true)};voiceRecognition.onresult=event=>{let provisional='';for(let i=event.resultIndex;i<event.results.length;i++){const phrase=event.results[i][0]?.transcript||'';if(event.results[i].isFinal)voiceFinal+=(voiceFinal?' ':'')+phrase.trim();else provisional+=phrase;}const composed=[voiceBase.trim(),voiceFinal.trim(),provisional.trim()].filter(Boolean).join('\n');const field=$('[data-k="description"]');if(field)field.value=composed;const row=current();if(row)row.description=composed;if(voiceFinal)persist();};voiceRecognition.onerror=e=>{const messages={'not-allowed':'Permiso de micrófono denegado. Actívalo en el navegador.','no-speech':'No se detectó voz. Intenta de nuevo.','network':'El reconocimiento de voz no está disponible por un problema de red.','audio-capture':'No se encontró un micrófono.'};voiceStatus(messages[e.error]||('No se pudo reconocer la voz: '+e.error));};voiceRecognition.onend=()=>{voiceRunning=false;commitVoice();voiceStatus('Dictado finalizado. Revisa y edita el texto antes de continuar.');};voiceRecognition.start();}catch(e){voiceRunning=false;voiceStatus('No se pudo iniciar el micrófono. Revisa permisos y compatibilidad.');}});
 $('#stopVoice').addEventListener('click',()=>{if(voiceRecognition&&voiceRunning){voiceStatus('Finalizando dictado…');voiceRecognition.stop();}});
-function makeCase(){return{id:id(),format,reportFormat:format,title:'',equipment:'',equipmentSap:'',area:'',sector:'',productionUnit:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}function navigate(name){if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
+function makeCase(){return{id:id(),format,reportFormat:format,title:'',equipment:'',equipmentSap:'',area:'',sector:'',productionUnit:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}
+function companyWorkspace(name){
+ const scoped=!!(corporateCtx&&corporateSelection()&&corporateIsAdmin());
+ const module=scoped&&['investigaciones','confiabilidad','compromisos','administracion'].includes(name);
+ const root=document.getElementById('mainApp');
+ root.dataset.companyModule=module?name:'';
+ let banner=document.getElementById('companyScopeBanner');
+ if(!banner){banner=document.createElement('div');banner.id='companyScopeBanner';banner.className='notice noprint';document.querySelector('#mainApp>.nav').after(banner)}
+ const org=scoped?corporateCtx.organizations.find(o=>o.id===corporateSelection()):null;
+ banner.textContent=org?'Empresa seleccionada: '+org.name+' · Consultas corporativas':'Espacio personal · Investigaciones y datos de tu cuenta';
+ const adminButton=document.querySelector('.nav button[data-page="administracion"]');
+ if(adminButton)adminButton.hidden=!corporateIsAdmin();
+ if(!document.getElementById('companyInvestigationsView')){
+  const heading=document.getElementById('companyUserReportsHeading'),box=document.createElement('div');box.id='companyInvestigationsView';heading.before(box);
+  const description=heading.nextElementSibling,table=description.nextElementSibling,detail=document.getElementById('orgCaseDetail');
+  [heading,description,table,detail].forEach(node=>box.append(node));
+ }
+ if(module){
+  document.querySelectorAll('.section').forEach(el=>el.classList.toggle('active',el.id==='organizaciones'));
+  document.getElementById('companyAdminPanel').hidden=false;
+  if(name==='administracion')window.ACRAccessConsole?.configure({platform:corporateCtx.platform,allowed:true,orgId:corporateSelection(),userId:activeUser?.id,organizations:corporateCtx.organizations.map(o=>({id:o.id,name:o.name}))},corporateApi);
+ }
+ return module;
+}
+
+function navigate(name){if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
 // Semanas ISO: lunes a domingo sin desfase horario ni dependencia del huso del navegador.
 function dateKeyUTC(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0')}
 function parseDateKey(value){
@@ -2433,6 +2469,7 @@ async function loadOrganizations(){
   drawOrganizationStatus();
   configureCommitmentScope();
   fillOrganizationBrandEditor();
+  companyWorkspace(page);
   if(page==='registro')drawCompany();
   if(page==='reporte')drawReport();
   if(fixedAdmin&&page!=='organizaciones')navigate('organizaciones');
@@ -2446,6 +2483,7 @@ $('#organizationSelect').onchange=()=>{
  drawOrganizationStatus();
  configureCommitmentScope();
  fillOrganizationBrandEditor();
+ companyWorkspace(page);
 };
 $('#refreshOrganizations').onclick=loadOrganizations;
 
@@ -3194,6 +3232,10 @@ async function loadCorporateOverview(){
  const orgId=corporateSelection();
  if(!orgId||!corporateIsAdmin()||!activeUser)return;
  const initialId=orgId;
+ corporateCtx.orgMembers=[];corporateCtx.cases=[];
+ $('#orgCasesTable').innerHTML='<tr><td colspan="6">Cargando investigaciones de la compañía seleccionada…</td></tr>';
+ $('#orgUsersTable').innerHTML='<tr><td colspan="6">Cargando usuarios…</td></tr>';
+ drawCorporateReliability();drawCorporateCommitments();
  try{
   const [members,cases]=await Promise.all([
    corporateApi(organizationApiPath('acr_memberships','?select=id,organization_id,user_id,email,display_name,status,role,requested_role,created_at&organization_id=eq.'+orgId+'&order=created_at.desc')),
