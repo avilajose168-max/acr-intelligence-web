@@ -3457,7 +3457,7 @@ function drawActions(){
     '<option value="'+key+'"'+((COMMIT_STATES[a.status]||'Pendiente')===key?' selected':'')+'>'+key+'</option>').join('')+'</select></label>'+
   '<button class="secondary" data-del="'+i+'" title="Eliminar acción">✕</button></div>'
  ).join('');
- $('[data-ai]').forEach(el=>{
+ $$('[data-ai]').forEach(el=>{
   const saveActionValue=()=>{
    const live=current();
    const action=live?.id===c.id?live.actions?.[Number(el.dataset.ai)]:null;
@@ -3467,7 +3467,7 @@ function drawActions(){
   el.addEventListener(el.tagName==='SELECT'?'change':'input',saveActionValue);
   if(el.type==='date')el.addEventListener('change',saveActionValue);
  });
- $('[data-del]').forEach(b=>b.onclick=()=>{
+ $$('[data-del]').forEach(b=>b.onclick=()=>{
   const live=current();if(live?.id!==c.id)return;
   live.actions.splice(Number(b.dataset.del),1);persist();drawActions();
  });
