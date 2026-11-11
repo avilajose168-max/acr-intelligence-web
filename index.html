@@ -557,11 +557,11 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
       <div id="authFeedback" aria-live="polite"></div>
       <button id="authSubmit" type="submit" class="primary">Ingresar a ACR Integrity</button>
       <div class="auth-links"><button id="authSwitch" type="button" class="auth-link">Crear una cuenta</button><button id="authRecover" type="button" class="auth-link">¿Olvidaste tu contraseña?</button></div>
-      <div class="auth-caption">Acceso con verificación de correo. Tus investigaciones de esta versión se conservan en este navegador por cuenta; aún no se sincronizan con la nube.</div>
+      <div class="auth-caption">Acceso con verificación de correo. Tus investigaciones personales se sincronizan con tu cuenta. Revisa el estado de guardado antes de cambiar de equipo. Sin conexión, los cambios quedan pendientes en este navegador.</div>
     </form>
   </div>
 </div>
-<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint"><button class="active" data-page="inicio">Inicio</button><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · PDF</button><button data-page="organizaciones">🏢 Empresas</button></nav>
+<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint"><button class="active" data-page="inicio">Inicio</button><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · PDF</button><button data-page="organizaciones">🏢 Empresas</button></nav><aside id="cloudSyncNotice" class="noprint" hidden style="margin:16px;padding:16px;border:1px solid #c9a660;border-radius:12px;background:#182c3b" aria-live="polite"><p id="cloudSyncMessage"></p><button id="cloudRetry" type="button">Reintentar sincronización</button> <button id="cloudBackup" type="button">Descargar respaldo pendiente</button> <button id="cloudMergeCopies" type="button" hidden>Conservar ambas copias</button></aside>
 <section id="inicio" class="section active"><div class="card"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
   <div><div class="eyebrow">ACR INTEGRITY · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
@@ -608,7 +608,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
    <div id="weeklyTrendAnalysis" class="trend-analysis" aria-live="polite"></div>
    <p class="help">Los valores corresponden al mismo filtro de área, equipo y período. Elige otra semana o mes para revisar su Pareto.</p></div>
 </div>
-<p class="help" style="margin:14px 0 0">Se considera la fecha de inicio de la detención; si no está registrada, se utiliza la fecha del evento. Los datos provienen solo de investigaciones guardadas en este navegador y cuenta; no incluyen eventos de otros usuarios o sistemas externos.</p>
+<p class="help" style="margin:14px 0 0">Se considera la fecha de inicio de la detención; si no está registrada, se utiliza la fecha del evento. Los datos provienen solo de las investigaciones de tu espacio personal sincronizado; no incluyen eventos de otros usuarios o sistemas externos.</p>
 </div><div class="toolbar" style="margin:13px 0 19px;flex-wrap:wrap">
   <button type="button" class="primary" id="previewWeekly">📄 Ver informe de la semana</button>
   <button type="button" class="secondary" id="downloadWeeklyPdf">⬇ Descargar PDF</button>
@@ -644,7 +644,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
   <p class="help" style="margin-top:12px">El filtro temporal utiliza la fecha de vencimiento de la acción (sin fecha, no aparece en el período). Los estados muestran la situación actual, no una fotografía histórica del cierre del mes. Completar una acción no elimina su investigación.</p>
 </section>
-<div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones se guardan localmente por usuario. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
+<div class="cols"><div class="card"><h2>Investigaciones guardadas</h2><div id="casesList"></div></div><div class="card"><h2>Flujo de trabajo</h2><div class="notice"><b>1.</b> Registra el síntoma y el equipo.<br><b>2.</b> Fotografía el componente, las alarmas o registros.<br><b>3.</b> Completa los 5 Porqués y factores relevantes.<br><b>4.</b> Declara qué está confirmado y qué sigue siendo hipótesis.<br><b>5.</b> Imprime o guarda en PDF.</div><p class="help">Las investigaciones personales se sincronizan con tu cuenta y mantienen una copia local de recuperación. Si activas IA externa, el texto del evento se enviará al proveedor para procesarlo. Evita incluir información confidencial sin autorización.</p><button class="secondary" id="export">Respaldar investigaciones (JSON)</button><label class="secondary" style="display:inline-block;cursor:pointer;margin-top:9px">Importar respaldo <input id="import" type="file" accept="application/json" style="display:none"></label></div></div></section>
 <section id="organizaciones" class="section">
 <div class="between" style="flex-wrap:wrap;gap:12px;margin-bottom:17px"><div><div class="eyebrow" id="corporateViewEyebrow">ACR INTEGRITY · ADMINISTRACIÓN</div><h1 id="corporateViewTitle">Centro de administración corporativa</h1><p class="muted" id="corporateViewSubtitle">Selecciona la empresa para revisar sus usuarios, investigaciones e indicadores.</p></div><button type="button" id="refreshOrganizations" class="secondary">↻ Actualizar</button></div>
 <div class="card" id="platformAdminPanel" hidden>
@@ -1009,6 +1009,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div class="toolbar" style="margin-top:18px"><button type="button" class="primary" id="importShared">Guardar una copia editable en mi cuenta</button><button type="button" class="secondary" id="dismissShared">Solo visualizar</button></div>
   </div>
 </div>
+<script src="./cloud-workspace.js"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -1034,6 +1035,47 @@ async function requestAuth(path,body,token){
   return data;
 }
 let session=null;
+let authRefreshPromise=null;
+async function personalAccessToken(){
+ if(!session?.access_token)throw Error('Inicia sesión para sincronizar.');
+ if(session.expires_at>Date.now()/1000+90)return session.access_token;
+ const previous=session;
+ if(!authRefreshPromise)authRefreshPromise=requestAuth('token?grant_type=refresh_token',{refresh_token:previous.refresh_token})
+  .then(data=>{
+   if(session!==previous)throw Error('La cuenta cambió.');
+   session={...data,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)};
+   localStorage.setItem(SESSION_KEY,JSON.stringify(session));return session.access_token;
+  }).finally(()=>{authRefreshPromise=null});
+ return authRefreshPromise;
+}
+let syncClientId=sessionStorage.getItem('acr-sync-tab-id');
+if(!syncClientId){syncClientId=crypto.randomUUID();sessionStorage.setItem('acr-sync-tab-id',syncClientId)}
+const personalSync=new ACRWorkspaceSync({
+ clientId:syncClientId,storage:localStorage,fetch:window.fetch.bind(window),url:SUPABASE_URL,publicKey:PUBLIC_KEY,
+ read:()=>db,getToken:personalAccessToken,
+ apply:value=>{
+  const changed=JSON.stringify(db)!==JSON.stringify(value);db=value;
+  if(selected&&!db.cases.some(c=>c.id===selected))selected=null;
+  if(changed&&!document.getElementById('mainApp').hidden)navigate(selected?page:'inicio');
+ },
+ onStatus:(kind,message)=>{
+  document.getElementById('saveStatus').textContent=message;
+  const panel=document.getElementById('cloudSyncNotice');
+  panel.hidden=!['conflict','offline'].includes(kind);
+  document.getElementById('cloudSyncMessage').textContent=message;
+  document.getElementById('cloudMergeCopies').hidden=kind!=='conflict';
+ }
+});
+document.getElementById('cloudRetry').onclick=()=>void personalSync.flush();
+document.getElementById('cloudBackup').onclick=()=>download('acr-respaldo-pendiente.json',JSON.stringify(db,null,2),'application/json');
+document.getElementById('cloudMergeCopies').onclick=async()=>{
+ if(!confirm('Se conservarán las investigaciones de ambas copias. Las versiones distintas de una misma investigación aparecerán como copias separadas. También se guardará un respaldo local exacto. ¿Continuar?'))return;
+ const button=document.getElementById('cloudMergeCopies');button.disabled=true;
+ try{await personalSync.resolveKeepingBoth()}finally{button.disabled=false}
+};
+window.addEventListener('online',()=>void personalSync.flush());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void personalSync.flush()});
+setInterval(()=>{if(!document.hidden)void personalSync.flush()},30000);
 async function enter(sessionData){
   if(!sessionData?.access_token||!sessionData?.user?.id)throw Error('No se recibió una sesión válida. Confirma tu correo e inicia sesión.');
   session={access_token:sessionData.access_token,refresh_token:sessionData.refresh_token,
@@ -1046,6 +1088,7 @@ async function enter(sessionData){
   if(!db.settings)db.settings={companyName:'',logo:''};
   selected=null;
   document.getElementById('accountEmail').textContent=activeUser.email||'Mi cuenta';
+  await personalSync.start(activeUser.id,KEY);
   hideAuth();navigate('inicio');
   void openIncomingShareFromUrl();
   void loadOrganizations();
@@ -1060,6 +1103,7 @@ async function validateSession(){
 }
 function logout(){
   const token=session?.access_token;
+  personalSync.stop();
   session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;
   localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
@@ -1179,7 +1223,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   finally{btn.disabled=false}
 });
 setAuthMode('login');showAuth();void validateSession();
-let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{localStorage.setItem(KEY,JSON.stringify(db));$('#saveStatus').textContent='● Guardado localmente';if(schedule)scheduleCorporateSync();return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
+let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{personalSync.persist();if(schedule)scheduleCorporateSync();return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
 // Dictado de voz opcional: inserta texto en el evento y utiliza el guardado existente.
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let voiceRecognition=null,voiceRunning=false,voiceBase='',voiceFinal='';
@@ -1777,7 +1821,7 @@ function removeInvestigation(id){
  const item=db.cases.find(c=>c.id===id);
  if(!item)return false;
  const name=normalizeText(item.title)||'Investigación sin título';
- if(!confirm('¿Eliminar definitivamente la investigación "'+name+'"?\n\nEsta acción elimina sus datos y fotografías de este navegador y no puede deshacerse sin un respaldo JSON.'))return false;
+ if(!confirm('¿Eliminar definitivamente la investigación "'+name+'"?\n\nEsta acción elimina sus datos y fotografías de tu espacio personal, también en la nube al sincronizar. No puede deshacerse sin un respaldo JSON. Las publicaciones corporativas se administran por separado.'))return false;
  const previousCases=db.cases,previousSelected=selected;
  db.cases=db.cases.filter(c=>c.id!==id);
  if(selected===id)selected=null;
@@ -2422,7 +2466,7 @@ async function publishCorporateCases(silent=false){
   if(!silent&&failed===0){state[orgId]=true;localStorage.setItem(corporateKey(),JSON.stringify(state))}
   if(success>0)persist(false);
   if(status)status.textContent=success+' investigaciones corporativas actualizadas.'+(failed?' '+failed+' pendientes: '+firstError:'')+
-   ' Las investigaciones siguen guardadas en el navegador.';
+   ' La copia personal conserva su propio estado de sincronización.';
   if(!silent&&failed)alert('Algunas investigaciones no se pudieron publicar: '+firstError);
  }finally{corporateSaveActive=false}
 }
@@ -2448,10 +2492,10 @@ async function finishInvestigationAndCommitments(){
     info.textContent='✓ Investigación publicada en '+org.name+' con '+actions.length+' compromiso(s). El administrador podrá consultarlos en Compromisos de la compañía.';
     if(corporateIsAdmin())await refreshCompanyCommitments();
    }else{
-    info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en esta cuenta y navegador. No se publicó a la compañía.';
+    info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en tu espacio personal; revisa el estado de sincronización. No se publicó a la compañía.';
    }
   }else{
-   info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en esta cuenta y navegador. Para compartirlos con una compañía, primero solicita afiliación y aprobación.';
+   info.textContent='✓ Investigación y '+actions.length+' compromiso(s) guardados en tu espacio personal; revisa el estado de sincronización. Para compartirlos con una compañía, primero solicita afiliación y aprobación.';
   }
   // Mostrar los compromisos recién creados aunque su vencimiento sea posterior al mes actual.
   $('#commitPeriod').value='all';
@@ -2465,7 +2509,7 @@ async function finishInvestigationAndCommitments(){
   // La copia local ya se guardó antes de intentar la publicación corporativa.
   // Distinguir los dos resultados evita alarmar al usuario o perder sus compromisos.
   info.textContent=localSaved
-   ?'✓ Investigación y compromisos guardados en este navegador. ⚠ La publicación en la empresa no se completó: '+error.message+'. Puedes volver a intentar «Guardar todo y finalizar».'
+   ?'✓ Investigación y compromisos guardados en tu espacio personal. ⚠ La publicación en la empresa no se completó: '+error.message+'. Puedes volver a intentar «Guardar todo y finalizar».'
    :'⚠ No se completó el guardado: '+error.message;
   $('#commitPeriod').value='all';
   $('#commitScope').value='personal';
@@ -3847,8 +3891,8 @@ box.className='preview reportMode-'+reportFormat;
  printPageStyle.textContent='@media print{@page{size:'+(reportFormat==='a3'?'A3 landscape; margin:10mm':'A4 portrait; margin:12mm')+'}}';
  document.head.appendChild(printPageStyle);
 const mode=reportFormat==='a3'?'A3 EJECUTIVO':reportFormat==='acr'?'ANÁLISIS CAUSA RAÍZ':'ANÁLISIS 5 PORQUÉS';const why=c.whys.some(x=>x.trim())?`<ol>${c.whys.filter(x=>x.trim()).map(x=>`<li>${text(x)}</li>`).join('')}</ol>`:'<p>No registrado</p>';const photos=c.photos.length?`<div class="printphotos">${c.photos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>EV-${String(i+1).padStart(2,'0')} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:'<p>No se adjuntaron fotografías.</p>';const actions=c.actions.filter(a=>a.description.trim());if(personal)paintQuality(c);box.innerHTML=`<div class="report-head"><div class="companyBrand">${brand.logo?`<img class="report-logo" alt="Logo corporativo" src="${brand.logo}">`:''}<div><div class="report-company-name">${esc(brand.name||'ACR Integrity')}</div><div class="report-company">Informe técnico de investigación de fallas</div></div><div class="right"><b style="font-size:11px">${mode}</b></div></div><div class="between"><span class="eyebrow">ACR Integrity · Informe técnico</span></div><h1>${esc(c.title||'Evento en investigación')}</h1><div class="small" style="color:#55687d">Documento ${esc(c.id.slice(0,8).toUpperCase())} · Generado ${new Date().toLocaleString('es-CL')}</div></div><div class="report-meta"><div>EQUIPO / TAG<b>${esc(c.equipment||'—')}</b></div><div>ÁREA / UNIDAD / SECTOR<b>${esc([c.area,c.area==='Área Húmeda'?c.productionUnit:c.sector].filter(Boolean).join(' · ')||'—')}</b></div><div>N.º SAP EQUIPO<b>${esc(c.equipmentSap||'—')}</b></div><div>FECHA / HORA<b>${esc((c.datetime||'—').replace('T',' '))}</b></div><div>SEVERIDAD<b>${esc(c.severity)}</b></div><div>TIEMPO DE DETENCIÓN<b>${esc(c.downtime||'0')} horas</b></div></div><div class="print-grid" style="margin-top:12px">${reportBox('01 · Situación / problema',`<p>${text(c.description)}</p><p><b>OT / Aviso:</b> ${esc(c.workorder||'—')}</p>`)}${reportBox('02 · Detención y seguridad',`<p><b>Duración:</b> ${esc(c.downtime||'0')} horas</p><p><b>Inicio:</b> ${esc((c.stopStart||'No registrado').replace('T',' '))} · <b>Término:</b> ${esc((c.stopEnd||'No registrado').replace('T',' '))}</p><p><b>Condición de seguridad:</b> ${c.safetyCondition==='si'?'Sí':c.safetyCondition==='no'?'No se identificó':'No declarada'}</p>${c.safetyCondition==='si'?`<p><b>Condición identificada:</b> ${text(c.safetyDescription)}</p><p><b>Acción correctiva de seguridad:</b> ${text(c.safetyAction||'No registrada')}</p>${(c.safetyPhotos||[]).length?`<div class="printphotos">${c.safetyPhotos.map((p,i)=>`<figure><img src="${p.data}"><figcaption>SEG-${i+1} · ${esc(p.caption)}</figcaption></figure>`).join('')}</div>`:''}`:''}`)}${reportBox('03 · Cinco Porqués',why)}${reportBox('04 · Causa básica y consecuencia',`<p><b>Causa básica preliminar:</b> ${text(c.basicCause)}</p><p><b>Consecuencia de la causa:</b> ${text(c.causeConsequence)}</p><p><b>Estado:</b> ${esc(c.validationStatus)}</p>`)}${reportBox('05 · Evidencia fotográfica',photos)}${reportBox('06 · Conclusión ejecutiva',`<p>${text(c.conclusion)}</p>`)}${reportBox('07 · Acciones y responsables',actions.length?`<table class="print-table"><thead><tr><th>Acción</th><th>Responsable</th><th>Compromiso</th></tr></thead><tbody>${actions.map(a=>`<tr><td>${text(a.description)}</td><td>${esc(a.owner||'—')}</td><td>${esc(a.due||'—')}</td></tr>`).join('')}</tbody></table>`:'<p>No registradas</p>')}</div><div class="signatures"><span>Investigador: ${esc(c.author||'___________________')}</span><span>Revisión técnica: ${esc(c.reviewer||'___________________')}</span></div><div class="print-footer">Documento de trabajo. Las hipótesis requieren evidencia verificable y aprobación técnica antes de declarar una causa raíz confirmada. Reporte generado en el dispositivo.</div>`}
-function download(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('#export').onclick=()=>download('acr-intelligence-terreno-respaldo.json',JSON.stringify(db,null,2),'application/json');$('#exportCase').onclick=()=>download('acr-'+current().id.slice(0,8)+'.json',JSON.stringify(current(),null,2),'application/json');$('#import').onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data.cases))throw Error('Formato inválido');if(!confirm('Se reemplazarán las investigaciones locales. ¿Continuar?'))return;db=data;selected=null;persist();navigate('inicio')}catch(err){alert('No se pudo importar el respaldo: '+err.message)}e.target.value=''};
-const demo=()=>{const c=makeCase();Object.assign(c,{format,title:'Pérdida de presión de clamping',equipment:'MP1000 · CH3 L1',area:'Chancado terciario',description:'Durante la operación se detectó una caída de presión en el sistema de clamping y se detuvo el equipo para inspección.',timeline:'14:10 · Alarma de baja presión.\n14:15 · Detención controlada.\n14:30 · Revisión inicial de válvula selectora.',severity:'Alta',downtime:'1.5',author:'Ingeniero de Confiabilidad',workorder:'OT-DEMO-001',whys:['¿Por qué se detuvo? — Presión de clamping insuficiente.','¿Por qué bajó la presión? — Se investiga una configuración incorrecta de la válvula selectora.','¿Por qué estaba en esa posición? — Pendiente confirmar secuencia de operación e intervención.','',''],rootCause:'Hipótesis: posición incorrecta de válvula selectora. No validada.',validation:'Pendiente: tendencia de presión, inspección de válvula y revisión de maniobras.',validationStatus:'Hipótesis pendiente',conclusion:'Evento en investigación. Se requiere validar el mecanismo y definir acciones permanentes antes del cierre.',actions:[{description:'Revisar registros de presión y alarmas',owner:'Instrumentación',due:'',status:'Pendiente'},{description:'Inspeccionar posición y señalización de válvula selectora',owner:'Mantenimiento',due:'',status:'Pendiente'},{description:'Evaluar procedimiento y control postintervención',owner:'Confiabilidad',due:'',status:'Pendiente'}]});db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$('#nextAnalysis').onclick=$('#nextAnalysisBottom').onclick=()=>navigate('analisis');$('#nextReport').onclick=$('#nextReportBottom').onclick=()=>navigate('reporte');$('#backHome').onclick=()=>navigate('inicio');$('#backEvent').onclick=()=>navigate('registro');$('#backAnalysis').onclick=()=>navigate('analisis');$('#saveReg').onclick=()=>{persist();alert('Avance guardado en este dispositivo')};
+function download(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('#export').onclick=()=>download('acr-intelligence-terreno-respaldo.json',JSON.stringify(db,null,2),'application/json');$('#exportCase').onclick=()=>download('acr-'+current().id.slice(0,8)+'.json',JSON.stringify(current(),null,2),'application/json');$('#import').onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data.cases))throw Error('Formato inválido');if(!confirm('Se reemplazarán las investigaciones de tu espacio personal y se sincronizará el cambio con la nube. Descarga primero un respaldo si necesitas conservarlas. ¿Continuar?'))return;db=data;selected=null;persist();navigate('inicio')}catch(err){alert('No se pudo importar el respaldo: '+err.message)}e.target.value=''};
+const demo=()=>{const c=makeCase();Object.assign(c,{format,title:'Pérdida de presión de clamping',equipment:'MP1000 · CH3 L1',area:'Chancado terciario',description:'Durante la operación se detectó una caída de presión en el sistema de clamping y se detuvo el equipo para inspección.',timeline:'14:10 · Alarma de baja presión.\n14:15 · Detención controlada.\n14:30 · Revisión inicial de válvula selectora.',severity:'Alta',downtime:'1.5',author:'Ingeniero de Confiabilidad',workorder:'OT-DEMO-001',whys:['¿Por qué se detuvo? — Presión de clamping insuficiente.','¿Por qué bajó la presión? — Se investiga una configuración incorrecta de la válvula selectora.','¿Por qué estaba en esa posición? — Pendiente confirmar secuencia de operación e intervención.','',''],rootCause:'Hipótesis: posición incorrecta de válvula selectora. No validada.',validation:'Pendiente: tendencia de presión, inspección de válvula y revisión de maniobras.',validationStatus:'Hipótesis pendiente',conclusion:'Evento en investigación. Se requiere validar el mecanismo y definir acciones permanentes antes del cierre.',actions:[{description:'Revisar registros de presión y alarmas',owner:'Instrumentación',due:'',status:'Pendiente'},{description:'Inspeccionar posición y señalización de válvula selectora',owner:'Mantenimiento',due:'',status:'Pendiente'},{description:'Evaluar procedimiento y control postintervención',owner:'Confiabilidad',due:'',status:'Pendiente'}]});db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$('#nextAnalysis').onclick=$('#nextAnalysisBottom').onclick=()=>navigate('analisis');$('#nextReport').onclick=$('#nextReportBottom').onclick=()=>navigate('reporte');$('#backHome').onclick=()=>navigate('inicio');$('#backEvent').onclick=()=>navigate('registro');$('#backAnalysis').onclick=()=>navigate('analisis');$('#saveReg').onclick=async()=>{if(!persist())return;await personalSync.flush();alert($('#saveStatus').textContent)};
 
 const ACR_SHARE_ENDPOINT=SUPABASE_URL+'/functions/v1/acr-share';
 let currentShareToken='',receivedSnapshot=null,openedSharedToken='';
