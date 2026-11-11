@@ -4,6 +4,9 @@ on:
     paths:
       - index.html
       - cloud-workspace.js
+      - access-console.js
+      - tests/access-console.test.cjs
+      - supabase/access-audit.sql
       - tests/cloud-workspace.test.cjs
       - tests/ai-assistant.test.cjs
       - tests/commitment-date.test.cjs
@@ -21,6 +24,8 @@ jobs:
       - name: Validate scripts and synchronization behavior
         run: |
           node --check cloud-workspace.js
+          node --check access-console.js
+          node --test tests/access-console.test.cjs
           node --test tests/cloud-workspace.test.cjs
           node tests/logic.test.cjs
           node --test tests/ai-assistant.test.cjs

@@ -1009,6 +1009,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div class="toolbar" style="margin-top:18px"><button type="button" class="primary" id="importShared">Guardar una copia editable en mi cuenta</button><button type="button" class="secondary" id="dismissShared">Solo visualizar</button></div>
   </div>
 </div>
+<script src="./access-console.js?v=20261111"></script>
 <script src="./cloud-workspace.js"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
@@ -1109,7 +1110,7 @@ async function validateSession(){
 function logout(){
   const token=session?.access_token;
   personalSync.stop();
-  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;
+  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();
   localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
 }
@@ -2271,6 +2272,7 @@ function drawOrganizationStatus(){
  const platform=!!corporateCtx?.platform;
  configureCorporateRoleLayout();
  $('#platformAdminPanel').hidden=!platform;
+ window.ACRAccessConsole?.configure({platform,allowed:corporateIsAdmin(),orgId:corporateSelection(),userId:activeUser?.id,organizations:(corporateCtx?.organizations||[]).map(o=>({id:o.id,name:o.name}))},corporateApi);
  $('#platformBillingModule').hidden=!platform;
  if(platform)void loadClientSubscriptions();
  const notice=$('#orgMembershipStatus');
@@ -3208,6 +3210,7 @@ async function unlinkCorporateMembership(id,button){
    'DELETE',undefined,'return=representation');
   if(!Array.isArray(deleted)||deleted.length!==1)throw Error('No se confirmó la desvinculación. Revisa si el registro sigue vigente.');
   await loadCorporateOverview();
+  void window.ACRAccessConsole?.refresh();
   // La cuenta sigue activa; solo se elimina la afiliación corporativa.
   $('#companyReportsStatus').textContent='Afiliación de '+person+' desvinculada de '+companyName+'. Sus ACR corporativos históricos se conservan.';
  }catch(error){
