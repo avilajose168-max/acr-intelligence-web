@@ -5,6 +5,8 @@ on:
       - index.html
       - cloud-workspace.js
       - tests/cloud-workspace.test.cjs
+      - tests/ai-assistant.test.cjs
+      - supabase/functions/acr-assistant/index.ts
       - .github/workflows/cloud-sync-check.yml
 permissions:
   contents: read
@@ -20,6 +22,7 @@ jobs:
           node --check cloud-workspace.js
           node --test tests/cloud-workspace.test.cjs
           node tests/logic.test.cjs
+          node --test tests/ai-assistant.test.cjs
       - name: Prepare existing browser regression suite
         run: |
           npm install --no-save playwright@1.57.0 jspdf@2.5.2 pptxgenjs@3.12.0
