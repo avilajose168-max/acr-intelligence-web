@@ -735,7 +735,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <div class="dashboard-kpis reliability-kpis">
   <div class="kpi-pane"><span>FALLAS REGISTRADAS</span><strong id="weekEvents">0</strong><small>Eventos de la semana</small></div>
-  <div class="kpi-pane"><span>HORAS DETENIDAS</span><strong id="weekHours">0,00 h</strong><small>Tiempo fuera de servicio registrado</small></div>
+  <div class="kpi-pane"><span>HORAS DETENIDAS</span><strong id="weekHours">0,00 h</strong><small>Suma de horas registradas por falla</small></div>
   <div class="kpi-pane"><span>HORAS OPERATIVAS</span><strong id="weekOperatingTotal">—</strong><small>Horas base − detenciones</small></div>
   <div class="kpi-pane"><span>MTTR · TIEMPO MEDIO</span><strong id="weekMttr">—</strong><small>Detención / fallas</small></div>
   <div class="kpi-pane"><span>MTBF · ENTRE FALLAS</span><strong id="weekMtbf">—</strong><small>Operación / fallas</small></div>
@@ -1648,32 +1648,21 @@ function weeklyIndicators(cases,monday,asset,now=new Date(),type='weekly'){
  // En vista general, la exposición es la suma del tiempo de los equipos con fallas registradas.
  // No se inventa el número de equipos sin eventos.
  const baseHours=bounds.future?0:bounds.baseHours*assets.length;
- const intervals=new Map();
- let documented=0,unverified=0,overlapHours=0;
- const relevant=scopedCases(cases,asset).filter(validDashboardCase);
- for(const c of relevant){
-  const interval=investigationDowntime(c,bounds);
-  const started=investigationStart(c);
-  if(!started)continue;
-  const active=started>=bounds.start&&started<bounds.cutoff;
-  if(active){if(interval)documented++;else unverified++}
-  if(!interval||interval.to<=interval.from)continue;
-  const key=asset===ALL_ASSETS?(normalizeText(c.equipment)||'Equipo sin identificar'):asset;
-  if(!assets.includes(key))continue;
-  if(!intervals.has(key))intervals.set(key,[]);
-  intervals.get(key).push(interval);
- }
- for(const ranges of intervals.values()){
-  ranges.sort((x,y)=>x.from-y.from);
-  let left=null,right=null;
-  for(const range of ranges){
-   if(left===null){left=range.from;right=range.to;continue}
-   if(range.from<=right)right=Math.max(right,range.to);
-   else{overlapHours+=(right-left)/3600000;left=range.from;right=range.to}
+ let documented=0,unverified=0,downtime=0;
+ // Each event contributes its full recorded duration, matching the investigation.
+ for(const c of records){
+  let hours=null;
+  if(c.stopStart&&c.stopEnd){
+   const from=new Date(c.stopStart).getTime(),to=new Date(c.stopEnd).getTime();
+   if(Number.isFinite(from)&&Number.isFinite(to)&&to>=from)hours=(to-from)/3600000;
   }
-  if(left!==null)overlapHours+=(right-left)/3600000;
+  if(hours===null){
+   const raw=String(c.downtime??'').trim().replace(',','.');
+   if(raw!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0)hours=Number(raw);
+  }
+  if(hours===null){unverified++;continue}
+  documented++;downtime+=hours;
  }
- const downtime=overlapHours;
  const valid=unverified===0&&baseHours>0&&downtime<=baseHours+0.000001;
  const operating=valid?Math.max(0,baseHours-downtime):null;
  return {
