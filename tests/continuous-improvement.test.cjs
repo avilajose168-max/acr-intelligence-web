@@ -7,6 +7,8 @@ assert.equal(inRange({...c,datetime:'2026-11-09T23:59'},'2026-11-10','2026-11-10
 const review={id:'r',kind:'review',action_key:'',data:{version:fingerprint(c),result:'Validado'}};
 assert.equal(activeReview(c,[review]),review);assert.equal(activeReview({...c,basicCause:'Otra causa'},[review]),null);
 assert.equal(activeReview({...c,id:'copy'},[review]),null);
+assert.equal(activeReview({...c,failureType:'Eléctrica'},[review]),null);
+assert.equal(activeReview({...c,reviewRequest:{id:'new-request'}},[review]),null);
 assert.equal(activeReview({...c,stopEnd:'2026-11-10T17:00'},[review]),null);
 const key=actionKey(c.actions[0],0),ex={id:'e',kind:'execution',action_key:key,data:{}},v={id:'v',kind:'effectiveness',action_key:key,data:{executionId:'e',result:'Efectiva'}};
 assert.equal(executionState(c,c.actions[0],0,[ex,v]).verification,v);
