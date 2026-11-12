@@ -821,17 +821,17 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <div><span>ASESORÍAS PENDIENTES</span><strong id="billingAdvisory">0 h</strong></div>
  </div>
  <div class="dashboard-toolbar corporate-toolbar" style="margin-top:14px">
-  <label class="field">Buscar compañía<input type="search" id="billingSearch" placeholder="Nombre o referencia de contrato"></label>
+  <label class="field">Tipo de cliente<select id="billingClientType"><option value="all">Todos</option><option value="company">Compañías</option><option value="independent">Independientes</option></select></label><label class="field">Buscar cliente<input type="search" id="billingSearch" placeholder="Nombre, correo o referencia de contrato"></label>
   <label class="field">Estado<select id="billingFilter">
-   <option value="all">Todos</option><option value="trial">Beta / prueba</option><option value="active">Activo</option>
+   <option value="all">Todos</option><option value="prelaunch">Prueba · inicio pendiente</option><option value="trial">Beta / prueba</option><option value="active">Activo</option>
    <option value="past_due">Pago pendiente</option><option value="expired">Vencidos</option><option value="scheduled">Inicio programado</option><option value="unconfigured">Sin contrato</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option>
   </select></label>
  </div>
  <div class="dashboard-table-wrap"><table class="dashboard-table platform-billing-table">
  <thead><tr><th>Cliente / plan</th><th>Contrato y vencimiento</th><th>Usuarios</th><th>IA (reporte manual)</th><th>Asesoría</th><th>Estado</th><th>Gestionar</th></tr></thead>
  <tbody id="billingRows"><tr><td colspan="7">Cargando clientes…</td></tr></tbody></table></div>
- <p id="billingNotice" role="status" class="help">Los cupos no bloquean el acceso automáticamente. Consumo de IA: dato manual hasta habilitar medición real.</p>
- <form id="billingEditor" class="platform-billing-editor" hidden>
+ <p id="billingNotice" role="status" class="help">Indicadores superiores: compañías. Independientes: prueba de 30 días sin inicio automático, cobros ni bloqueo. Consumo de IA: reporte manual.</p>
+ <div id="independentClientsPanel"></div><form id="billingEditor" class="platform-billing-editor" hidden>
   <div class="between"><h3 id="billingEditorTitle">Editar contrato</h3><button type="button" id="billingEditorClose" class="secondary">✕ Cerrar</button></div>
   <div class="platform-billing-fields">
    <label class="field">Plan<input name="plan_name" maxlength="100" required></label>
@@ -1166,6 +1166,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   </div>
 </div>
 <script src="./access-console.js?v=20261111"></script>
+<script src="./independent-clients.js?v=20261112"></script>
 <script src="./cloud-workspace.js"></script>
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
@@ -2367,8 +2368,9 @@ async function corporateApi(path,method='GET',body=undefined,prefer=''){
 }
 
 const clientsSection=document.createElement('section');clientsSection.id='clientes';clientsSection.className='section';clientsSection.innerHTML='<h1>Clientes y suscripciones</h1><p class="muted">Convenios, pruebas gratuitas y acompañamiento · Administración general</p>';clientsSection.append(document.getElementById('platformBillingModule'));document.getElementById('mainApp').append(clientsSection);
-document.getElementById('logoutButton').addEventListener('click',()=>{clientSubscriptions=[];clientMemberships=[];billingEditOrgId='';$('#clientsNav').hidden=true;$('#platformBillingModule').hidden=true;$('#billingRows').innerHTML='';$('#billingEditor').reset();$('#billingEditor').hidden=true});
+document.getElementById('logoutButton').addEventListener('click',()=>{clientSubscriptions=[];clientMemberships=[];billingEditOrgId='';independentClients.reset();$('#clientsNav').hidden=true;$('#platformBillingModule').hidden=true;$('#billingRows').innerHTML='';$('#billingEditor').reset();$('#billingEditor').hidden=true});
 let clientSubscriptions=[],clientMemberships=[],billingEditOrgId='',billingLoading=false;
+const independentClients=window.ACRIndependentClients.mount({root:()=>$('#independentClientsPanel'),allowed:()=>!!corporateCtx?.platform,userId:()=>activeUser?.id||'',request:corporateApi,type:()=>$('#billingClientType').value,search:()=>$('#billingSearch').value,status:()=>$('#billingFilter').value});
 const subscriptionLabels={trial:'Beta / prueba',active:'Activo',past_due:'Pago pendiente',suspended:'Suspendido',cancelled:'Cancelado'};
 function clientSubscriptionRow(orgId){return clientSubscriptions.find(x=>x.organization_id===orgId)||null}
 function billNum(value){return Number(value||0).toLocaleString('es-CL',{maximumFractionDigits:2})}
@@ -2382,7 +2384,7 @@ function billingStatus(item,today){
 }
 async function loadClientSubscriptions(){
  if(!corporateCtx?.platform||billingLoading)return;
- billingLoading=true;
+ billingLoading=true;void independentClients.load();
  try{
   const [subscriptions,memberships]=await Promise.all([
    corporateApi(organizationApiPath('acr_client_subscriptions','?select=*&order=updated_at.desc')),
@@ -2392,13 +2394,14 @@ async function loadClientSubscriptions(){
   if(!Array.isArray(subscriptions)||!Array.isArray(memberships))throw Error('No se pudieron obtener los clientes y suscripciones.');
   clientSubscriptions=subscriptions;clientMemberships=memberships;
   renderClientSubscriptions();
-  $('#billingNotice').textContent='Datos guardados en la cuenta de administrador general. Los cupos y el consumo manual de IA no limitan solicitudes automáticamente.';
+  $('#billingNotice').textContent='Indicadores superiores: compañías. Datos comerciales visibles solo para administración general. No se activan cobros ni se bloquean cuentas.';
  }catch(error){
   $('#billingNotice').textContent='No se pudieron cargar las suscripciones: '+error.message;
  }finally{billingLoading=false}
 }
 function renderClientSubscriptions(){
  if(!corporateCtx?.platform)return;
+ const independentOnly=$('#billingClientType').value==='independent';$('#billingRows').closest('.dashboard-table-wrap').hidden=independentOnly;$('#platformBillingModule .platform-billing-kpis').hidden=independentOnly;if(independentOnly)$('#billingEditor').hidden=true;independentClients.render();
  const orgs=corporateCtx.organizations||[],today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()+30);
  const end=cutoff.toISOString().slice(0,10);
@@ -2442,6 +2445,7 @@ function openBillingEditor(orgId){
 $('#billingEditorClose').onclick=()=>{$('#billingEditor').hidden=true;billingEditOrgId=''};
 $('#platformBillingRefresh').onclick=()=>void loadClientSubscriptions();
 $('#billingFilter').onchange=renderClientSubscriptions;
+$('#billingClientType').onchange=renderClientSubscriptions;
 $('#billingSearch').oninput=renderClientSubscriptions;
 $('#billingEditor').onsubmit=async ev=>{
  ev.preventDefault();
@@ -2518,7 +2522,7 @@ function drawOrganizationStatus(){
  $('#platformAdminPanel').hidden=!platform;
  window.ACRAccessConsole?.configure({platform,allowed:corporateIsAdmin(),orgId:corporateSelection(),userId:activeUser?.id,organizations:(corporateCtx?.organizations||[]).map(o=>({id:o.id,name:o.name}))},corporateApi);
  $('#platformBillingModule').hidden=!platform;$('#clientsNav').hidden=!platform;
- if(platform)void loadClientSubscriptions();
+ if(platform)void loadClientSubscriptions();else independentClients.reset();
  const notice=$('#orgMembershipStatus');
  if(!org){
   notice.textContent='Selecciona una compañía. Si aún no está registrada, solicítala al administrador general de ACR Integrity.';
