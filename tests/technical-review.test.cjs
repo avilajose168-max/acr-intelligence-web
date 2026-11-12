@@ -4,7 +4,7 @@ const row={pub:{id:'pub',owner_id:'author',organization_id:'company-a'},c:{revie
 assert.equal(reviewerCanDecide(row,'author',false,'v1'),false);
 assert.equal(reviewerCanDecide(row,'author',true,'v1'),false);
 assert.equal(reviewerCanDecide(row,'admin-a',false,'v1'),false);
-assert.equal(reviewerCanDecide(row,'admin-b',true,'v1'),false);
+assert.equal(reviewerCanDecide(row,'admin-b',true,'v1'),true);
 assert.equal(reviewerCanDecide(row,'admin-a',true,'v2'),false);
 assert.equal(reviewerCanDecide(row,'admin-a',true,'v1'),true);
 assert.equal(reviewerCanDecide({...row,pub:null},'admin-a',true,'v1'),false);
@@ -12,4 +12,4 @@ const valid={kind:'review',data:{requestId:'request',version:'v1',result:'Valida
 assert.equal(latestDecision([valid,{kind:'review',data:{version:'v1',result:'Validado'}}],row.c.reviewRequest),valid);
 assert.equal(latestDecision([{...valid,data:{...valid.data,requestId:'other'}}],row.c.reviewRequest),undefined);
 assert.equal(companyId({c:{reportOrganizationId:'company-b'}}),'company-b');
-console.log('PASS: creator/admin UI separation, assigned reviewer, source-version invalidation, decision/request linkage and personal/company context.');
+console.log('PASS: creator/admin UI separation, authorized company reviewer, source-version invalidation, decision/request linkage and personal/company context.');
