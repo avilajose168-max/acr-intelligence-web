@@ -1,0 +1,7 @@
+const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');require('../technical-review.js');
+const clicks={},buttons={trBackAnalysis:{},trBackReport:{}};const row={c:{id:'original'}};
+const ui=global.ACRTechnicalReview.mount({root:()=>({querySelector:s=>buttons[s.slice(1)]||null}),returnToCase:(r,page)=>{clicks[page]=r.c.id}});ui.bind(row);buttons.trBackAnalysis.onclick();buttons.trBackReport.onclick();assert.deepEqual(clicks,{analisis:'original',reporte:'original'});
+const source=fs.readFileSync(process.argv[2]||'index.html','utf8');const callback=source.slice(source.indexOf(' returnToCase:(row,target)=>')+14,source.indexOf('\n currentId:',source.indexOf(' returnToCase:(row,target)=>'))).replace(/,\s*$/,'');
+const ctx={db:{cases:[{id:'original'},{id:'other'}]},activeUser:{id:'owner'},selected:'other',navigate:page=>{ctx.page=page}};vm.createContext(ctx);const back=vm.runInContext('('+callback+')',ctx);
+back(row,'analisis');assert.equal(ctx.selected,'original');assert.equal(ctx.page,'analisis');back({pub:{local_case_id:'original',owner_id:'owner'},c:{id:'published'}},'reporte');assert.equal(ctx.selected,'original');assert.equal(ctx.page,'reporte');assert.throws(()=>back({pub:{owner_id:'outsider'},c:{id:'original'}},'analisis'));
+console.log('PASS: return buttons reopen the exact investigation in analysis/report, including published local-case mapping and author guard.');
