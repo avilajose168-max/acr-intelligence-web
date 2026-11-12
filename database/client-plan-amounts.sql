@@ -1,0 +1,2 @@
+alter table public.acr_client_subscriptions add column if not exists monthly_amount numeric(14,2) check(monthly_amount>=0), add column if not exists currency text not null default 'CLP' check(currency in ('CLP','USD','UF'));
+notify pgrst,'reload schema';
