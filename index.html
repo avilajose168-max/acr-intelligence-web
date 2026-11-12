@@ -4505,6 +4505,7 @@ window.acrImprovement=window.ACRImprovement.mount({
  isAdmin:()=>!!corporateCtx&&corporateIsAdmin(),canCompany:()=>!!corporateCtx&&(corporateIsAdmin()||corporateAllowed()),
  companyLabel:()=>corporateCtx?.organizations?.find(o=>o.id===corporateSelection())?.name||'Compañía seleccionada',
  userId:()=>activeUser?.id||'',userLabel:()=>activeUser?.email||'Usuario',
+ returnToCase:(row,target)=>{const caseId=row.pub?.local_case_id||row.c.id;if(row.pub&&row.pub.owner_id!==activeUser?.id)throw Error('Esta investigación pertenece a otro usuario.');const c=db.cases.find(c=>c.id===caseId);if(!c)throw Error('La investigación no está disponible en tu espacio personal.');selected=c.id;navigate(target==='reporte'?'reporte':'analisis')},
  currentId:()=>current()?.id||'',request:corporateApi,afterCorporateWrite:()=>loadCorporateOverview(),
  persist:()=>persist(),flush:()=>personalSync.flush(),download,
  leave:()=>{if(voiceRunning&&voiceRecognition)voiceRecognition.stop()}
