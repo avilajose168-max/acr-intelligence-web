@@ -1715,7 +1715,7 @@ function weeklyIndicators(cases,monday,asset,now=new Date(),type='weekly'){
   records,events:records.length,downtime,
   documentedCount:documented,baseHours,operating,
   complete:unverified===0,unverified,
-  mttr:documented>0?downtime/documented:null,
+  mttr:unverified===0&&documented>0?downtime/documented:null,
   mtbf:valid&&records.length>0?operating/records.length:null,
   availability:valid?operating/baseHours*100:null,
   invalidBase:downtime>baseHours+0.000001,
@@ -1741,6 +1741,8 @@ function drawDashboard(){
  $('#previewWeekly').textContent='📄 Ver informe '+(type==='monthly'?'del mes':'de la semana');
  $('#weekEvents').textContent=String(kpi.events);
  $('#weekHours').textContent=dashboardReliabilityFormat(kpi.downtime);
+ $('#weekHours').previousElementSibling.textContent=kpi.unverified?'HORAS DETENIDAS · PARCIAL':'HORAS DETENIDAS';
+ $('#weekHours').nextElementSibling.textContent=kpi.unverified?'Duración conocida de '+kpi.documentedCount+' de '+kpi.events+' fallas':'Suma de horas registradas por falla';
  $('#weekOperatingTotal').textContent=dashboardReliabilityFormat(kpi.operating);
  $('#weekMttr').textContent=dashboardReliabilityFormat(kpi.mttr);
  $('#weekMtbf').textContent=dashboardReliabilityFormat(kpi.mtbf);
@@ -1757,10 +1759,11 @@ function drawDashboard(){
   :'Equipo '+asset+' · 24 horas continuas por día, acumuladas solo hasta el corte indicado.';
  let warning='';
  if(kpi.invalidBase)warning='La detención registrada supera el tiempo base: revisa las fechas de los eventos.';
- else if(!kpi.complete)warning='Hay '+kpi.unverified+' falla(s) sin duración o término verificable; MTBF y disponibilidad quedan pendientes.';
+ else if(!kpi.complete)warning='Hay '+kpi.unverified+' falla(s) sin duración o término verificable; horas operativas, MTTR, MTBF y disponibilidad quedan pendientes. La suma de horas detenidas es parcial.';
  else if(!kpi.events)warning='Sin fallas en esta semana. MTTR y MTBF no se calculan; la disponibilidad solo refleja detenciones conocidas.';
  else warning='Base '+dashboardMetricText(kpi.baseHours,'hours')+' h − detenciones '+dashboardMetricText(kpi.downtime,'hours')+' h = operación '+dashboardMetricText(kpi.operating,'hours')+' h. MTTR = detención / '+kpi.documentedCount+' falla(s); MTBF = operación / '+kpi.events+' falla(s).';
  if(kpi.globalExposure)warning='Filtro de tipo: '+kpi.events+' falla(s) · '+dashboardMetricText(kpi.downtime,'hours')+' h de detención. MTTR corresponde al tipo seleccionado. Las horas operativas, MTBF y disponibilidad consideran todos los tipos en el área/equipo y período seleccionados.';
+ if(kpi.globalExposure&&(kpi.unverified||kpi.globalUnverified))warning+=' Faltan duraciones verificables: el total de horas puede ser parcial y los indicadores incompletos se muestran con —.';
  $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
@@ -3055,7 +3058,7 @@ function corporatePeriodResults(cases,bounds,asset){
  const operating=complete?Math.max(0,base-hours):null;
  return {
   events, hours, documented, unverified, base, equipmentCount:equipment.length,
-  mttr:documented>0?hours/documented:null,
+  mttr:unverified===0&&documented>0?hours/documented:null,
   mtbf:complete&&events.length>0?operating/events.length:null,
   availability:complete?100*operating/base:null
  };
@@ -3153,6 +3156,7 @@ function drawCorporateReliability(){
  $('#corporatePeriodLabel').textContent=bounds.label+' · '+corporateAreaScopeName()+' · '+(assetSelect.value===ALL_ASSETS?'Todos los equipos':assetSelect.value);
  $('#corpEvents').textContent=results.events.length;
  $('#corpHours').textContent=dashboardReliabilityFormat(results.hours);
+ $('#corpHours').previousElementSibling.textContent=results.unverified?'HORAS DETENIDAS · PARCIAL':'HORAS DETENIDAS';
  $('#corpMttr').textContent=dashboardReliabilityFormat(results.mttr);
  $('#corpMtbf').textContent=dashboardReliabilityFormat(results.mtbf);
  $('#corpMtbf').previousElementSibling.textContent=results.globalExposure?'MTBF GLOBAL · TODOS LOS TIPOS':'MTBF';
@@ -3161,7 +3165,7 @@ function drawCorporateReliability(){
  $('#corporateReliabilityNote').textContent=
   'Base de operación: '+dashboardReliabilityFormat(results.base)+' para '+results.equipmentCount+
   ' equipo(s) con eventos, considerando 24 h/día hasta el corte del período. '+
-  (results.unverified?'⚠ '+results.unverified+' evento(s) sin tiempo de detención verificable; MTBF y disponibilidad no disponibles.':
+  (results.unverified?'⚠ '+results.unverified+' evento(s) sin tiempo de detención verificable; horas operativas, MTTR, MTBF y disponibilidad pendientes. Horas detenidas: suma parcial.':
    'MTBF y disponibilidad son estimaciones basadas en los equipos documentados, no en toda la flota.');
  if(results.globalExposure)$('#corporateReliabilityNote').textContent+=' Fallas, detención y MTTR corresponden al tipo seleccionado; MTBF y disponibilidad consideran todos los tipos para el mismo alcance y período.';
  $('#corporateParetoChart').innerHTML=renderParetoSvg(pareto.rows,pareto.total,metric);
