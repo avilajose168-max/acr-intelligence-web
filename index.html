@@ -1164,6 +1164,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <script src="./access-console.js?v=20261111"></script>
 <script src="./cloud-workspace.js"></script>
+<script src="./continuous-improvement.js?v=20261112"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -2061,7 +2062,8 @@ function listCommitments(){
   if(!Array.isArray(c.actions))continue;
   c.actions.forEach((a,i)=>{
    if(!String(a?.description||'').trim())return;
-   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',area:c.area||c.sector||'Sin clasificar',sourceCase:c,action:a,status:effectiveCommitStatus(a,today)});
+   const followup=(c.followupEvents||[]).filter(e=>e.action_key===String(i)+':'+String(a.description||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim());const ex=followup.filter(e=>e.kind==='execution').at(-1),ver=followup.filter(e=>e.kind==='effectiveness').at(-1);const displayed=ex?{...a,executionSummary:ver&&ver.data.executionId===String(ex.id)?'Efectividad: '+ver.data.result:'Ejecutada · efectividad pendiente'}:a;
+   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',area:c.area||c.sector||'Sin clasificar',sourceCase:c,action:displayed,status:effectiveCommitStatus(a,today)});
   });
  }
  rows.sort((a,b)=>{
@@ -2157,10 +2159,10 @@ async function refreshCompanyCommitments(){
  const button=$('#commitRefreshCompany');button.disabled=true;
  try{
   const cases=await corporateApi(organizationApiPath('acr_corporate_investigations',
-   '?select=id,local_case_id,owner_id,title,equipment,payload&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'));
+   '?select=id,organization_id,local_case_id,owner_id,title,equipment,payload&organization_id=eq.'+orgId+'&order=updated_at.desc&limit=1000'));
   if(!Array.isArray(cases))throw Error('No se pudo leer el historial corporativo.');
   if(orgId!==corporateSelection())return;
-  companyCommitmentsCache=cases;companyCommitmentsOrg=orgId;
+  const hydrated=await window.ACRImprovement.hydrateCorporate(cases,corporateApi);if(orgId!==corporateSelection())return;companyCommitmentsCache=hydrated;companyCommitmentsOrg=orgId;
   $('#commitScopeMessage').hidden=true;
   drawCommitments();
  }catch(error){
@@ -2195,7 +2197,7 @@ function drawCommitments(){
  const filtered=filteredCommitments(rows);
  $('#commitmentsTable').innerHTML=filtered.length?filtered.map(r=>
   '<tr data-commit-select="'+esc(r.caseId)+':'+r.index+'" class="'+(selectedCommitKey===r.caseId+':'+r.index?'commit-selected':'')+'"><td><span class="commit-name">'+esc(r.equipment)+'</span><div class="small">'+esc(r.caseTitle)+'</div></td>'+
-  '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td>'+
+  '<td>'+esc(r.action.description)+(r.action.executionSummary?'<div class="small">'+esc(r.action.executionSummary)+'</div>':'')+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td>'+
   '<td><span class="commit-priority commit-priority-'+({Alta:'high',Media:'medium',Baja:'low'}[r.action.priority]||'none')+'">'+esc(r.action.priority||'Sin asignar')+'</span></td>'+
   '<td class="commit-date">'+esc(r.action.due||'Sin fecha')+commitmentDeadlineBadge(r.action)+'</td>'+
   '<td><span class="commit-state commit-state-'+r.status+'">'+commitStatusLabel(r.status)+'</span><div style="margin-top:5px">'+
@@ -2900,7 +2902,7 @@ function drawCorporateCommitments(){
  $('#corpCommitRows').innerHTML=filtered.length?filtered.map(r=>
   '<tr data-corp-commit-select="'+esc(r.publishedId)+':'+r.index+'" class="'+(selectedCorporateCommitKey===r.publishedId+':'+r.index?'commit-selected':'')+'"><td><strong>'+esc(r.equipment)+'</strong><div class="small">'+esc(r.caseTitle)+'</div><div class="small">'+esc(r.area)+
   (r.area==='Área Húmeda'?' · '+esc(r.productionUnit):r.sector?' · '+esc(r.sector):'')+'</div></td>'+
-  '<td>'+esc(r.action.description)+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td><td>'+
+  '<td>'+esc(r.action.description)+(r.action.executionSummary?'<div class="small">'+esc(r.action.executionSummary)+'</div>':'')+'</td><td>'+esc(r.action.owner||'Sin asignar')+'</td><td>'+
   '<span class="commit-priority commit-priority-'+({Alta:'high',Media:'medium',Baja:'low'}[r.action.priority]||'none')+'">'+esc(r.action.priority||'Sin asignar')+'</span></td><td>'+
   esc(r.action.due||'Sin fecha')+commitmentDeadlineBadge(r.action)+'</td><td><span class="commit-state commit-state-'+r.status+'">'+
   esc(commitStatusLabel(r.status))+'</span></td><td><button type="button" class="secondary" data-corp-commit-case="'+esc(r.publishedId)+'">Ver ACR</button></td></tr>'
@@ -3288,7 +3290,7 @@ async function loadCorporateOverview(){
   ]);
   if(initialId!==corporateSelection()||!corporateIsAdmin())return;
   if(!Array.isArray(members)||!Array.isArray(cases))throw Error('Datos incompletos.');
-  corporateCtx.orgMembers=members;corporateCtx.cases=cases;
+  const hydrated=await window.ACRImprovement.hydrateCorporate(cases,corporateApi);if(initialId!==corporateSelection()||!corporateIsAdmin())return;corporateCtx.orgMembers=members;corporateCtx.cases=hydrated;
   drawCorporateReliability();
   drawCorporateCommitments();
   const metric=corporateCommitMetrics(cases);
@@ -4415,6 +4417,18 @@ async function shareCasePdf(){
 ['downloadCasePdf','downloadCasePdfBottom'].forEach(id=>$('#'+id).onclick=saveCasePdf);
 ['shareCasePdf','shareCasePdfBottom'].forEach(id=>$('#'+id).onclick=shareCasePdf);
 $('#print').onclick=$('#printBottom').onclick=()=>{drawReport();window.print()};
+
+window.acrImprovement=window.ACRImprovement.mount({
+ personalCases:()=>db.cases,
+ companyId:()=>corporateCtx?corporateSelection():'',
+ isAdmin:()=>!!corporateCtx&&corporateIsAdmin(),canCompany:()=>!!corporateCtx&&(corporateIsAdmin()||corporateAllowed()),
+ companyLabel:()=>corporateCtx?.organizations?.find(o=>o.id===corporateSelection())?.name||'Compañía seleccionada',
+ userId:()=>activeUser?.id||'',userLabel:()=>activeUser?.email||'Usuario',
+ currentId:()=>current()?.id||'',request:corporateApi,afterCorporateWrite:()=>loadCorporateOverview(),
+ persist:()=>persist(),flush:()=>personalSync.flush(),download,
+ leave:()=>{if(voiceRunning&&voiceRecognition)voiceRecognition.stop()}
+});
 drawList();})();
 
 </script></body></html>
+
