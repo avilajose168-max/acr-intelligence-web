@@ -1,0 +1,30 @@
+begin;
+create temporary table extension_test(k text primary key,id uuid default gen_random_uuid());insert into extension_test(k) values('org'),('company_request'),('user'),('pending_user'),('individual_request'),('pending_request'),('member');grant select on extension_test to authenticated;
+insert into auth.users(id,email,raw_user_meta_data) select id,k||'@extension.invalid','{}' from extension_test where k in ('user','pending_user','member');
+insert into public.acr_organizations(id,name) select id,'EXTENSION ROLLBACK' from extension_test where k='org';
+insert into public.acr_client_subscriptions(organization_id,subscription_status,contract_end) values((select id from extension_test where k='org'),'trial',(now() at time zone 'America/Santiago')::date+5);
+insert into public.acr_independent_subscriptions(user_id,trial_start) values((select id from extension_test where k='user'),(now() at time zone 'America/Santiago')::date-40);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','056ddac8-3be8-4b98-b616-7c1f58f6583b',true);
+do $$declare response jsonb;last_date date;today date:=(now() at time zone 'America/Santiago')::date;denied boolean:=false;begin
+perform public.acr_extend_client_trial('company',(select id from extension_test where k='org'),'Evaluación extendida',(select id from extension_test where k='company_request'));
+select contract_end into last_date from public.acr_client_subscriptions where organization_id=(select id from extension_test where k='org');
+if last_date<>today+35 then raise exception 'FAIL company +30';end if;
+response:=public.acr_extend_client_trial('company',(select id from extension_test where k='org'),'Reintento',(select id from extension_test where k='company_request'));
+if response->>'already_applied'<>'true' then raise exception 'FAIL idempotency';end if;
+if (select count(*) from public.acr_trial_extensions where organization_id=(select id from extension_test where k='org'))<>1 then raise exception 'FAIL duplicate journal';end if;
+perform public.acr_extend_client_trial('independent',(select id from extension_test where k='user'),'Reactivar prueba',(select id from extension_test where k='individual_request'));
+if (select extended_trial_end from public.acr_independent_subscriptions where user_id=(select id from extension_test where k='user'))<>today+30 then raise exception 'FAIL expired individual fresh 30 days';end if;
+perform public.acr_extend_client_trial('independent',(select id from extension_test where k='pending_user'),'Regalo previo al lanzamiento',(select id from extension_test where k='pending_request'));
+if not exists(select 1 from public.acr_independent_subscriptions where user_id=(select id from extension_test where k='pending_user') and trial_start is null and trial_extension_days=30 and extended_trial_end is null) then raise exception 'FAIL pending trial started prematurely';end if;
+update public.acr_client_subscriptions set subscription_status='active',updated_by=auth.uid() where organization_id=(select id from extension_test where k='org');
+begin perform public.acr_extend_client_trial('company',(select id from extension_test where k='org'),'No extender plan pago',gen_random_uuid());exception when check_violation then denied:=true;end;
+if not denied then raise exception 'FAIL paid company modified';end if;
+end $$;
+select set_config('request.jwt.claim.sub',(select id::text from extension_test where k='member'),true);
+do $$declare denied boolean:=false;begin
+if exists(select 1 from public.acr_trial_extensions where user_id=(select id from extension_test where k='user')) then raise exception 'FAIL nonplatform history';end if;
+begin perform public.acr_extend_client_trial('independent',(select id from extension_test where k='user'),'No autorizado',gen_random_uuid());exception when insufficient_privilege then denied:=true;end;
+if not denied then raise exception 'FAIL unauthorized extension';end if;end $$;
+reset role;rollback;
+select 'PASS: +30 company, expired individual gets 30 new days, pending trial remains unstarted, retry idempotency, paid plan unchanged, platform-only grants/history. All fixtures rolled back.' as result;
