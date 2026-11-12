@@ -14,12 +14,19 @@ function activeReview(c,events){const e=latest(events,'review');return e&&e.data
 function executionState(c,a,index,events){const e=latest(events,'execution',actionKey(a,index)),v=latest(events,'effectiveness',actionKey(a,index));return {execution:e,verification:v&&e&&v.data.executionId===String(e.id)?v:null}}
 const verifiedReviews=new WeakMap();
 function reviewFor(c){const e=verifiedReviews.get(c);return e&&activeReview(c,[e])?e:null}
+async function resolveReviewNames(events,request,investigation){
+ const missing=events.some(e=>e.kind==='review'&&(!e.data.reviewer||['Administrador general','Administrador de compañía','Administrador','Usuario','Nombre no registrado'].includes(e.data.reviewer)||e.data.reviewer.includes('@')));
+ if(!missing)return events;
+ const names=await request('/rest/v1/rpc/acr_review_actor_names','POST',{p_investigation:investigation});
+ const map=new Map((Array.isArray(names)?names:[]).map(x=>[x.id,x.name]));
+ return events.map(e=>e.kind==='review'&&map.has(e.actor_id)&&(!e.data.reviewer||['Administrador general','Administrador de compañía','Administrador','Usuario','Nombre no registrado'].includes(e.data.reviewer)||e.data.reviewer.includes('@'))?{...e,data:{...e.data,reviewer:map.get(e.actor_id)}}:e);
+}
 async function loadCaseReview(c,request,userId){
  verifiedReviews.delete(c);if(!c.reportOrganizationId)return;
  const pubs=await request('/rest/v1/acr_corporate_investigations?select=id&organization_id=eq.'+encodeURIComponent(c.reportOrganizationId)+'&owner_id=eq.'+encodeURIComponent(userId)+'&local_case_id=eq.'+encodeURIComponent(c.id)+'&limit=1');
  if(!pubs.length)return;
  const events=await request('/rest/v1/acr_followup_events?select=*&investigation_id=eq.'+encodeURIComponent(pubs[0].id)+'&kind=eq.review&order=id.asc');
- const e=activeReview(c,events);if(e)verifiedReviews.set(c,e);
+ const resolved=await resolveReviewNames(events,request,pubs[0].id);const e=activeReview(c,resolved);if(e)verifiedReviews.set(c,e);
 }
 async function hydrateCorporate(pubs,request){
  if(!pubs.length)return pubs;
@@ -29,6 +36,7 @@ async function hydrateCorporate(pubs,request){
   const batch=await request('/rest/v1/acr_followup_events?select=*,acr_corporate_investigations!inner(organization_id)&acr_corporate_investigations.organization_id=eq.'+encodeURIComponent(org)+'&order=id.asc&limit=500&offset='+offset);
   events.push(...batch);if(batch.length<500)break;
  }
+ for(const p of pubs){const resolved=await resolveReviewNames(events.filter(e=>e.investigation_id===p.id),request,p.id);const byId=new Map(resolved.map(e=>[e.id,e]));events=events.map(e=>e.investigation_id===p.id?byId.get(e.id)||e:e)}
  const hydrated=pubs.map(p=>({...p,payload:{...p.payload,actions:(p.payload?.actions||[]).map((a,i)=>{
   const state=executionState(p.payload,a,i,events.filter(e=>e.investigation_id===p.id));
   return state.execution?{...a,status:'Completado',executionSummary:state.verification?'Efectividad: '+state.verification.data.result:'Ejecutada · efectividad pendiente'}:a;
@@ -178,6 +186,6 @@ function mount(api){
  const voiceExit=new MutationObserver(()=>{if(!el.classList.contains('active')||document.getElementById('mainApp').hidden)shift?.stop()});voiceExit.observe(el,{attributes:true,attributeFilter:['class']});voiceExit.observe(document.getElementById('mainApp'),{attributes:true,attributeFilter:['hidden','data-workspace']});document.addEventListener('visibilitychange',()=>{if(document.hidden)shift?.stop()});
  return {open,refresh:()=>load(true)};
 }
-root.ACRImprovement={fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
+root.ACRImprovement={resolveReviewNames,fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
 if(typeof module!=='undefined')module.exports={fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState,hydrateCorporate,filterFollowupRows,followupType,followupSector};
 })(typeof window==='undefined'?globalThis:window);
