@@ -1,0 +1,27 @@
+const assert=require('node:assert/strict');
+const {fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState}=require('../continuous-improvement.js');
+const c={id:'1',equipment:'Bomba P-101',description:'Pérdida de caudal',basicCause:'Desalineación',conclusion:'Corregir alineación',stopStart:'2026-11-10T12:00',stopEnd:'2026-11-10T16:00',actions:[{description:'Alinear motor',owner:'Mantenimiento',due:'2026-11-18'}]};
+assert.equal(hours(c),4);assert.equal(hours({downtime:'2,5'}),2.5);assert.equal(hours({downtime:'no'}),0);
+assert.equal(inRange({...c,datetime:'2026-11-10T12:00'},'2026-11-10','2026-11-10'),true);
+assert.equal(inRange({...c,datetime:'2026-11-09T23:59'},'2026-11-10','2026-11-10'),false);
+const review={id:'r',kind:'review',action_key:'',data:{version:fingerprint(c),result:'Validado'}};
+assert.equal(activeReview(c,[review]),review);assert.equal(activeReview({...c,basicCause:'Otra causa'},[review]),null);
+assert.equal(activeReview({...c,id:'copy'},[review]),null);
+assert.equal(activeReview({...c,stopEnd:'2026-11-10T17:00'},[review]),null);
+const key=actionKey(c.actions[0],0),ex={id:'e',kind:'execution',action_key:key,data:{}},v={id:'v',kind:'effectiveness',action_key:key,data:{executionId:'e',result:'Efectiva'}};
+assert.equal(executionState(c,c.actions[0],0,[ex,v]).verification,v);
+assert.equal(executionState(c,c.actions[0],0,[ex,v,{...ex,id:'new'}]).verification,null);
+assert.equal(executionState(c,{description:'Cambiar motor'},0,[ex,v]).execution,undefined);
+const rows=[{c},{c:{...c,id:'2'}},{c:{...c,id:'3',reportOrganizationId:'OTHER'}},{c:{id:'4',title:'Sin relación',equipment:'Compresor C-200'}}];
+assert.deepEqual(similar(c,rows).map(r=>r.c.id),['2']);
+assert.equal(latest([ex,v],'effectiveness',key),v);
+console.log('PASS: exact downtime, date bounds, review invalidation, execution/verification lifecycle, changed action, tenant separation, recurrence ranking.');
+const {hydrateCorporate}=require('../continuous-improvement.js');
+(async()=>{
+ const pub={id:'pub',organization_id:'org-a',payload:c};
+ const hydrated=await hydrateCorporate([pub],async()=>[{...ex,investigation_id:'pub'},{...v,investigation_id:'pub'}]);
+ assert.equal(hydrated[0].payload.actions[0].status,'Completado');
+ assert.equal(hydrated[0].payload.actions[0].executionSummary,'Efectividad: Efectiva');
+ assert.equal(c.actions[0].status,undefined);
+ console.log('PASS: corporate completion and effectiveness overlays preserve original investigator payload.');
+})().catch(e=>{console.error(e);process.exitCode=1});
