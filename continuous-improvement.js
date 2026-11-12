@@ -39,7 +39,7 @@ function mount(api){
  userId:api.userId,userLabel:api.userLabel,request:api.request,
  personalNotes:()=>api.personalHandovers?.()||[],savePersonal:entry=>api.savePersonalHandover(entry),
  root:()=>el,render,visible:()=>el.classList.contains('active')&&tab==='handover'&&!document.getElementById('mainApp').hidden,
- scopeLabel:()=>isCompany()?api.companyLabel():'Mis investigaciones',download:api.download,
+ scopeLabel:()=>isCompany()?api.companyLabel():'Mis investigaciones',brand:cases=>api.handoverBrand?.(isCompany(),cases)||{name:isCompany()?api.companyLabel():'',logo:''},download:api.download,
  rewrite:value=>api.rewriteHandover(value)
  });
  const technical=root.ACRTechnicalReview?.mount({
