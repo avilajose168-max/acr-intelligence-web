@@ -1088,7 +1088,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
  </div>
  <article id="commitmentsReportContent" class="weekly-sheet" aria-label="Informe de compromisos del período"></article>
 </section>
-<section id="registro" class="section"><div class="bar" style="margin-bottom:18px;flex-wrap:wrap"><div><div class="eyebrow">Paso 1</div><h1>Registro de falla en terreno</h1></div><div class="toolbar"><button class="secondary" id="backHome">Mis investigaciones</button><button class="primary" id="nextAnalysis">Continuar →</button></div></div><div class="card" id="reportBrandPanel"><h2>🏢 Personalización del informe</h2><p class="muted" id="reportBrandHelp">Si eres independiente, agrega tu nombre o el de tu empresa y adjunta un logo. Si perteneces a una compañía, se utiliza su identidad aprobada automáticamente.</p><div class="grid"><label class="field">Nombre de la empresa<input id="companyName" placeholder="Ej.: Nombre de la empresa"></label><label class="field">Logo de la empresa (PNG, JPG o WEBP)<input type="file" id="companyLogo" accept="image/png,image/jpeg,image/webp"></label></div><div class="logoPreview" id="logoPreview" style="margin-top:12px"></div><button class="secondary" id="removeLogo" type="button" style="margin-top:10px">Quitar logo</button></div><div class="card"><div class="grid"><div class="grid" id="eventAreaGroup" style="grid-column:1/-1;align-items:start">
+<section id="registro" class="section"><div class="bar" style="margin-bottom:18px;flex-wrap:wrap"><div><div class="eyebrow">Paso 1</div><h1>Registro de falla en terreno</h1></div><div class="toolbar"><button class="secondary" id="backHome">Mis investigaciones</button><button class="primary" id="nextAnalysis">Continuar →</button></div></div><div class="card" id="reportBrandPanel"><h2>🏢 Personalización del informe</h2><label class="field" style="margin-bottom:14px">Crear esta investigación como<select id="reportIdentityMode"><option value="">Profesional independiente · Nombre y logo editables</option></select></label><p class="muted" id="reportBrandHelp">Si eres independiente, agrega tu nombre o el de tu empresa y adjunta un logo. Si perteneces a una compañía, se utiliza su identidad aprobada automáticamente.</p><div class="grid"><label class="field">Nombre de la empresa<input id="companyName" placeholder="Ej.: Nombre de la empresa"></label><label class="field">Logo de la empresa (PNG, JPG o WEBP)<input type="file" id="companyLogo" accept="image/png,image/jpeg,image/webp"></label></div><div class="logoPreview" id="logoPreview" style="margin-top:12px"></div><button class="secondary" id="removeLogo" type="button" style="margin-top:10px">Quitar logo</button></div><div class="card"><div class="grid"><div class="grid" id="eventAreaGroup" style="grid-column:1/-1;align-items:start">
 <label class="field" id="freeAreaField">Área / proceso<input data-k="area" placeholder="Ej.: Chancado terciario"></label>
 <label class="field" id="miningAreaField" hidden>Área<select id="miningAreaSelect"><option value="">Seleccionar área…</option><option value="Área Seca">Área Seca</option><option value="Área Húmeda">Área Húmeda</option></select></label>
 <label class="field" id="miningSectorField" hidden>Sector del área<select id="miningSectorSelect"><option value="">Seleccionar sector…</option><option value="Chancado">Chancado</option><option value="Apilamiento">Apilamiento</option></select></label>
@@ -1390,7 +1390,7 @@ $('#startAppliedVoice').addEventListener('click',()=>beginFieldDictation('applie
 $('#stopAppliedVoice').onclick=()=>{if(voiceRecognition&&voiceRunning)voiceRecognition.stop()};
 if(!SpeechRecognitionAPI){$('#startAppliedVoice').disabled=true;$('#appliedVoiceStatus').textContent='Dictado no disponible en este navegador. Puedes escribir las acciones.';}
 $('#stopVoice').addEventListener('click',()=>{if(voiceRecognition&&voiceRunning){voiceStatus('Finalizando dictado…');voiceRecognition.stop();}});
-function makeCase(){return{personalReportBrand:{name:db.settings.companyName||'',logo:db.settings.logo||''},id:id(),format,reportFormat:format,title:'',equipment:'',equipmentSap:'',area:'',sector:'',productionUnit:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}
+function makeCase(){return{reportOrganizationId:($('#authAffiliation')?.value==='company'&&(corporateCtx?.platform||currentCorporateMembership()?.status==='approved'))?corporateSelection():'',personalReportBrand:{name:db.settings.companyName||'',logo:db.settings.logo||''},id:id(),format,reportFormat:format,title:'',equipment:'',equipmentSap:'',area:'',sector:'',productionUnit:'',datetime:stamp(),severity:'Media',downtime:'',stopStart:'',stopEnd:'',author:'',workorder:'',description:'',timeline:'',safetyCondition:'',safetyDescription:'',safetyAction:'',safetyPhotos:[],basicCause:'',causeConsequence:'',hypotheses:[],whys:['','','','',''],rootCause:'',validation:'',validationStatus:'Hipótesis pendiente',reviewer:'',conclusion:'',photos:[],actions:[{description:'',owner:'',due:'',status:'Pendiente'}],created:Date.now()}}
 function companyWorkspace(name){
  const scoped=!!(corporateCtx&&corporateSelection()&&corporateIsAdmin());
  const module=scoped&&['investigaciones','confiabilidad','compromisos','administracion'].includes(name);
@@ -2518,10 +2518,11 @@ $('#organizationSelect').onchange=()=>{
 $('#refreshOrganizations').onclick=loadOrganizations;
 
 function activeCorporateBrand(){
- if(!corporateCtx?.organizations||corporateCtx.platform)return null;
- const approved=(corporateCtx.memberships||[]).filter(m=>m.status==='approved');
- const member=approved.find(m=>m.role==='admin')||approved.find(m=>m.organization_id===corporateSelection())||approved[0];
- const org=corporateCtx.organizations.find(o=>o.id===member?.organization_id&&o.active);
+ const oid=current()?.reportOrganizationId;
+ if(!oid||!corporateCtx?.organizations)return null;
+ const approved=corporateCtx.platform||(corporateCtx.memberships||[]).some(m=>m.organization_id===oid&&m.status==='approved');
+ if(!approved)return null;
+ const org=corporateCtx.organizations.find(o=>o.id===oid&&o.active);
  return org?{name:org.name,logo:org.logo_data||'',id:org.id}:null;
 }
 function effectiveReportBrand(){const personal=current()?.personalReportBrand;return activeCorporateBrand()||{name:personal?.name??db.settings.companyName??'',logo:personal?.logo??db.settings.logo??''}}
@@ -3589,6 +3590,10 @@ function recalcDowntime(c){
  hint.textContent=message+': '+c.downtime.replace('.',',')+' horas ('+Math.floor(Math.round(hours*60)/60)+' h '+String(Math.round(hours*60)%60).padStart(2,'0')+' min).';
 }
 function drawCompany(){
+ const mode=$('#reportIdentityMode'),chosen=current()?.reportOrganizationId||'';
+ const options=(corporateCtx?.organizations||[]).filter(o=>o.active&&(corporateCtx.platform||(corporateCtx.memberships||[]).some(m=>m.organization_id===o.id&&m.status==='approved')));
+ mode.innerHTML='<option value="">Profesional independiente · Nombre y logo editables</option>'+options.map(o=>'<option value="'+esc(o.id)+'">Compañía · '+esc(o.name)+'</option>').join('');
+ mode.value=options.some(o=>o.id===chosen)?chosen:'';
  const corporate=activeCorporateBrand(),cfg=effectiveReportBrand();
  $('#companyName').value=cfg.name||'';
  $('#companyName').readOnly=!!corporate;
@@ -3600,6 +3605,11 @@ function drawCompany(){
  $('#logoPreview').innerHTML=cfg.logo?'<img alt="Logo de la empresa" src="'+cfg.logo+'"><span class="small">'+(corporate?'Logo oficial de la compañía':'Logo listo para el PDF')+'</span>':
   '<span class="small">'+(corporate?'La compañía aún no tiene logo registrado.':'Sin logo. Puedes agregarlo en cualquier momento.')+'</span>';
 }
+$('#reportIdentityMode').onchange=e=>{
+ const c=current();if(!c)return;
+ c.reportOrganizationId=e.target.value;
+ persist();drawCompany();drawMiningArea(c);
+};
 $('#companyName').addEventListener('input',e=>{if(activeCorporateBrand()){drawCompany();return}const c=current();if(c)c.personalReportBrand={...effectiveReportBrand(),name:e.target.value};db.settings.companyName=e.target.value;persist()});
 $('#removeLogo').onclick=()=>{if(activeCorporateBrand())return;const c=current();if(c)c.personalReportBrand={...effectiveReportBrand(),logo:''};db.settings.logo='';$('#companyLogo').value='';persist();drawCompany()};
 $('#companyLogo').onchange=async e=>{
