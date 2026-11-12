@@ -12,7 +12,8 @@ function mount(api){let cache=new Map(),loading=new Map(),generation=0;
   const org=companyId(r);if(!org)return;
   const reviewers=await api.request('/rest/v1/rpc/acr_company_reviewers','POST',{p_org:org});
   let pub=r.pub;if(!pub){const list=await api.request('/rest/v1/acr_corporate_investigations?select=id,organization_id,owner_id,local_case_id,payload,updated_at&organization_id=eq.'+encodeURIComponent(org)+'&owner_id=eq.'+encodeURIComponent(api.userId())+'&local_case_id=eq.'+encodeURIComponent(r.c.id)+'&limit=1');pub=list[0]}
-  const events=pub?await api.request('/rest/v1/acr_followup_events?select=*&investigation_id=eq.'+encodeURIComponent(pub.id)+'&kind=eq.review&order=id.asc'):[];
+  let events=pub?await api.request('/rest/v1/acr_followup_events?select=*&investigation_id=eq.'+encodeURIComponent(pub.id)+'&kind=eq.review&order=id.asc'):[];
+  if(pub)events=await root.ACRImprovement.resolveReviewNames(events,api.request,pub.id);
   if(gen!==generation||scope!==api.scope())return;cache.set(k,{reviewers:Array.isArray(reviewers)?reviewers:[],pub,events});
  }catch(e){if(gen===generation&&scope===api.scope())cache.set(k,{error:e.message})}finally{loading.delete(k);if(gen===generation&&scope===api.scope()&&api.visible())api.render()}}
  function html(r){
