@@ -12,6 +12,15 @@ function similar(c,rows){const equipment=norm(c.equipment),words=new Set(norm([c
 function inRange(c,from,to){const d=String(c.datetime||c.stopStart||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(d)&&d>=from&&d<=to}
 function activeReview(c,events){const e=latest(events,'review');return e&&e.data.version===fingerprint(c)&&(!c.reviewRequest||e.data.requestId===c.reviewRequest.id)?e:null}
 function executionState(c,a,index,events){const e=latest(events,'execution',actionKey(a,index)),v=latest(events,'effectiveness',actionKey(a,index));return {execution:e,verification:v&&e&&v.data.executionId===String(e.id)?v:null}}
+const verifiedReviews=new WeakMap();
+function reviewFor(c){const e=verifiedReviews.get(c);return e&&activeReview(c,[e])?e:null}
+async function loadCaseReview(c,request,userId){
+ verifiedReviews.delete(c);if(!c.reportOrganizationId)return;
+ const pubs=await request('/rest/v1/acr_corporate_investigations?select=id&organization_id=eq.'+encodeURIComponent(c.reportOrganizationId)+'&owner_id=eq.'+encodeURIComponent(userId)+'&local_case_id=eq.'+encodeURIComponent(c.id)+'&limit=1');
+ if(!pubs.length)return;
+ const events=await request('/rest/v1/acr_followup_events?select=*&investigation_id=eq.'+encodeURIComponent(pubs[0].id)+'&kind=eq.review&order=id.asc');
+ const e=activeReview(c,events);if(e)verifiedReviews.set(c,e);
+}
 async function hydrateCorporate(pubs,request){
  if(!pubs.length)return pubs;
  const org=pubs[0].organization_id;if(!org)return pubs;
@@ -20,10 +29,11 @@ async function hydrateCorporate(pubs,request){
   const batch=await request('/rest/v1/acr_followup_events?select=*,acr_corporate_investigations!inner(organization_id)&acr_corporate_investigations.organization_id=eq.'+encodeURIComponent(org)+'&order=id.asc&limit=500&offset='+offset);
   events.push(...batch);if(batch.length<500)break;
  }
- return pubs.map(p=>({...p,payload:{...p.payload,actions:(p.payload?.actions||[]).map((a,i)=>{
+ const hydrated=pubs.map(p=>({...p,payload:{...p.payload,actions:(p.payload?.actions||[]).map((a,i)=>{
   const state=executionState(p.payload,a,i,events.filter(e=>e.investigation_id===p.id));
   return state.execution?{...a,status:'Completado',executionSummary:state.verification?'Efectividad: '+state.verification.data.result:'Ejecutada · efectividad pendiente'}:a;
  })}}));
+ hydrated.forEach(p=>{const e=activeReview(p.payload,events.filter(e=>e.investigation_id===p.id));if(e)verifiedReviews.set(p.payload,e)});return hydrated;
 }
 
 function followupType(c){return {electrica:'Eléctrica',mecanica:'Mecánica',operacional:'Operacional'}[norm(c.failureType)]||'Sin clasificar'}
@@ -62,7 +72,7 @@ function mount(api){
   const opts=(values,value)=>'<option value="">Todos</option>'+values.map(v=>'<option value="'+E(v)+'"'+(value===v?' selected':'')+'>'+E(v)+'</option>').join('');
   const areas=[...new Set(rows.map(r=>String(r.c.area||'').trim()||'Sin clasificar'))].sort((a,b)=>a.localeCompare(b,'es'));
   const sectors=[...new Set(filterFollowupRows(rows,{area:filters.area}).map(r=>followupSector(r.c)))].sort((a,b)=>a.localeCompare(b,'es'));
-  return '<div class="card"><h2>Filtrar investigaciones</h2><div class="ci-tools ci-filters"><label class="field">Área operacional<select id="ciFilterArea">'+opts(areas,filters.area)+'</select></label><label class="field">Sector del área / unidad productiva<select id="ciFilterSector">'+opts(sectors,filters.sector)+'</select></label><label class="field">Tipo de falla<select id="ciFilterType">'+opts(['Eléctrica','Mecánica','Operacional','Sin clasificar'],filters.type)+'</select></label><button class="secondary" type="button" id="ciClearFilters">Limpiar filtros</button></div><p class="help">'+visibleRows().length+' de '+rows.length+' investigaciones de este espacio. Los filtros se aplican también a las solicitudes asignadas a ti.</p></div>';
+  return '<div class="card"><h2>Filtrar investigaciones</h2><div class="ci-tools ci-filters"><label class="field">Área operacional<select id="ciFilterArea">'+opts(areas,filters.area)+'</select></label><label class="field">Sector del área / unidad productiva<select id="ciFilterSector">'+opts(sectors,filters.sector)+'</select></label><label class="field">Tipo de falla<select id="ciFilterType">'+opts(['Eléctrica','Mecánica','Operacional','Sin clasificar'],filters.type)+'</select></label><button class="secondary" type="button" id="ciClearFilters">Limpiar filtros</button></div><p class="help">'+visibleRows().length+' de '+rows.length+' investigaciones de este espacio. Los filtros se aplican también a las solicitudes de revisión de la compañía.</p></div>';
  }
  function rowEvents(r){return r?.pub?events.filter(e=>e.investigation_id===r.pub.id):(r?.c.followupEvents||[])}
  function eventInfo(e){return E(new Date(e.created_at).toLocaleString('es-CL'))+' · '+E(e.data.actorLabel||'Usuario')+' · ID: '+E(e.actor_id||'')}
@@ -168,6 +178,6 @@ function mount(api){
  const voiceExit=new MutationObserver(()=>{if(!el.classList.contains('active')||document.getElementById('mainApp').hidden)shift?.stop()});voiceExit.observe(el,{attributes:true,attributeFilter:['class']});voiceExit.observe(document.getElementById('mainApp'),{attributes:true,attributeFilter:['hidden','data-workspace']});document.addEventListener('visibilitychange',()=>{if(document.hidden)shift?.stop()});
  return {open,refresh:()=>load(true)};
 }
-root.ACRImprovement={mount,hydrateCorporate};
+root.ACRImprovement={reviewFor,loadCaseReview,mount,hydrateCorporate};
 if(typeof module!=='undefined')module.exports={fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState,hydrateCorporate,filterFollowupRows,followupType,followupSector};
 })(typeof window==='undefined'?globalThis:window);
