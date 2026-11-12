@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');require('../continuous-improvement.js');
+const {fingerprint}=require('../continuous-improvement.js');
+const {reviewFor,loadCaseReview,hydrateCorporate}=global.ACRImprovement;
+(async()=>{
+ const c={id:'case',reportOrganizationId:'org',description:'Hechos',actions:[],reviewRequest:{id:'req'}};
+ c.reviewRequest.version=fingerprint(c);
+ const event={id:1,investigation_id:'pub',kind:'review',action_key:'',actor_id:'admin',created_at:'2026-11-12T12:00:00Z',data:{version:fingerprint(c),requestId:'req',result:'Validado',reviewer:'Ana Supervisora'}};
+ await loadCaseReview(c,async url=>url.includes('followup_events')?[event]:[{id:'pub'}],'owner');
+ assert.equal(reviewFor(c).data.reviewer,'Ana Supervisora');
+ assert.equal(reviewFor(c).data.result,'Validado');
+ c.description='Actualización';assert.equal(reviewFor(c),null);
+ c.description='Hechos';
+ const result=await hydrateCorporate([{id:'pub',organization_id:'org',payload:c}],async()=>[event]);
+ assert.equal(reviewFor(result[0].payload).actor_id,'admin');
+ const noReview={...c,reviewRequest:{id:'new'}};await loadCaseReview(noReview,async url=>url.includes('followup_events')?[event]:[{id:'pub'}],'owner');assert.equal(reviewFor(noReview),null);
+ console.log('PASS: author and corporate reports resolve actual reviewer, timestamp/result and invalidate changed analysis/new requests.');
+})().catch(e=>{console.error(e);process.exitCode=1});
+require('../technical-review.js');
+const review=global.ACRTechnicalReview.mount({isAdmin:()=>true,userId:()=> 'admin-other',fingerprint});
+const c={id:'1',area:'Área Seca',sector:'Apilamiento',failureType:'Mecánica',title:'Falla bomba',reviewRequest:{id:'r'}};c.reviewRequest.version=fingerprint(c);
+const row={key:'k',pub:{id:'p',owner_id:'owner'},c};
+const html=review.inbox([row],[]);
+assert.ok(html.includes('Solicitudes de revisión pendientes · 1'));assert.ok(html.includes('Área Seca · Apilamiento · Mecánica'));assert.ok(!html.includes('asignadas a ti'));
+assert.ok(review.inbox([row],[{kind:'review',investigation_id:'p',data:{requestId:'r',version:c.reviewRequest.version,result:'Validado'}}]).includes('pendientes · 0'));
+console.log('PASS: company queue counts and classifies all pending requests, resolved requests leave queue.');
