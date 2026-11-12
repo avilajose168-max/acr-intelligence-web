@@ -663,6 +663,11 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 .deadline-complete{background:#153f37;color:#a1e7c9;border:1px solid #337f68}
 .deadline-normal{background:#18384d;color:#b6ddf3;border:1px solid #397390}
 .deadline-none{background:#283441;color:#d1dce7;border:1px solid #576a7a}
+</style><style>
+@media screen{
+ #mainApp[data-workspace="organizaciones"] #companyAdminPanel{display:none!important}
+ #mainApp:not([data-workspace="organizaciones"]) #companyModuleLinks{display:none!important}
+}
 </style></head><body>
 <div id="authWall" class="auth-wall"><svg class="login-waves" viewBox="0 0 1500 420" preserveAspectRatio="none" fill="none" stroke="#dba94f" stroke-width="1" aria-hidden="true"><path d="M-100 150 C280 -50 330 390 650 165 S1120 50 1500 -120" opacity="0.8"/><path d="M-100 158 C280 -44 330 395 650 171 S1120 56 1500 -113" opacity="0.775"/><path d="M-100 166 C280 -38 330 400 650 177 S1120 62 1500 -106" opacity="0.75"/><path d="M-100 174 C280 -32 330 405 650 183 S1120 68 1500 -99" opacity="0.7250000000000001"/><path d="M-100 182 C280 -26 330 410 650 189 S1120 74 1500 -92" opacity="0.7000000000000001"/><path d="M-100 190 C280 -20 330 415 650 195 S1120 80 1500 -85" opacity="0.675"/><path d="M-100 198 C280 -14 330 420 650 201 S1120 86 1500 -78" opacity="0.65"/><path d="M-100 206 C280 -8 330 425 650 207 S1120 92 1500 -71" opacity="0.625"/><path d="M-100 214 C280 -2 330 430 650 213 S1120 98 1500 -64" opacity="0.6000000000000001"/><path d="M-100 222 C280 4 330 435 650 219 S1120 104 1500 -57" opacity="0.5750000000000001"/><path d="M-100 230 C280 10 330 440 650 225 S1120 110 1500 -50" opacity="0.55"/><path d="M-100 238 C280 16 330 445 650 231 S1120 116 1500 -43" opacity="0.525"/><path d="M-100 246 C280 22 330 450 650 237 S1120 122 1500 -36" opacity="0.5"/><path d="M-100 254 C280 28 330 455 650 243 S1120 128 1500 -29" opacity="0.47500000000000003"/><path d="M-100 262 C280 34 330 460 650 249 S1120 134 1500 -22" opacity="0.45"/><path d="M-100 270 C280 40 330 465 650 255 S1120 140 1500 -15" opacity="0.42500000000000004"/><path d="M-100 278 C280 46 330 470 650 261 S1120 146 1500 -8" opacity="0.4"/><path d="M-100 286 C280 52 330 475 650 267 S1120 152 1500 -1" opacity="0.375"/><path d="M-100 294 C280 58 330 480 650 273 S1120 158 1500 6" opacity="0.35000000000000003"/><path d="M-100 302 C280 64 330 485 650 279 S1120 164 1500 13" opacity="0.325"/><path d="M-100 310 C280 70 330 490 650 285 S1120 170 1500 20" opacity="0.30000000000000004"/><path d="M-100 318 C280 76 330 495 650 291 S1120 176 1500 27" opacity="0.275"/><path d="M-100 326 C280 82 330 500 650 297 S1120 182 1500 34" opacity="0.25"/><path d="M-100 334 C280 88 330 505 650 303 S1120 188 1500 41" opacity="0.22499999999999998"/></svg>
   <div class="auth-shell">
@@ -1394,6 +1399,15 @@ function makeCase(){return{reportOrganizationId:($('#authAffiliation')?.value===
 function companyWorkspace(name){
  const scoped=!!(corporateCtx&&corporateSelection()&&corporateIsAdmin());
  const module=scoped&&['investigaciones','confiabilidad','compromisos','administracion'].includes(name);
+
+ let links=document.getElementById('companyModuleLinks');
+ if(!links){
+  links=document.createElement('div');links.id='companyModuleLinks';links.className='card';
+  links.innerHTML='<h2>Consultar la compañía seleccionada</h2><p class="help">Los tableros se consultan en sus secciones del menú lateral.</p><div class="toolbar"><button type="button" class="secondary" data-company-open="investigaciones">Investigaciones</button><button type="button" class="secondary" data-company-open="confiabilidad">Confiabilidad</button><button type="button" class="secondary" data-company-open="compromisos">Compromisos</button><button type="button" class="secondary" data-company-open="administracion">Administración</button></div>';
+  document.getElementById('corporateAffiliationPanel').after(links);
+  links.querySelectorAll('[data-company-open]').forEach(button=>button.onclick=()=>navigate(button.dataset.companyOpen));
+ }
+ links.hidden=!(scoped&&name==='organizaciones');
  const root=document.getElementById('mainApp');
  root.dataset.companyModule=module?name:'';
  let banner=document.getElementById('companyScopeBanner');
