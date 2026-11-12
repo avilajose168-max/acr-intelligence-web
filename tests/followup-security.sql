@@ -12,6 +12,7 @@ insert into public.acr_corporate_investigations(id,organization_id,owner_id,loca
 select (select id from followup_ids where k='case_a'),(select id from followup_ids where k='org_a'),(select id from followup_ids where k='owner'),'followup-test','Test','Test','{}'::jsonb;
 insert into public.acr_corporate_investigations(id,organization_id,owner_id,local_case_id,title,equipment,payload)
 select (select id from followup_ids where k='case_b'),(select id from followup_ids where k='org_b'),(select id from followup_ids where k='admin_b'),'followup-test-b','Test','Test','{}'::jsonb;
+update public.acr_corporate_investigations set payload=jsonb_build_object('reviewRequest',jsonb_build_object('id','request-a','reviewerId',(select id::text from followup_ids where k='admin_a'),'version','v1')) where id=(select id from followup_ids where k='case_a');
 set local role authenticated;
 do $$
 declare ca uuid;cb uuid;u uuid;denied boolean;cnt int;
@@ -25,7 +26,7 @@ if not denied then raise exception 'FAIL member corporate validation';end if;
 denied:=false;begin insert into public.acr_followup_events(investigation_id,kind,data,actor_id) values(ca,'execution','{}',(select id from followup_ids where k='admin_a'));exception when insufficient_privilege then denied:=true;end;
 if not denied then raise exception 'FAIL forged actor';end if;
 perform set_config('request.jwt.claim.sub',(select id::text from followup_ids where k='admin_a'),true);
-insert into public.acr_followup_events(investigation_id,kind,data) values(ca,'review','{"result":"Validado"}'),(ca,'lesson','{"active":true}'),(ca,'effectiveness','{"result":"Efectiva"}');
+insert into public.acr_followup_events(investigation_id,kind,data) values(ca,'review','{"requestId":"request-a","version":"v1","result":"Validado","notes":"Evidencia revisada"}'),(ca,'lesson','{"active":true}'),(ca,'effectiveness','{"result":"Efectiva"}');
 select count(*) into cnt from public.acr_followup_events;if cnt<>4 then raise exception 'FAIL admin read';end if;
 denied:=false;begin insert into public.acr_followup_events(investigation_id,kind,data) values(cb,'review','{}');exception when insufficient_privilege then denied:=true;end;
 if not denied then raise exception 'FAIL cross company append';end if;
