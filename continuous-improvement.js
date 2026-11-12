@@ -60,7 +60,7 @@ function mount(api){
  const technical=root.ACRTechnicalReview?.mount({
  scope:scopeKey,userId:api.userId,userLabel:api.userLabel,isAdmin:api.isAdmin,request:api.request,
  root:()=>el,visible:()=>el.classList.contains('active')&&tab==='review'&&!document.getElementById('mainApp').hidden,
- render,fingerprint,activeReview,events:rowEvents,append,
+ render,fingerprint,activeReview,events:rowEvents,append,returnToCase:api.returnToCase,
  publishRequest:async(r,request)=>{await api.publishReviewRequest(r,request);r.c.reviewRequest=request;}
  });
  function isCompany(){return !!api.companyId()&&api.canCompany()&&(mode==='company'||mode==='auto'&&api.isAdmin())}
