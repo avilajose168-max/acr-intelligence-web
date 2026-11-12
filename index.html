@@ -1164,7 +1164,8 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <script src="./access-console.js?v=20261111"></script>
 <script src="./cloud-workspace.js"></script>
-<script src="./continuous-improvement.js?v=20261112"></script>
+<script src="./shift-handover.js?v=20261112-1"></script>
+<script src="./continuous-improvement.js?v=20261112-1"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -4420,6 +4421,16 @@ $('#print').onclick=$('#printBottom').onclick=()=>{drawReport();window.print()};
 
 window.acrImprovement=window.ACRImprovement.mount({
  personalCases:()=>db.cases,
+ personalHandovers:()=>Array.isArray(db.settings.shiftHandovers)?db.settings.shiftHandovers:[],
+ savePersonalHandover:async entry=>{
+  const before=db.settings.shiftHandovers;db.settings.shiftHandovers=[...(Array.isArray(before)?before:[]),entry];
+  if(!persist()){db.settings.shiftHandovers=before;throw Error('No se pudo guardar la entrega en este dispositivo.');}
+  const synced=await personalSync.flush();if(synced===false)throw Error('La entrega está guardada en este dispositivo; revisa el estado de sincronización con la nube.');
+ },
+ rewriteHandover:async original=>{
+  const result=await assisted('rewrite',{description:original,title:'Novedades del turno: mejorar únicamente la redacción del relato del supervisor, conservar hechos y no agregar causas, nombres ni conclusiones.',equipment:'Entrega de turno',area:'',downtime:'',timeline:'',validation:'',whys:[]});
+  return String(result.description||'').trim();
+ },
  companyId:()=>corporateCtx?corporateSelection():'',
  isAdmin:()=>!!corporateCtx&&corporateIsAdmin(),canCompany:()=>!!corporateCtx&&(corporateIsAdmin()||corporateAllowed()),
  companyLabel:()=>corporateCtx?.organizations?.find(o=>o.id===corporateSelection())?.name||'Compañía seleccionada',
