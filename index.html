@@ -732,6 +732,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <label class="field dashboard-filter" id="reliabilitySubareaWrap" hidden>Sector del área
     <select id="reliabilitySubarea"><option value="__all__">Todos los sectores</option></select>
   </label>
+  <label class="field dashboard-filter">Tipo de falla<select id="reliabilityFailureType"><option value="__all__">Todos los tipos</option><option>Eléctrica</option><option>Mecánica</option><option>Operacional</option><option value="__unclassified__">Sin clasificar</option></select></label>
   <label class="field dashboard-filter">Alcance del análisis
     <select id="reliabilityAsset" aria-label="Equipo para indicadores"><option value="__all__">Todos los equipos</option></select>
   </label>
@@ -752,7 +753,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <select id="paretoMetric" aria-label="Indicador de Pareto"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select>
   </label>
   <label class="field dashboard-filter">Agrupar por
-    <select id="paretoGroup" aria-label="Agrupar Pareto"><option value="equipment">Equipo / TAG</option><option value="failure">Falla / evento</option></select>
+    <select id="paretoGroup" aria-label="Agrupar Pareto"><option value="equipment">Equipo / TAG</option><option value="failure">Falla / evento</option><option value="failureType">Tipo de falla</option></select>
   </label>
 </div>
 <div class="dashboard-charts">
@@ -893,6 +894,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <button type="button" class="secondary" id="corporateNext">Siguiente →</button>
     <label class="field">Área operacional<select id="corporateArea"><option value="__all__">Toda la compañía</option><option value="Área Seca">Área Seca</option><option value="Área Húmeda">Área Húmeda</option><option value="__unclassified__">Sin clasificar</option></select></label>
     <label class="field" id="corporateSubareaWrap" hidden>Sector del área<select id="corporateSubarea"><option value="__all__">Todos los sectores</option></select></label>
+    <label class="field">Tipo de falla<select id="corporateFailureType"><option value="__all__">Todos los tipos</option><option>Eléctrica</option><option>Mecánica</option><option>Operacional</option><option value="__unclassified__">Sin clasificar</option></select></label>
     <label class="field">Equipo / TAG<select id="corporateAsset"><option value="__all__">Todos los equipos</option></select></label>
   </div>
   <div class="dashboard-week" id="corporatePeriodLabel"></div>
@@ -911,7 +913,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <p class="help" id="corporateReliabilityNote">Se asume operación 24 horas al día por equipo con eventos. Los indicadores no se calculan si faltan horas verificables.</p>
   <div class="dashboard-toolbar corporate-toolbar">
     <label class="field">Indicador para ambos gráficos<select id="corporateParetoMetric"><option value="events">Cantidad de fallas</option><option value="hours">Horas de detención</option></select></label>
-    <label class="field">Agrupar por<select id="corporateParetoGroup"><option value="equipment">Equipo / TAG</option><option value="failure">Tipo de falla / evento</option></select></label>
+    <label class="field">Agrupar por<select id="corporateParetoGroup"><option value="equipment">Equipo / TAG</option><option value="failure">Falla / evento</option><option value="failureType">Tipo de falla</option></select></label>
     <button type="button" class="secondary" id="corporateExportPeriod">⬇ Exportar período (CSV)</button>
   </div>
   <div class="dashboard-charts" aria-label="Pareto y tendencia de las últimas ocho semanas">
@@ -1480,7 +1482,31 @@ function casesInWeek(cases,monday,type='weekly'){
  const end=periodEnd(monday,type);
  return (cases||[]).filter(c=>validDashboardCase(c)&&caseEventDate(c)>=monday&&caseEventDate(c)<end);
 }
+function failureTypeLabel(c){
+ const value=String(c?.failureType||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ return {electrica:'Eléctrica',mecanica:'Mecánica',operacional:'Operacional'}[value]||'Sin clasificar';
+}
+function filterFailureTypes(cases,value='__all__'){
+ return value==='__all__'?cases:cases.filter(c=>failureTypeLabel(c)===(value==='__unclassified__'?'Sin clasificar':value));
+}
+function failureTypeScopeLabel(value){return value==='__all__'?'Todos los tipos de falla':value==='__unclassified__'?'Tipo de falla sin clasificar':'Falla '+value.toLocaleLowerCase('es')}
+function paretoGroupName(group){return group==='failureType'?'Tipo de falla':group==='failure'?'Falla / evento':'Equipo / TAG'}
+function globalExposure(selected,global){
+ return {...selected,mtbf:global.mtbf,availability:global.availability,
+ ...('baseHours' in global?{baseHours:global.baseHours,operating:global.operating,assets:global.assets}:{base:global.base,equipmentCount:global.equipmentCount}),
+ globalExposure:true,globalUnverified:global.unverified};
+}
+function personalReliabilityResults(start,asset,now,type){
+ const selected=weeklyIndicators(reliabilityAreaCases(),start,asset,now,type);
+ return $('#reliabilityFailureType').value==='__all__'?selected:globalExposure(selected,weeklyIndicators(reliabilityAreaCases(db.cases,false),start,asset,now,type));
+}
+function corporateReliabilityResults(cases,bounds,asset){
+ const selected=corporatePeriodResults(cases,bounds,asset);
+ return $('#corporateFailureType').value==='__all__'?selected:globalExposure(selected,corporatePeriodResults(corporateAreaScopedCases(selectedCorporateCases(),false),bounds,asset));
+}
+
 function dashboardGroupKey(c,group){
+ if(group==='failureType')return failureTypeLabel(c);
  const name=group==='failure'?normalizeText(c.title):normalizeText(c.equipment);
  return name || (group==='failure'?'Falla sin título':'Equipo sin identificar');
 }
@@ -1592,10 +1618,10 @@ function renderMonthlyTrend(cases,month,metric){
 }
 const ALL_ASSETS='__all__';
 function dashboardAssets(cases=db.cases){return [...new Set(cases.filter(validDashboardCase).map(c=>normalizeText(c.equipment)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
-function reliabilityAreaCases(cases=db.cases){
+function reliabilityAreaCases(cases=db.cases,includeType=true){
  const area=$('#reliabilityArea').value;
  const subarea=$('#reliabilitySubarea').value;
- return cases.filter(c=>{
+ return (includeType?filterFailureTypes(cases,$('#reliabilityFailureType')?.value||'__all__'):cases).filter(c=>{
   if(area==='__all__')return true;
   if(area==='__unclassified__')return !c.area||!['Área Seca','Área Húmeda'].includes(c.area);
   if(c.area!==area)return false;
@@ -1617,7 +1643,7 @@ function drawReliabilityAreaOptions(){
 }
 function reliabilityScopeLabel(){
  const area=$('#reliabilityArea').value,sub=$('#reliabilitySubarea').value;
- return (area==='__all__'?'Todas las áreas':area==='__unclassified__'?'Sin clasificar':area)+(sub!=='__all__'?' / '+sub:'');
+ return (area==='__all__'?'Todas las áreas':area==='__unclassified__'?'Sin clasificar':area)+(sub!=='__all__'?' / '+sub:'')+' · '+failureTypeScopeLabel($('#reliabilityFailureType').value);
 }
 function scopedCases(cases,asset){return asset===ALL_ASSETS?cases:cases.filter(c=>normalizeText(c.equipment)===asset)}
 
@@ -1706,7 +1732,7 @@ function drawDashboard(){
  const asset=select.value,metric=$('#paretoMetric').value,group=$('#paretoGroup').value;
  const now=new Date();
  const type=reportPeriodType(),start=reportPeriodStart();
- const kpi=weeklyIndicators(scopeCases,start,asset,now,type);
+ const kpi=personalReliabilityResults(start,asset,now,type);
  const data=weeklyPareto(kpi.records,start,metric,group,now,type);
  $('#weekLabel').textContent=periodTitle(start,type)+' · '+reliabilityScopeLabel();
  $('#previewWeekly').textContent='📄 Ver informe '+(type==='monthly'?'del mes':'de la semana');
@@ -1715,6 +1741,9 @@ function drawDashboard(){
  $('#weekOperatingTotal').textContent=dashboardReliabilityFormat(kpi.operating);
  $('#weekMttr').textContent=dashboardReliabilityFormat(kpi.mttr);
  $('#weekMtbf').textContent=dashboardReliabilityFormat(kpi.mtbf);
+ $('#weekMtbf').previousElementSibling.textContent=kpi.globalExposure?'MTBF GLOBAL · TODOS LOS TIPOS':'MTBF · ENTRE FALLAS';
+ $('#weekAvailability').previousElementSibling.textContent=kpi.globalExposure?'DISPONIBILIDAD GLOBAL':'DISPONIBILIDAD';
+ $('#weekOperatingTotal').previousElementSibling.textContent=kpi.globalExposure?'HORAS OPERATIVAS · GLOBAL':'HORAS OPERATIVAS';
  $('#weekAvailability').textContent=dashboardAvailabilityFormat(kpi.availability);
  $('#availabilityFill').style.width=(kpi.availability===null?0:Math.max(0,Math.min(100,kpi.availability)))+'%';
  $('#weekBaseAuto').textContent=dashboardReliabilityFormat(kpi.baseHours);
@@ -1728,6 +1757,7 @@ function drawDashboard(){
  else if(!kpi.complete)warning='Hay '+kpi.unverified+' falla(s) sin duración o término verificable; MTBF y disponibilidad quedan pendientes.';
  else if(!kpi.events)warning='Sin fallas en esta semana. MTTR y MTBF no se calculan; la disponibilidad solo refleja detenciones conocidas.';
  else warning='Base '+dashboardMetricText(kpi.baseHours,'hours')+' h − detenciones '+dashboardMetricText(kpi.downtime,'hours')+' h = operación '+dashboardMetricText(kpi.operating,'hours')+' h. MTTR = detención / '+kpi.documentedCount+' falla(s); MTBF = operación / '+kpi.events+' falla(s).';
+ if(kpi.globalExposure)warning='Filtro de tipo: '+kpi.events+' falla(s) · '+dashboardMetricText(kpi.downtime,'hours')+' h de detención. MTTR corresponde al tipo seleccionado. Las horas operativas, MTBF y disponibilidad consideran todos los tipos en el área/equipo y período seleccionados.';
  $('#reliabilityMethod').textContent=warning+(asset===ALL_ASSETS?' Vista agregada: incluye únicamente equipos identificados en las fallas guardadas.':'');
  $('#paretoValueHeading').textContent=metric==='hours'?'Horas':'Fallas';
  $('#paretoChart').innerHTML=renderParetoSvg(data.rows,data.total,metric);
@@ -1746,6 +1776,7 @@ $('#reliabilityPeriod').onchange=drawDashboard;
 $('#paretoMetric').onchange=drawDashboard;
 $('#paretoGroup').onchange=drawDashboard;
 $('#reliabilityAsset').onchange=drawDashboard;
+$('#reliabilityFailureType').onchange=drawDashboard;
 setInterval(()=>{if(document.visibilityState==='visible'){
  const nowWeek=isoWeekStart(dashboardToday());
  if(selectedDashboardWeek===lastDashboardCurrentWeek)selectedDashboardWeek=nowWeek;
@@ -1756,7 +1787,7 @@ let lastDashboardCurrentWeek=isoWeekStart(dashboardToday());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.querySelector('#inicio.section.active'))drawDashboard()});
 function weeklyReportData(){
  const type=reportPeriodType(),metric=$('#paretoMetric').value,group=$('#paretoGroup').value,monday=reportPeriodStart(),asset=activeDashboardScope();
- const now=new Date(),reliability=weeklyIndicators(reliabilityAreaCases(),monday,asset,now,type);
+ const now=new Date(),reliability=personalReliabilityResults(monday,asset,now,type);
  const result=weeklyPareto(reliability.records,monday,metric,group,now,type);
  return {monday,type,metric,group,asset,scope:reliabilityScopeLabel(),period:periodTitle(monday,type),...result,reliability,cutoff:reliability.bounds.cutoff.toLocaleString('es-CL')};
 }
@@ -1768,23 +1799,23 @@ function reportValue(data,number){return dashboardMetricText(number,data.metric)
 function displayEventDate(c){return (c.stopStart||c.datetime||'').replace('T',' ').slice(0,16)||'Sin fecha'}
 function weeklyReportHtml(data){
  const metricName=data.metric==='hours'?'Horas de detención':'Cantidad de fallas';
- const groupName=data.group==='failure'?'nombre de falla':'equipo / TAG';
+ const groupName=paretoGroupName(data.group);
  const rows=data.rows.map((row,i)=>
   '<tr><td>'+(i+1)+'. '+esc(row.label)+'</td><td>'+reportValue(data,row.value)+'</td><td>'+row.cumulative.toFixed(1).replace('.',',')+'%</td></tr>'
  ).join('');
  const events=data.records.slice().sort((a,b)=>caseEventDate(a).localeCompare(caseEventDate(b))).map((c,i)=>
-  '<tr><td>'+(i+1)+'</td><td>'+esc(displayEventDate(c))+'</td><td>'+esc(c.equipment||'Sin TAG')+'</td><td>'+esc(c.title||'Sin título')+'</td><td>'+dashboardMetricText(sumDashboardHours(c),'hours')+'</td></tr>'
+  '<tr><td>'+(i+1)+'</td><td>'+esc(displayEventDate(c))+'</td><td>'+esc(c.equipment||'Sin TAG')+'</td><td>'+esc(c.title||'Sin título')+'</td><td>'+esc(failureTypeLabel(c))+'</td><td>'+dashboardMetricText(sumDashboardHours(c),'hours')+'</td></tr>'
  ).join('');
  const top=data.rows[0];
  return '<div class="weekly-sheet-head"><div style="font-size:12px;font-weight:800;color:#aa8242;letter-spacing:1.1px">ACR INTEGRITY · RELIABILITY DASHBOARD</div>'+
   '<h1>Informe '+(data.type==='monthly'?'mensual':'semanal')+' de fallas · Pareto</h1><p>'+esc(data.period)+' · Área / sector: '+esc(data.scope)+' · Alcance: '+esc(data.asset==='__all__'?'Todos los equipos':data.asset)+' · Indicador: '+metricName+' · Agrupación: '+groupName+' · Corte: '+esc(data.cutoff)+'</p></div>'+
   '<div class="weekly-kpis"><div><strong>'+data.records.length+'</strong><span>Fallas registradas</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.downtime)+'</strong><span>Horas detenidas</span></div>'+
-  '<div><strong>'+dashboardReliabilityFormat(data.reliability.operating)+'</strong><span>Horas operativas</span></div>'+
+  '<div><strong>'+dashboardReliabilityFormat(data.reliability.operating)+'</strong><span>Horas operativas'+(data.reliability.globalExposure?' globales':'')+'</span></div>'+
   '<div><strong>'+dashboardReliabilityFormat(data.reliability.mttr)+'</strong><span>MTTR</span></div>'+
-  '<div><strong>'+dashboardReliabilityFormat(data.reliability.mtbf)+'</strong><span>MTBF</span></div>'+
-  '<div><strong>'+dashboardAvailabilityFormat(data.reliability.availability)+'</strong><span>Disponibilidad</span></div></div>'+
-  '<div class="weekly-report-notice">Horas base: '+(data.reliability.baseHours===null?'No registradas':dashboardReliabilityFormat(data.reliability.baseHours))+'. Base automática desde el lunes 00:00 hasta el corte '+esc(data.cutoff)+', considerando operación 24/7. '+(data.reliability.complete?'':'Existen eventos sin duración; revisar indicadores.')+'</div>'+
+  '<div><strong>'+dashboardReliabilityFormat(data.reliability.mtbf)+'</strong><span>MTBF'+(data.reliability.globalExposure?' global':'')+'</span></div>'+
+  '<div><strong>'+dashboardAvailabilityFormat(data.reliability.availability)+'</strong><span>Disponibilidad'+(data.reliability.globalExposure?' global':'')+'</span></div></div>'+
+  '<div class="weekly-report-notice">Horas base: '+(data.reliability.baseHours===null?'No registradas':dashboardReliabilityFormat(data.reliability.baseHours))+'. '+(data.reliability.globalExposure?'MTBF, disponibilidad y horas operativas consideran todos los tipos para el mismo alcance. ':'')+'Base automática desde el lunes 00:00 hasta el corte '+esc(data.cutoff)+', considerando operación 24/7. '+(data.reliability.complete?'':'Existen eventos sin duración; revisar indicadores.')+'</div>'+
   '<h2>01 · Pareto por '+metricName.toLowerCase()+'</h2>'+
   '<div class="weekly-report-grid"><div class="weekly-report-chart">'+renderParetoSvg(data.rows,data.total,data.metric)+'</div>'+
   '<div><table><thead><tr><th>'+esc(groupName)+'</th><th>'+metricName+'</th><th>% acum.</th></tr></thead><tbody>'+
@@ -1793,8 +1824,8 @@ function weeklyReportHtml(data){
   '<div class="weekly-report-notice">'+(top?'<b>Mayor contribución:</b> '+esc(top.label)+' concentra '+top.cumulative.toFixed(1).replace('.',',')+'% del indicador semanal. ':'No se registraron fallas para el período elegido. ')+
   'El porcentaje es acumulado; la suma corresponde solo a los eventos guardados en este navegador. MTTR utiliza solo fallas con duración registrada ('+data.reliability.documentedCount+'). MTBF y disponibilidad usan horas base automáticas (24/7) y detenciones con fecha/hora de término o duración verificable.</div>'+
   '<h2>02 · Registro de eventos de la semana</h2>'+
-  '<table><thead><tr><th>N.º</th><th>Fecha / hora</th><th>Equipo</th><th>Descripción del evento</th><th>Horas</th></tr></thead><tbody>'+
-  (events||'<tr><td colspan="5">Sin eventos registrados</td></tr>')+'</tbody></table>'+
+  '<table><thead><tr><th>N.º</th><th>Fecha / hora</th><th>Equipo</th><th>Descripción del evento</th><th>Tipo de falla</th><th>Horas</th></tr></thead><tbody>'+
+  (events||'<tr><td colspan="6">Sin eventos registrados</td></tr>')+'</tbody></table>'+
   '<div class="weekly-report-foot">Fuente: investigaciones almacenadas localmente en ACR Integrity. Semana ISO (lunes a domingo), según inicio de detención o fecha del evento. '+
   'Cada investigación identificada se cuenta como un evento; verifica duplicaciones antes de emitir informes oficiales.</div>';
 }
@@ -1814,10 +1845,10 @@ function weeklySummary(data){
  return [
   {label:'Fallas registradas',value:data.records.length},
   {label:'Horas detenidas',value:dashboardMetricText(data.hours,'hours')+' h'},
-  {label:'Horas operativas',value:dashboardReliabilityFormat(data.reliability.operating)},
+  {label:data.reliability.globalExposure?'Horas operativas globales':'Horas operativas',value:dashboardReliabilityFormat(data.reliability.operating)},
   {label:'MTTR',value:dashboardReliabilityFormat(data.reliability.mttr)},
-  {label:'MTBF',value:dashboardReliabilityFormat(data.reliability.mtbf)},
-  {label:'Disponibilidad',value:dashboardAvailabilityFormat(data.reliability.availability)}
+  {label:data.reliability.globalExposure?'MTBF global':'MTBF',value:dashboardReliabilityFormat(data.reliability.mtbf)},
+  {label:data.reliability.globalExposure?'Disponibilidad global':'Disponibilidad',value:dashboardAvailabilityFormat(data.reliability.availability)}
  ];
 }
 function loadExportLibrary(name){
@@ -1870,7 +1901,7 @@ function exportPdfWeekly(){
    str('Barras: '+(data.metric==='hours'?'horas':'fallas')+'    Línea: % acumulado',graph.x+4,graph.y+81,7,[77,95,112]);
  }
  const tableX=198,tableY=73,colWidth=86;
- str('02  CONTRIBUCIÓN POR '+(data.group==='failure'?'FALLA':'EQUIPO'),tableX,tableY,10,navy,true);
+ str('02  CONTRIBUCIÓN POR '+paretoGroupName(data.group).toLocaleUpperCase('es'),tableX,tableY,10,navy,true);
  data.rows.slice(0,9).forEach((row,i)=>{
    const y=tableY+10+i*10;rect(tableX,y-6,colWidth,9,i%2?[247,249,251]:[235,242,247]);
    const label=row.label.length>28?row.label.slice(0,27)+'…':row.label;
@@ -1941,7 +1972,7 @@ async function exportPptWeekly(){
   slide.addText(k.label,{x:x+.2,y:3.32,w:3.4,h:.26,fontSize:12,color:'B8CDD9'});
  });
  slide.addText('MTTR: '+dashboardReliabilityFormat(data.reliability.mttr)+'  MTBF: '+dashboardReliabilityFormat(data.reliability.mtbf)+'  Disp.: '+dashboardAvailabilityFormat(data.reliability.availability),{x:.7,y:4.05,w:11.8,h:.32,fontSize:16,bold:true,color:'E9C07A'});
- slide.addText('Alcance: '+(data.asset==='__all__'?'Todos los equipos':data.asset)+'  |  Indicador: '+metric+'  |  Agrupación: '+(data.group==='failure'?'tipo de falla':'equipo / TAG'),{x:.7,y:4.78,w:11.9,h:.42,fontSize:16,...base});
+ slide.addText('Alcance: '+(data.asset==='__all__'?'Todos los equipos':data.asset)+'  |  Indicador: '+metric+'  |  Agrupación: '+paretoGroupName(data.group),{x:.7,y:4.78,w:11.9,h:.42,fontSize:16,...base});
  slide.addText('Prioriza los equipos y modos de falla que concentran la mayor cantidad de eventos o indisponibilidad.',{x:.7,y:5.15,w:11.8,h:.72,fontSize:14,color:'BDCDDA',breakLine:false});
  const pareto=pptBaseSlide(ppt,'Diagrama de Pareto',metric+'  ·  '+data.period);
  const graph={x:.9,y:2.35,w:8.2,h:3.85};
@@ -3031,9 +3062,9 @@ function corporatePeriodPareto(events,bounds,metric,group){
  let cumulative=0;
  return {rows:condensed.map(row=>({...row,cumulative:total?100*(cumulative+=row.value)/total:0})),total};
 }
-function corporateAreaScopedCases(cases){
+function corporateAreaScopedCases(cases,includeType=true){
  const area=$('#corporateArea').value,sub=$('#corporateSubarea').value;
- return cases.filter(c=>{
+ return (includeType?filterFailureTypes(cases,$('#corporateFailureType')?.value||'__all__'):cases).filter(c=>{
   if(area==='__all__')return true;
   if(area==='__unclassified__')return !['Área Seca','Área Húmeda'].includes(c.area);
   if(c.area!==area)return false;
@@ -3054,7 +3085,7 @@ function corporateAreaOptions(){
 function corporateAreaScopeName(){
  const area=$('#corporateArea').value,sub=$('#corporateSubarea').value;
  return (area==='__all__'?'Toda la compañía':area==='__unclassified__'?'Sin clasificar':area)+
- (sub!=='__all__'?' / '+sub:'');
+ (sub!=='__all__'?' / '+sub:'')+' · '+failureTypeScopeLabel($('#corporateFailureType').value);
 }
 function drawCorporateAreaSummary(cases,bounds){
  const areas=[['Área Seca','corpDryEvents','corpDryHours'],['Área Húmeda','corpWetEvents','corpWetHours'],['__unclassified__','corpOtherEvents','corpOtherHours']];
@@ -3100,8 +3131,8 @@ function drawCorporateReliability(){
  assetSelect.innerHTML='<option value="'+ALL_ASSETS+'">Todos los equipos</option>'+
   assets.map(asset=>'<option value="'+esc(asset)+'">'+esc(asset)+'</option>').join('');
  assetSelect.value=assets.includes(old)?old:ALL_ASSETS;
- const bounds=corporateCalendarBounds(),results=corporatePeriodResults(cases,bounds,assetSelect.value);
- drawCorporateAreaSummary(allCases,bounds);
+ const bounds=corporateCalendarBounds(),results=corporateReliabilityResults(cases,bounds,assetSelect.value);
+ drawCorporateAreaSummary(filterFailureTypes(allCases,$('#corporateFailureType').value),bounds);
  const metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
  const pareto=corporatePeriodPareto(results.events,bounds,metric,group);
  $('#corporatePeriodLabel').textContent=bounds.label+' · '+corporateAreaScopeName()+' · '+(assetSelect.value===ALL_ASSETS?'Todos los equipos':assetSelect.value);
@@ -3109,12 +3140,15 @@ function drawCorporateReliability(){
  $('#corpHours').textContent=dashboardReliabilityFormat(results.hours);
  $('#corpMttr').textContent=dashboardReliabilityFormat(results.mttr);
  $('#corpMtbf').textContent=dashboardReliabilityFormat(results.mtbf);
+ $('#corpMtbf').previousElementSibling.textContent=results.globalExposure?'MTBF GLOBAL · TODOS LOS TIPOS':'MTBF';
+ $('#corpAvailability').previousElementSibling.textContent=results.globalExposure?'DISPONIBILIDAD GLOBAL':'DISPONIBILIDAD';
  $('#corpAvailability').textContent=dashboardAvailabilityFormat(results.availability);
  $('#corporateReliabilityNote').textContent=
   'Base de operación: '+dashboardReliabilityFormat(results.base)+' para '+results.equipmentCount+
   ' equipo(s) con eventos, considerando 24 h/día hasta el corte del período. '+
   (results.unverified?'⚠ '+results.unverified+' evento(s) sin tiempo de detención verificable; MTBF y disponibilidad no disponibles.':
    'MTBF y disponibilidad son estimaciones basadas en los equipos documentados, no en toda la flota.');
+ if(results.globalExposure)$('#corporateReliabilityNote').textContent+=' Fallas, detención y MTTR corresponden al tipo seleccionado; MTBF y disponibilidad consideran todos los tipos para el mismo alcance y período.';
  $('#corporateParetoChart').innerHTML=renderParetoSvg(pareto.rows,pareto.total,metric);
  const trendMonday=corporateTrendEndMonday(bounds);
  $('#corporateTrendChart').innerHTML=corporateTrendChart(corporateTrendSource(),trendMonday,metric);
@@ -3137,6 +3171,7 @@ $('#corporateCurrent').onclick=()=>{corporateCalendarSelection=null;drawCorporat
 $('#corporateArea').onchange=()=>{$('#corporateSubarea').value='__all__';$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
 $('#corporateSubarea').onchange=()=>{$('#corporateAsset').value=ALL_ASSETS;drawCorporateReliability()};
 $('#corporateAsset').onchange=drawCorporateReliability;
+$('#corporateFailureType').onchange=drawCorporateReliability;
 $('#corporateParetoMetric').onchange=drawCorporateReliability;
 
 $('#corporateParetoGroup').onchange=drawCorporateReliability;
@@ -3144,14 +3179,14 @@ $('#corporateRefresh').onclick=loadCorporateOverview;
 $('#corporateExportPeriod').onclick=()=>{
  if(!corporateIsAdmin())return;
  const bounds=corporateCalendarBounds(),asset=$('#corporateAsset').value;
- const results=corporatePeriodResults(corporateAreaScopedCases(selectedCorporateCases()),bounds,asset);
+ const results=corporateReliabilityResults(corporateAreaScopedCases(selectedCorporateCases()),bounds,asset);
  const memberNames=new Map((corporateCtx?.orgMembers||[]).map(m=>[m.user_id,m.display_name||m.email]));
  const rows=(corporateCtx?.cases||[]).filter(entry=>results.events.some(c=>c.id===entry.payload?.id)).map(entry=>{
   const c=entry.payload;
-  return [memberNames.get(entry.owner_id)||'Usuario',c.area||'',c.area==='Área Húmeda'?(c.productionUnit||''):(c.sector||''),c.equipment||'',c.title||'',c.datetime||c.stopStart||'',
+  return [memberNames.get(entry.owner_id)||'Usuario',c.area||'',c.area==='Área Húmeda'?(c.productionUnit||''):(c.sector||''),c.equipment||'',c.title||'',failureTypeLabel(c),c.datetime||c.stopStart||'',
    investigationDowntime(c,bounds)?.hours??'',c.basicCause||'',c.conclusion||'',(c.actions||[]).filter(a=>a.description).length];
  });
- const head=['Autor','Área','Sector o unidad de producción','Equipo','Falla','Fecha','Horas de detención','Causa básica','Conclusión','Número de compromisos'];
+ const head=['Autor','Área','Sector o unidad de producción','Equipo','Falla','Tipo de falla','Fecha','Horas de detención','Causa básica','Conclusión','Número de compromisos'];
  const output='\uFEFF'+[head,...rows].map(cols=>cols.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  download('ACR_Tablero_Corporativo_'+bounds.period+'.csv',output,'text/csv;charset=utf-8');
 };
@@ -3181,45 +3216,45 @@ function corporateReportHeader(type,period,scope){
 }
 function corporateReliabilityReportHtml(){
  const bounds=corporateCalendarBounds(),all=selectedCorporateCases(),cases=corporateAreaScopedCases(all),asset=$('#corporateAsset').value;
- const data=corporatePeriodResults(cases,bounds,asset),metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
+ const data=corporateReliabilityResults(cases,bounds,asset),metric=$('#corporateParetoMetric').value,group=$('#corporateParetoGroup').value;
  const pareto=corporatePeriodPareto(data.events,bounds,metric,group);
  const trendMonday=corporateTrendEndMonday(bounds),trendMetric=metric;
  const trendCases=corporateTrendSource();
  const trendRows=corporateTrendRows(trendCases,trendMonday,trendMetric);
  const breakdown=['Área Seca','Área Húmeda','Sin clasificar'].map(area=>{
-  const scoped=all.filter(c=>area==='Sin clasificar'?!['Área Seca','Área Húmeda'].includes(c.area):c.area===area);
+  const scoped=filterFailureTypes(all,$('#corporateFailureType').value).filter(c=>area==='Sin clasificar'?!['Área Seca','Área Húmeda'].includes(c.area):c.area===area);
   const events=scoped.filter(c=>{const date=investigationStart(c);return date&&date>=bounds.start&&date<bounds.cutoff});
   const hours=events.reduce((n,c)=>n+(investigationDowntime(c,bounds)?.hours??sumDashboardHours(c)),0);
   return '<div><b>'+esc(area)+'</b><strong>'+events.length+' '+(events.length===1?'falla':'fallas')+'</strong><div>'+esc(dashboardReliabilityFormat(hours))+' de detención</div></div>';
  });
  const info=[
   ['Fallas registradas',data.events.length],['Horas detenidas',dashboardReliabilityFormat(data.hours)],
-  ['MTTR',dashboardReliabilityFormat(data.mttr)],['MTBF',dashboardReliabilityFormat(data.mtbf)],
-  ['Disponibilidad',dashboardAvailabilityFormat(data.availability)]
+  ['MTTR',dashboardReliabilityFormat(data.mttr)],[data.globalExposure?'MTBF global':'MTBF',dashboardReliabilityFormat(data.mtbf)],
+  [data.globalExposure?'Disponibilidad global':'Disponibilidad',dashboardAvailabilityFormat(data.availability)]
  ];
  const eventRows=data.events.slice().sort((a,b)=>(investigationStart(b)?.getTime()||0)-(investigationStart(a)?.getTime()||0)).map(c=>[
   displayEventDate(c),c.area||'Sin clasificar',c.area==='Área Húmeda'?(c.productionUnit||'—'):(c.sector||'—'),
-  c.equipment||'Sin TAG',c.title||'Sin título',dashboardReliabilityFormat(investigationDowntime(c,bounds)?.hours??null)
+  c.equipment||'Sin TAG',c.title||'Sin título',failureTypeLabel(c),dashboardReliabilityFormat(investigationDowntime(c,bounds)?.hours??null)
  ]);
  return corporateReportHeader('confiabilidad',bounds.label,corporateAreaScopeName()+' · '+(asset===ALL_ASSETS?'Todos los equipos':asset))+
   corporateReportKpis(info)+
   '<h2>01 · Desglose de detenciones por área de la compañía</h2><div class="corp-report-breakdown">'+breakdown.join('')+'</div>'+
   '<div class="corp-reliability-visuals">'+
   '<section class="corp-report-visual"><h2>02 · Pareto corporativo ('+(metric==='hours'?'horas de detención':'cantidad de fallas')+')</h2>'+
-  corporateReportParetoChart(pareto.rows,pareto.total,metric,group==='equipment'?'Pareto de equipos':'Pareto por tipo de falla')+'</section>'+
+  corporateReportParetoChart(pareto.rows,pareto.total,metric,'Pareto por '+paretoGroupName(group).toLocaleLowerCase('es'))+'</section>'+
   '<section class="corp-report-visual"><h2>03 · Tendencia de las últimas 8 semanas ('+(trendMetric==='hours'?'horas detenidas':'cantidad de fallas')+')</h2>'+
   '<div class="corp-report-chart" role="img" aria-label="Tendencia de fallas corporativas de ocho semanas">'+
   '<p class="corp-report-chart-label">Historial semanal · '+esc(corporateAreaScopeName())+'</p>'+
   corporateTrendChart(trendCases,trendMonday,trendMetric)+'</div></section></div>'+
   '<h2>Detalle del Pareto corporativo</h2>'+
-  corporateReportTable([group==='equipment'?'Equipo / TAG':'Tipo de falla','Valor','Acumulado'],pareto.rows.map(r=>[
+  corporateReportTable([paretoGroupName(group),'Valor','Acumulado'],pareto.rows.map(r=>[
    r.label,dashboardMetricText(r.value,metric),r.cumulative.toLocaleString('es-CL',{maximumFractionDigits:1})+'%'
   ]),'Sin fallas para el período')+
   '<h2>Detalle semanal de tendencias</h2>'+
   corporateReportTable(['Semana (lunes)','Fallas','Horas detenidas'],trendRows.map(r=>[r.week,r.events,dashboardMetricText(r.hours,'hours')]),'Sin eventos para las últimas ocho semanas')+
   '<h2>04 · Investigaciones del período</h2>'+
-  corporateReportTable(['Fecha','Área','Sector / unidad','Equipo','Evento','Detención'],eventRows,'No hay investigaciones publicadas con estos filtros')+
-  '<p class="corp-report-note">Fuente: ACR publicados en esta compañía. MTBF y disponibilidad estimados sobre los equipos con eventos y horas verificables; no equivalen a indicadores de toda la flota. El desglose por áreas corresponde al período completo de la empresa.</p>';
+  corporateReportTable(['Fecha','Área','Sector / unidad','Equipo','Evento','Tipo de falla','Detención'],eventRows,'No hay investigaciones publicadas con estos filtros')+
+  '<p class="corp-report-note">'+(data.globalExposure?'El filtro de tipo se aplica a fallas, detención, MTTR y gráficos. MTBF y disponibilidad consideran todos los tipos del mismo alcance. ':'')+'Fuente: ACR publicados en esta compañía. MTBF y disponibilidad estimados sobre los equipos con eventos y horas verificables; no equivalen a indicadores de toda la flota. El desglose por áreas corresponde al período completo de la empresa.</p>';
 }
 function corporateCommitmentReportHtml(){
  const period=$('#corpCommitPeriod').value,periodLabel=period==='all'?'Todos los vencimientos':
@@ -4459,4 +4494,3 @@ window.acrImprovement=window.ACRImprovement.mount({
 drawList();})();
 
 </script></body></html>
-
