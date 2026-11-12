@@ -1,5 +1,14 @@
 const assert=require('node:assert/strict');
 const {dates,key,intervalIncludes,latestNotes,includedNotes}=require('../shift-handover.js');
+const {reportBrand,brandHeader}=require('../shift-handover.js');
+const logo='data:image/png;base64,iVBORw0KGgo=';
+assert.equal(reportBrand({name:' Compañía de ejemplo ',logo}).name,'Compañía de ejemplo');
+assert.equal(reportBrand({name:'Compañía',logo}).logo,logo);
+assert.equal(reportBrand({logo:'https://untrusted.invalid/logo.png'}).logo,'');
+const header=brandHeader({name:'Compañía de ejemplo',logo},'Entrega diaria','Turno A');
+assert(header.includes('Compañía de ejemplo'));assert(header.includes(logo));assert(header.includes('Entrega diaria'));assert(!header.includes('ACR Integrity'));
+assert(brandHeader({name:'<script>alert(1)</script>'},'Entrega semanal','Turno B').includes('&lt;script&gt;'));
+assert(!brandHeader({},'Entrega diaria','Turno A').includes('ACR Integrity'));
 assert.deepEqual(dates('daily','2026-11-11'),{from:'2026-11-11',to:'2026-11-11'});
 assert.deepEqual(dates('weekly','2026-11-11'),{from:'2026-11-09',to:'2026-11-15'});
 assert.deepEqual(dates('weekly','2026-11-15'),{from:'2026-11-09',to:'2026-11-15'});
