@@ -515,6 +515,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
  #reliabilityDashboard .dashboard-chart svg text {font-size:12px}
  #reliabilityDashboard .dashboard-chart {padding:11px}
 }
+@media(max-width:620px){#clientes .platform-billing-table{min-width:0;width:100%}#clientes .platform-billing-table thead{display:none}#clientes .platform-billing-table tr{display:block;margin:12px 0;padding:12px;border:1px solid #376784;border-radius:12px}#clientes .platform-billing-table td{display:block;white-space:normal;overflow-wrap:anywhere;border:0!important}#clientes .platform-billing-table td[data-label]:before{content:attr(data-label);display:block;font-size:11px;color:#e0bd75;margin-bottom:4px}#clientes .platform-billing-table button{min-height:44px;width:100%}#clientes .dashboard-table-wrap{overflow:visible}#clientes .platform-billing{padding:12px}#clientes .field{min-width:0;max-width:100%}}
 </style><style>
 /* Phone layouts: keep the top of the sign-in form reachable on short viewports. */
 @media screen and (max-width:750px){
@@ -714,7 +715,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </form>
   </div>
 </div>
-<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint" aria-label="Navegación principal"><div class="workspace-logo">◈ ACR <span>Integrity</span></div><button class="active" data-page="inicio">⌂ Inicio</button><button data-page="organizaciones">🏢 Empresas</button><button data-page="investigaciones">▤ Investigaciones</button><button data-page="confiabilidad">▥ Confiabilidad</button><button data-page="compromisos">☑ Compromisos</button><button data-page="administracion">⚙ Administración</button><div class="workspace-step-label">INVESTIGACIÓN PERSONAL</div><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · Informe PDF</button></nav><aside id="cloudSyncNotice" class="noprint" hidden style="margin:16px;padding:16px;border:1px solid #c9a660;border-radius:12px;background:#182c3b" aria-live="polite"><p id="cloudSyncMessage"></p><button id="cloudRetry" type="button">Reintentar sincronización</button> <button id="cloudBackup" type="button">Descargar respaldo pendiente</button> <button id="cloudMergeCopies" type="button" hidden>Conservar ambas copias</button></aside>
+<div class="app" id="mainApp" hidden><header class="bar noprint"><div><div class="brand">◈ ACR <span class="gold">Integrity</span> <span class="chip">WEB · V12</span></div><div class="small">Investiga la falla donde ocurre. Documenta, analiza y reporta.</div></div><div class="account-chip"><strong id="accountEmail"></strong><button type="button" id="logoutButton">Cerrar sesión</button><span class="save" id="saveStatus">● Listo para registrar</span></div></header><nav class="nav noprint" aria-label="Navegación principal"><div class="workspace-logo">◈ ACR <span>Integrity</span></div><button class="active" data-page="inicio">⌂ Inicio</button><button data-page="organizaciones">🏢 Empresas</button><button data-page="clientes" id="clientsNav" hidden>◇ Clientes y suscripciones</button><button data-page="investigaciones">▤ Investigaciones</button><button data-page="confiabilidad">▥ Confiabilidad</button><button data-page="compromisos">☑ Compromisos</button><button data-page="administracion">⚙ Administración</button><div class="workspace-step-label">INVESTIGACIÓN PERSONAL</div><button data-page="registro">1 · Evento</button><button data-page="analisis">2 · Análisis</button><button data-page="reporte">3 · Informe PDF</button></nav><aside id="cloudSyncNotice" class="noprint" hidden style="margin:16px;padding:16px;border:1px solid #c9a660;border-radius:12px;background:#182c3b" aria-live="polite"><p id="cloudSyncMessage"></p><button id="cloudRetry" type="button">Reintentar sincronización</button> <button id="cloudBackup" type="button">Descargar respaldo pendiente</button> <button id="cloudMergeCopies" type="button" hidden>Conservar ambas copias</button></aside>
 <section id="inicio" class="section active"><div class="card" id="homeFailureStart"><div class="eyebrow">Tu asistente en terreno</div><h1>Ocurrió una falla. ¿Qué necesitas hacer?</h1><p class="muted">Selecciona un formato, registra datos y fotos, investiga con preguntas guiadas y genera un documento para entregar a mantenimiento o gerencia.</p><div class="triple" id="formatChoices"><button class="choice selected" data-format="5why"><b>🔎 5 Porqués</b><span>Rápido, ideal para eventos puntuales. Informe A4.</span></button><button class="choice" data-format="a3"><b>📋 A3 ejecutivo</b><span>Una vista para gerencia: problema, causas, evidencias y acciones. Impresión A3 horizontal.</span></button><button class="choice" data-format="acr"><b>🧠 ACR completo</b><span>Investigación detallada: 5 Porqués, causas probables, evidencias y plan de acción.</span></button></div><div class="between" style="margin-top:20px;flex-wrap:wrap"><button class="primary" id="start">+ Iniciar investigación</button></div></div><div class="card reliability-dashboard noprint" id="reliabilityDashboard" style="margin-top:15px">
 <div class="between" style="flex-wrap:wrap;gap:13px">
   <div><div class="eyebrow">ACR INTEGRITY · RELIABILITY COMMAND CENTER</div><h2>◈ Indicadores de confiabilidad</h2><p class="muted" style="margin:4px 0 0">Confiabilidad semanal · Lunes a domingo · Fallas, mantenibilidad y disponibilidad</p></div>
@@ -814,7 +815,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
  </div>
  <div class="dashboard-kpis platform-billing-kpis">
   <div><span>COMPAÑÍAS</span><strong id="billingCompanies">0</strong></div>
-  <div><span>CONTRATOS VIGENTES</span><strong id="billingActive">0</strong></div>
+  <div><span>PRUEBAS GRATUITAS</span><strong id="billingTrials">0</strong></div><div><span>CONTRATOS VIGENTES</span><strong id="billingActive">0</strong></div>
   <div><span>POR VENCER · 30 DÍAS</span><strong id="billingExpiring">0</strong></div>
   <div><span>USUARIOS APROBADOS</span><strong id="billingSeats">0</strong></div>
   <div><span>ASESORÍAS PENDIENTES</span><strong id="billingAdvisory">0 h</strong></div>
@@ -823,7 +824,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <label class="field">Buscar compañía<input type="search" id="billingSearch" placeholder="Nombre o referencia de contrato"></label>
   <label class="field">Estado<select id="billingFilter">
    <option value="all">Todos</option><option value="trial">Beta / prueba</option><option value="active">Activo</option>
-   <option value="past_due">Pago pendiente</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option>
+   <option value="past_due">Pago pendiente</option><option value="expired">Vencidos</option><option value="scheduled">Inicio programado</option><option value="unconfigured">Sin contrato</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option>
   </select></label>
  </div>
  <div class="dashboard-table-wrap"><table class="dashboard-table platform-billing-table">
@@ -834,7 +835,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
   <div class="between"><h3 id="billingEditorTitle">Editar contrato</h3><button type="button" id="billingEditorClose" class="secondary">✕ Cerrar</button></div>
   <div class="platform-billing-fields">
    <label class="field">Plan<input name="plan_name" maxlength="100" required></label>
-   <label class="field">Referencia contrato<input name="contract_reference" maxlength="160"></label>
+   <label class="field">Importe mensual acordado<input name="monthly_amount" type="number" min="0" step="0.01" placeholder="Sin importe registrado"></label><label class="field">Moneda<select name="currency"><option>CLP</option><option>USD</option><option>UF</option></select></label><label class="field">Referencia contrato<input name="contract_reference" maxlength="160"></label>
    <label class="field">Inicio<input type="date" name="contract_start"></label>
    <label class="field">Vencimiento<input type="date" name="contract_end"></label>
    <label class="field">Estado<select name="subscription_status"><option value="trial">Beta / prueba</option><option value="active">Activo</option><option value="past_due">Pago pendiente</option><option value="suspended">Suspendido</option><option value="cancelled">Cancelado</option></select></label>
@@ -1418,7 +1419,7 @@ function companyWorkspace(name){
  let banner=document.getElementById('companyScopeBanner');
  if(!banner){banner=document.createElement('div');banner.id='companyScopeBanner';banner.className='notice noprint';document.querySelector('#mainApp>.nav').after(banner)}
  const org=scoped?corporateCtx.organizations.find(o=>o.id===corporateSelection()):null;
- banner.textContent=org?'Empresa seleccionada: '+org.name+' · Consultas corporativas':'Espacio personal · Investigaciones y datos de tu cuenta';
+ banner.textContent=name==='clientes'?'Administración general · Todas las compañías':org?'Empresa seleccionada: '+org.name+' · Consultas corporativas':'Espacio personal · Investigaciones y datos de tu cuenta';
  const adminButton=document.querySelector('.nav button[data-page="administracion"]');
  if(adminButton)adminButton.hidden=!corporateIsAdmin();
  if(name==='administracion'&&!scoped){document.querySelectorAll('.section').forEach(el=>el.classList.toggle('active',el.id==='organizaciones'))}
@@ -1439,7 +1440,7 @@ function companyWorkspace(name){
  return module;
 }
 
-function navigate(name){if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
+function navigate(name){if(name==='clientes'&&!corporateCtx?.platform)name='inicio';if(name==='clientes')void loadClientSubscriptions();if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion','clientes'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
 // Semanas ISO: lunes a domingo sin desfase horario ni dependencia del huso del navegador.
 function dateKeyUTC(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0')}
 function parseDateKey(value){
@@ -2365,15 +2366,18 @@ async function corporateApi(path,method='GET',body=undefined,prefer=''){
  return data;
 }
 
+const clientsSection=document.createElement('section');clientsSection.id='clientes';clientsSection.className='section';clientsSection.innerHTML='<h1>Clientes y suscripciones</h1><p class="muted">Convenios, pruebas gratuitas y acompañamiento · Administración general</p>';clientsSection.append(document.getElementById('platformBillingModule'));document.getElementById('mainApp').append(clientsSection);
+document.getElementById('logoutButton').addEventListener('click',()=>{clientSubscriptions=[];clientMemberships=[];billingEditOrgId='';$('#clientsNav').hidden=true;$('#platformBillingModule').hidden=true;$('#billingRows').innerHTML='';$('#billingEditor').reset();$('#billingEditor').hidden=true});
 let clientSubscriptions=[],clientMemberships=[],billingEditOrgId='',billingLoading=false;
 const subscriptionLabels={trial:'Beta / prueba',active:'Activo',past_due:'Pago pendiente',suspended:'Suspendido',cancelled:'Cancelado'};
 function clientSubscriptionRow(orgId){return clientSubscriptions.find(x=>x.organization_id===orgId)||null}
 function billNum(value){return Number(value||0).toLocaleString('es-CL',{maximumFractionDigits:2})}
 function billDate(value){if(!value)return 'Sin registrar';const [y,m,d]=value.split('-');return d+'/'+m+'/'+y}
 function billingStatus(item,today){
- if(!item)return {label:'Sin contrato registrado',status:'trial'};
+ if(!item)return {label:'Sin contrato registrado',status:'unconfigured'};
  if(item.contract_end&&item.contract_end<today&&['trial','active'].includes(item.subscription_status))
-  return {label:'Contrato vencido',status:'past_due'};
+  return {label:item.subscription_status==='trial'?'Prueba vencida':'Contrato vencido',status:'expired'};
+ if(item.contract_start&&item.contract_start>today&&['trial','active'].includes(item.subscription_status))return {label:'Inicio programado',status:'scheduled'};
  return {label:subscriptionLabels[item.subscription_status]||'Sin estado',status:item.subscription_status};
 }
 async function loadClientSubscriptions(){
@@ -2395,30 +2399,31 @@ async function loadClientSubscriptions(){
 }
 function renderClientSubscriptions(){
  if(!corporateCtx?.platform)return;
- const orgs=corporateCtx.organizations||[],today=new Date().toISOString().slice(0,10);
+ const orgs=corporateCtx.organizations||[],today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()+30);
  const end=cutoff.toISOString().slice(0,10);
  const joined=orgs.map(org=>({org,sub:clientSubscriptionRow(org.id),
   seats:new Set(clientMemberships.filter(m=>m.organization_id===org.id&&m.status==='approved').map(m=>m.user_id)).size}));
  $('#billingCompanies').textContent=orgs.length;
- $('#billingActive').textContent=joined.filter(x=>x.sub&&x.sub.subscription_status==='active'&&(!x.sub.contract_end||x.sub.contract_end>=today)).length;
+ $('#billingTrials').textContent=joined.filter(x=>billingStatus(x.sub,today).status==='trial').length;
+ $('#billingActive').textContent=joined.filter(x=>billingStatus(x.sub,today).status==='active').length;
  $('#billingExpiring').textContent=joined.filter(x=>x.sub?.contract_end&&x.sub.contract_end>=today&&x.sub.contract_end<=end&&['trial','active'].includes(x.sub.subscription_status)).length;
  $('#billingSeats').textContent=joined.reduce((n,x)=>n+x.seats,0);
  $('#billingAdvisory').textContent=billNum(joined.reduce((n,x)=>n+Math.max(0,Number(x.sub?.advisory_hours_included||0)-Number(x.sub?.advisory_hours_used||0)),0))+' h';
  const status=$('#billingFilter').value,term=$('#billingSearch').value.toLocaleLowerCase('es').trim();
- const visible=joined.filter(({org,sub})=>(status==='all'||(sub?.subscription_status||'trial')===status)&&
+ const visible=joined.filter(({org,sub})=>(status==='all'||billingStatus(sub,today).status===status)&&
   (!term||[org.name,sub?.plan_name,sub?.contract_reference].join(' ').toLocaleLowerCase('es').includes(term)));
  $('#billingRows').innerHTML=visible.length?visible.map(({org,sub,seats})=>{
   const statusInfo=billingStatus(sub,today);
   const aiLimit=sub?.ai_monthly_limit;
-  const aiText=sub?(billNum(sub.ai_usage_reported)+' / '+(aiLimit===null?'Sin cupo':billNum(aiLimit))):'Sin reporte';
+  const aiText=sub?.ai_usage_month?(billNum(sub.ai_usage_reported)+' / '+(aiLimit===null?'Sin cupo':billNum(aiLimit))):'Sin reporte';
   const advisory=sub?billNum(sub.advisory_hours_used)+' / '+billNum(sub.advisory_hours_included)+' h':'Sin asignar';
-  return '<tr><td><b>'+esc(org.name)+'</b><div class="small">'+esc(sub?.plan_name||'Sin plan configurado')+'</div></td>'+
-   '<td>'+esc(sub?.contract_reference||'Sin referencia')+'<div class="small">Vence: '+billDate(sub?.contract_end)+'</div></td>'+
-   '<td>'+seats+' / '+(sub?.seat_limit==null?'Sin límite registrado':billNum(sub.seat_limit))+'</td>'+
-   '<td>'+esc(aiText)+'<div class="small">'+(sub?.ai_usage_month?esc(String(sub.ai_usage_month).slice(0,7)):'Mes no definido')+'</div></td>'+
-   '<td>'+esc(advisory)+'</td><td><span class="chip">'+esc(statusInfo.label)+'</span></td>'+
-   '<td><button type="button" class="secondary" data-billing-edit="'+esc(org.id)+'">Gestionar</button></td></tr>';
+  return '<tr><td data-label="Cliente / plan"><b>'+esc(org.name)+'</b><div class="small">'+esc(sub?.plan_name||'Sin plan configurado')+'</div><div class="small">'+(sub?.monthly_amount==null?'Importe sin registrar':billNum(sub.monthly_amount)+' '+esc(sub.currency||'CLP')+' / mes')+'</div></td>'+
+   '<td data-label="Contrato">'+esc(sub?.contract_reference||'Sin referencia')+'<div class="small">Vence: '+billDate(sub?.contract_end)+'</div></td>'+
+   '<td data-label="Usuarios">'+seats+' / '+(sub?.seat_limit==null?'Sin límite registrado':billNum(sub.seat_limit))+'</td>'+
+   '<td data-label="IA · reporte manual">'+esc(aiText)+'<div class="small">'+(sub?.ai_usage_month?esc(String(sub.ai_usage_month).slice(0,7)):'Mes no definido')+'</div></td>'+
+   '<td data-label="Asesoría">'+esc(advisory)+'</td><td data-label="Estado"><span class="chip">'+esc(statusInfo.label)+'</span></td>'+
+   '<td data-label="Gestionar"><button type="button" class="secondary" data-billing-edit="'+esc(org.id)+'">Gestionar</button></td></tr>';
  }).join(''):'<tr><td colspan="7">Sin clientes que coincidan con los filtros.</td></tr>';
  $$('[data-billing-edit]').forEach(el=>el.onclick=()=>openBillingEditor(el.dataset.billingEdit));
 }
@@ -2427,9 +2432,9 @@ function openBillingEditor(orgId){
  const org=corporateCtx.organizations.find(o=>o.id===orgId);if(!org)return;
  billingEditOrgId=orgId;const sub=clientSubscriptionRow(orgId)||{},form=$('#billingEditor');
  $('#billingEditorTitle').textContent='Contrato · '+org.name;
- for(const key of ['plan_name','contract_reference','contract_start','contract_end','subscription_status','seat_limit','ai_monthly_limit','ai_usage_reported','advisory_hours_included','advisory_hours_used','advisory_notes','internal_notes']){
+ for(const key of ['monthly_amount','currency','plan_name','contract_reference','contract_start','contract_end','subscription_status','seat_limit','ai_monthly_limit','ai_usage_reported','advisory_hours_included','advisory_hours_used','advisory_notes','internal_notes']){
   const input=form.elements.namedItem(key);if(!input)continue;
-  input.value=sub[key]??(key==='plan_name'?'Beta gratuita':key==='subscription_status'?'trial':key==='ai_usage_reported'||key.startsWith('advisory_hours_')?'0':'');
+  input.value=sub[key]??(key==='currency'?'CLP':key==='plan_name'?'Beta gratuita':key==='subscription_status'?'trial':key==='ai_usage_reported'||key.startsWith('advisory_hours_')?'0':'');
  }
  form.elements.namedItem('ai_usage_month').value=sub.ai_usage_month?String(sub.ai_usage_month).slice(0,7):'';
  form.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'});
@@ -2446,6 +2451,7 @@ $('#billingEditor').onsubmit=async ev=>{
  if(start&&end&&end<start){alert('El vencimiento no puede ser anterior al inicio del contrato.');return}
  const nullableInt=k=>input(k)===''?null:Number(input(k));
  const payload={
+  monthly_amount:input('monthly_amount')===''?null:Number(input('monthly_amount')),currency:input('currency'),
   organization_id:billingEditOrgId,plan_name:input('plan_name'),contract_reference:input('contract_reference'),
   contract_start:start||null,contract_end:end||null,subscription_status:input('subscription_status'),
   seat_limit:nullableInt('seat_limit'),ai_monthly_limit:nullableInt('ai_monthly_limit'),
@@ -2454,6 +2460,7 @@ $('#billingEditor').onsubmit=async ev=>{
   advisory_notes:input('advisory_notes'),internal_notes:input('internal_notes'),
   updated_at:new Date().toISOString(),updated_by:activeUser.id
  };
+ if(payload.monthly_amount!==null&&(!Number.isFinite(payload.monthly_amount)||payload.monthly_amount<0)){alert('Ingresa un importe mensual válido.');return}
  if(payload.seat_limit!==null&&(!Number.isInteger(payload.seat_limit)||payload.seat_limit<1)||
   payload.ai_monthly_limit!==null&&(!Number.isInteger(payload.ai_monthly_limit)||payload.ai_monthly_limit<0)||
   !Number.isInteger(payload.ai_usage_reported)||payload.ai_usage_reported<0||
@@ -2510,7 +2517,7 @@ function drawOrganizationStatus(){
  configureCorporateRoleLayout();
  $('#platformAdminPanel').hidden=!platform;
  window.ACRAccessConsole?.configure({platform,allowed:corporateIsAdmin(),orgId:corporateSelection(),userId:activeUser?.id,organizations:(corporateCtx?.organizations||[]).map(o=>({id:o.id,name:o.name}))},corporateApi);
- $('#platformBillingModule').hidden=!platform;
+ $('#platformBillingModule').hidden=!platform;$('#clientsNav').hidden=!platform;
  if(platform)void loadClientSubscriptions();
  const notice=$('#orgMembershipStatus');
  if(!org){
