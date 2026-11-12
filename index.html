@@ -1164,9 +1164,9 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 </div>
 <script src="./access-console.js?v=20261111"></script>
 <script src="./cloud-workspace.js"></script>
-<script src="./shift-handover.js?v=20261112-2"></script>
+<script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
-<script src="./continuous-improvement.js?v=20261112-2"></script>
+<script src="./continuous-improvement.js?v=20261112-3"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -4423,6 +4423,13 @@ $('#print').onclick=$('#printBottom').onclick=()=>{drawReport();window.print()};
 
 window.acrImprovement=window.ACRImprovement.mount({
  personalCases:()=>db.cases,
+ handoverBrand:(company,cases=[])=>{
+  const settings={name:db.settings.companyName||'',logo:safeSharedPicture(db.settings.logo)};
+  const official=id=>corporateCtx?.organizations?.find(o=>o.id===id&&(corporateCtx.platform||corporateCtx.memberships?.some(m=>m.organization_id===id&&m.status==='approved')));
+  if(company){const org=official(corporateSelection());return {name:org?.name||'',logo:safeSharedPicture(org?.logo_data)}}
+  const identities=new Map();for(const c of cases){const org=c.reportOrganizationId?official(c.reportOrganizationId):null;const brand=org?{name:org.name,logo:safeSharedPicture(org.logo_data)}:{name:c.personalReportBrand?.name||'',logo:safeSharedPicture(c.personalReportBrand?.logo)};if(brand.name||brand.logo)identities.set(JSON.stringify(brand),brand)}
+  return identities.size===1?[...identities.values()][0]:settings;
+ },
  publishReviewRequest:async(row,request)=>{
   const c=row.c,orgId=row.pub?.organization_id||c.reportOrganizationId;
   if(!orgId||!activeUser?.id||row.pub&&row.pub.owner_id!==activeUser.id)throw Error('Solo el creador puede enviar este análisis a revisión.');
