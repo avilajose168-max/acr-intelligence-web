@@ -722,7 +722,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     </label>
     <p id="authCompanyHelp" class="auth-company-help">Las empresas aparecen aquí cuando el administrador general las incorpora a la plataforma. El cargo de administrador queda pendiente de autorización. Seleccionar una empresa no da acceso a sus datos automáticamente.</p>
   </div>
-  <p id="authIndependentHelp" class="auth-company-help">Tu cuenta será independiente. Tus investigaciones seguirán siendo privadas y podrás solicitar afiliación a una empresa más adelante.</p>
+  <p id="authIndependentHelp" class="auth-company-help">Tu registro independiente requiere autorización del administrador general antes de ingresar. Luego podrás solicitar afiliación a una compañía.</p>
 </div>
       <label class="field">Correo electrónico<input id="authEmail" type="email" autocomplete="email" required placeholder="nombre@empresa.com"></label>
       <label class="field" id="authPassWrap">Contraseña<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo 8 caracteres"></label>
@@ -1183,7 +1183,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
     <div class="toolbar" style="margin-top:18px"><button type="button" class="primary" id="importShared">Guardar una copia editable en mi cuenta</button><button type="button" class="secondary" id="dismissShared">Solo visualizar</button></div>
   </div>
 </div>
-<script src="./access-console.js?v=20261111"></script>
+<script src="./access-console.js?v=20261111"></script><script src="./account-settings.js?v=20261113"></script>
 <script src="./trial-extensions.js?v=20261112"></script>
 <script src="./independent-clients.js?v=20261112"></script>
 <script src="./cloud-workspace.js"></script>
@@ -1263,6 +1263,10 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void perso
 setInterval(()=>{if(!document.hidden)void personalSync.flush()},30000);
 async function enter(sessionData){
   if(!sessionData?.access_token||!sessionData?.user?.id)throw Error('No se recibió una sesión válida. Confirma tu correo e inicia sesión.');
+  const gate=await fetch(SUPABASE_URL+'/rest/v1/rpc/acr_platform_access_status',{method:'POST',headers:{apikey:PUBLIC_KEY,authorization:'Bearer '+sessionData.access_token,'content-type':'application/json'},body:'{}',cache:'no-store'});
+  const access=await gate.json().catch(()=>null);
+  if(!gate.ok)throw Error('No se pudo verificar la autorización de acceso. Intenta nuevamente.');
+  if(access!=='approved')throw Error(access==='rejected'?'Tu solicitud de acceso no fue autorizada. Contacta al administrador general.':'Tu registro está pendiente de autorización del administrador general. Podrás ingresar cuando sea aprobado.');
   session={access_token:sessionData.access_token,refresh_token:sessionData.refresh_token,
     expires_at:Math.floor(Date.now()/1000)+(sessionData.expires_in||3600),user:sessionData.user};
   localStorage.setItem(SESSION_KEY,JSON.stringify(session));
@@ -1284,13 +1288,13 @@ async function validateSession(){
   try{
     const refreshed=await requestAuth('token?grant_type=refresh_token',{refresh_token:stored.refresh_token});
     await enter(refreshed);
-  }catch(_){localStorage.removeItem(SESSION_KEY);showAuth()}
+  }catch(error){localStorage.removeItem(SESSION_KEY);showAuth();authFeedback(error.message||'Inicia sesión nuevamente.','notice')}
 }
 function logout(){
   const token=session?.access_token;
   personalSync.stop();
   session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();
-  localStorage.removeItem(SESSION_KEY);showAuth();
+  accountSettings.reset();localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
 }
 document.getElementById('logoutButton').addEventListener('click',logout);
@@ -1299,7 +1303,7 @@ function setAuthMode(mode){
   authMode=mode;authFeedback('');
   const signup=mode==='signup',recover=mode==='recover';
   document.getElementById('authTitle').textContent=signup?'Crea tu cuenta':recover?'Recuperar acceso':'Bienvenido a';
-  document.getElementById('authSubtitle').textContent=signup?'Regístrate para comenzar a investigar y gestionar tus eventos.':recover?'Te enviaremos instrucciones para restablecer la contraseña.':'Ingresa con tus credenciales para acceder a tu espacio de investigación.';
+  document.getElementById('authSubtitle').textContent=signup?'Solicita tu registro. El administrador general debe autorizar tu ingreso antes de usar la plataforma.':recover?'Te enviaremos instrucciones para restablecer la contraseña.':'Ingresa con tus credenciales para acceder a tu espacio de investigación.';
   document.getElementById('authNameWrap').hidden=!signup;
   document.getElementById('authCompanyWrap').hidden=recover;
   if(!recover){drawAuthAffiliation();void loadSignupOrganizations();}
@@ -1374,8 +1378,9 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
         metadata.acr_requested_role=role==='admin'?'admin':'member';
       }
       const data=await requestAuth('signup',{email,password,data:metadata});
+      setAuthMode('login');
       if(data.access_token&&data.user){await enter(data)}
-      else{setAuthMode('login');authFeedback('Cuenta solicitada. Confirma tu correo electrónico y luego inicia sesión. Si elegiste una compañía, tu afiliación quedará pendiente de aprobación.','notice')}
+      else{setAuthMode('login');authFeedback('Cuenta solicitada. Confirma tu correo electrónico. El administrador general debe autorizar tu ingreso; si elegiste una compañía, tu afiliación también requiere aprobación.','notice')}
     }else{
       const company=document.getElementById('authAffiliation').value==='company';
       const orgId=document.getElementById('authOrganization').value;
@@ -2389,6 +2394,25 @@ async function corporateApi(path,method='GET',body=undefined,prefer=''){
  return data;
 }
 
+const accountSettings=window.ACRAccountSettings.mount({
+ user:()=>activeUser,platform:()=>!!corporateCtx?.platform,request:corporateApi,
+ updateUser:async body=>{
+  const token=await personalAccessToken();
+  const response=await fetch(SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:PUBLIC_KEY,authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)});
+  const user=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(user.msg||user.message||'No se pudo actualizar la cuenta.');
+  if(user.id!==activeUser?.id)throw Error('La cuenta cambió.');
+  activeUser=user;session.user=user;localStorage.setItem(SESSION_KEY,JSON.stringify(session));$('#accountEmail').textContent=user.email;
+  return user;
+ },
+ changePassword:async(current,password)=>{
+  const verified=await requestAuth('token?grant_type=password',{email:activeUser.email,password:current});
+  if(verified.user?.id!==activeUser?.id)throw Error('No se pudo confirmar tu identidad.');
+  session={...verified,expires_at:Math.floor(Date.now()/1000)+(verified.expires_in||3600)};activeUser=verified.user;localStorage.setItem(SESSION_KEY,JSON.stringify(session));
+  const response=await fetch(SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:PUBLIC_KEY,authorization:'Bearer '+session.access_token,'content-type':'application/json'},body:JSON.stringify({password,current_password:current})});
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.msg||data.message||'No se pudo cambiar la contraseña.');
+ }
+});
 const clientsSection=document.createElement('section');clientsSection.id='clientes';clientsSection.className='section';clientsSection.innerHTML='<h1>Clientes y suscripciones</h1><p class="muted">Convenios, pruebas gratuitas y acompañamiento · Administración general</p>';clientsSection.append(document.getElementById('platformBillingModule'));document.getElementById('mainApp').append(clientsSection);
 document.getElementById('logoutButton').addEventListener('click',()=>{clientSubscriptions=[];clientMemberships=[];billingEditOrgId='';independentClients.reset();trialExtensions.reset();$('#clientsNav').hidden=true;$('#platformBillingModule').hidden=true;$('#billingRows').innerHTML='';$('#billingEditor').reset();$('#billingEditor').hidden=true});
 let clientSubscriptions=[],clientMemberships=[],billingEditOrgId='',billingLoading=false;
@@ -2575,7 +2599,7 @@ async function loadOrganizations(){
   ]);
   if(!Array.isArray(organizations)||!Array.isArray(memberships)||!Array.isArray(roles))throw Error('La información de empresas no se pudo leer.');
   const lastOrg=localStorage.getItem('acr-org-choice-'+activeUser.id)||'';
-  corporateCtx={organizations,memberships,platform:roles.some(p=>p.user_id===activeUser.id),cases:[],orgMembers:[]};
+  corporateCtx={organizations,memberships,platform:roles.some(p=>p.user_id===activeUser.id),cases:[],orgMembers:[]};accountSettings.configure();
   const select=$('#organizationSelect');
   select.innerHTML='<option value="">Seleccionar organización…</option>'+organizations.map(o=>
    '<option value="'+esc(o.id)+'">'+esc(o.name)+'</option>').join('');
