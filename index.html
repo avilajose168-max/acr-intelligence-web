@@ -1189,7 +1189,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./cloud-workspace.js?v=20261114-recovery"></script>
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
-<script src="./continuous-improvement.js?v=20261112-3"></script>
+<script src="./continuous-improvement.js?v=20261114-completion"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -1465,7 +1465,32 @@ function companyWorkspace(name){
  return module;
 }
 
-function navigate(name){if(name==='clientes'&&!corporateCtx?.platform)name='inicio';if(name==='clientes')void loadClientSubscriptions();if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion','clientes'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
+
+let personalExecutionRefresh=null;
+async function refreshPersonalExecutions(){
+ const uid=activeUser?.id;if(!uid)return;
+ if(personalExecutionRefresh?.uid===uid)return personalExecutionRefresh.promise;
+ const context=db,task={uid,promise:null};
+ task.promise=(async()=>{
+  try{
+   const updates=await window.ACRImprovement.loadPersonalExecutionUpdates(context.cases,corporateApi,uid);
+   if(activeUser?.id!==uid||db!==context)return;
+   if(window.ACRImprovement.applyPersonalExecutionUpdates(db.cases,updates)){
+    if(!persist(false))throw Error('El cierre está registrado en la compañía; no se pudo actualizar la copia personal.');
+    await personalSync.flush();drawCommitments();
+   }
+  }finally{if(personalExecutionRefresh===task)personalExecutionRefresh=null}
+ })();personalExecutionRefresh=task;return task.promise;
+}
+function refreshPersonalExecutionsNotice(){
+ void refreshPersonalExecutions().catch(error=>{
+  if(page!=='compromisos')return;
+  $('#commitScopeMessage').textContent='No se pudo consultar el cierre de los compromisos: '+error.message;
+  $('#commitScopeMessage').hidden=false;
+ });
+}
+
+function navigate(name){if(name==='clientes'&&!corporateCtx?.platform)name='inicio';if(name==='clientes')void loadClientSubscriptions();if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if(name==='compromisos')refreshPersonalExecutionsNotice();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion','clientes'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
 // Semanas ISO: lunes a domingo sin desfase horario ni dependencia del huso del navegador.
 function dateKeyUTC(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0')}
 function parseDateKey(value){
@@ -2124,8 +2149,8 @@ function listCommitments(){
   if(!Array.isArray(c.actions))continue;
   c.actions.forEach((a,i)=>{
    if(!String(a?.description||'').trim())return;
-   const followup=(c.followupEvents||[]).filter(e=>e.action_key===String(i)+':'+String(a.description||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim());const ex=followup.filter(e=>e.kind==='execution').at(-1),ver=followup.filter(e=>e.kind==='effectiveness').at(-1);const displayed=ex?{...a,executionSummary:ver&&ver.data.executionId===String(ex.id)?'Efectividad: '+ver.data.result:'Ejecutada · efectividad pendiente'}:a;
-   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',area:c.area||c.sector||'Sin clasificar',sourceCase:c,action:displayed,status:effectiveCommitStatus(a,today)});
+   const followup=(c.followupEvents||[]).filter(e=>e.action_key===String(i)+':'+String(a.description||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim());const ex=followup.filter(e=>e.kind==='execution').at(-1),ver=followup.filter(e=>e.kind==='effectiveness').at(-1);const displayed=ex?{...a,status:'Completado',executionSummary:ver&&ver.data.executionId===String(ex.id)?'Efectividad: '+ver.data.result:'Ejecutada · efectividad pendiente'}:a;
+   rows.push({caseId:c.id,index:i,caseTitle:c.title||'Investigación sin título',equipment:c.equipment||'Equipo sin TAG',area:c.area||c.sector||'Sin clasificar',sourceCase:c,action:displayed,status:effectiveCommitStatus(displayed,today)});
   });
  }
  rows.sort((a,b)=>{
@@ -4238,7 +4263,7 @@ $('#reportFormat').addEventListener('change',e=>{
  persist();
  drawReport();
 });
-function reportBox(title,html,klass=''){return `<div class="reportbox ${klass}"><h3>${title}</h3>${html}</div>`}async function drawReport(){const c=current();if(!c)return;try{await window.ACRImprovement.loadCaseReview(c,corporateApi,activeUser?.id)}catch(e){console.warn('No se pudo actualizar la revisión técnica',e)}if(current()!==c)return;renderCaseReport(c,$('#printDocument'),selectedReportFormat(c),effectiveReportBrand(),true)}
+function reportBox(title,html,klass=''){return `<div class="reportbox ${klass}"><h3>${title}</h3>${html}</div>`}async function drawReport(){const c=current();if(!c)return;try{await refreshPersonalExecutions();await window.ACRImprovement.loadCaseReview(c,corporateApi,activeUser?.id)}catch(e){console.warn('No se pudo actualizar la revisión técnica',e)}if(current()!==c)return;renderCaseReport(c,$('#printDocument'),selectedReportFormat(c),effectiveReportBrand(),true)}
 function reviewPresentation(c){
  const e=window.ACRImprovement?.reviewFor(c);
  if(!c.reportOrganizationId)return {status:'Revisión personal · sin aprobación corporativa',reviewer:c.reviewer||'',date:'',notes:''};
@@ -4567,7 +4592,7 @@ window.acrImprovement=window.ACRImprovement.mount({
  companyLabel:()=>corporateCtx?.organizations?.find(o=>o.id===corporateSelection())?.name||'Compañía seleccionada',
  userId:()=>activeUser?.id||'',userLabel:()=>activeUser?.email||'Usuario',
  returnToCase:(row,target)=>{const caseId=row.pub?.local_case_id||row.c.id;if(row.pub&&row.pub.owner_id!==activeUser?.id)throw Error('Esta investigación pertenece a otro usuario.');const c=db.cases.find(c=>c.id===caseId);if(!c)throw Error('La investigación no está disponible en tu espacio personal.');selected=c.id;navigate(target==='reporte'?'reporte':'analisis')},
- currentId:()=>current()?.id||'',request:corporateApi,afterCorporateWrite:()=>loadCorporateOverview(),
+ currentId:()=>current()?.id||'',request:corporateApi,refreshExecutions:refreshPersonalExecutions,afterCorporateWrite:async()=>{try{await refreshPersonalExecutions()}finally{await loadCorporateOverview()}},
  persist:()=>persist(),flush:()=>personalSync.flush(),download,
  leave:()=>{if(voiceRunning&&voiceRecognition)voiceRecognition.stop()}
 });

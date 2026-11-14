@@ -44,12 +44,57 @@ async function hydrateCorporate(pubs,request){
  hydrated.forEach(p=>{const e=activeReview(p.payload,events.filter(e=>e.investigation_id===p.id));if(e)verifiedReviews.set(p.payload,e)});return hydrated;
 }
 
+
+function personalExecutionUpdates(cases,pubs,events,userId){
+ const updates=[];
+ for(const c of cases){
+  if(!c.reportOrganizationId)continue;
+  const p=pubs.find(p=>p.owner_id===userId&&p.local_case_id===c.id&&p.organization_id===c.reportOrganizationId);if(!p)continue;
+  const journal=events.filter(e=>e.investigation_id===p.id);
+  (c.actions||[]).forEach((a,i)=>{
+   const published=(p.actions||p.payload?.actions||[])[i];
+   if(!published||actionKey(published,i)!==actionKey(a,i))return;
+   const state=executionState(c,a,i,journal);if(!state.execution)return;
+   updates.push({caseId:c.id,organizationId:p.organization_id,index:i,key:actionKey(a,i),executionId:String(state.execution.id),summary:state.verification?'Efectividad: '+state.verification.data.result:'Ejecutada · efectividad pendiente'});
+  });
+ }
+ return updates;
+}
+async function loadPersonalExecutionUpdates(cases,request,userId){
+ if(!userId||!cases.some(c=>c.reportOrganizationId))return [];
+ let pubs=[];
+ for(let offset=0;offset<100000;offset+=500){
+  const batch=await request('/rest/v1/acr_corporate_investigations?select=id,organization_id,owner_id,local_case_id,actions:payload->actions&owner_id=eq.'+encodeURIComponent(userId)+'&order=id.asc&limit=500&offset='+offset);
+  pubs.push(...batch);if(batch.length<500)break;
+ }
+ pubs=pubs.filter(p=>cases.some(c=>c.id===p.local_case_id&&c.reportOrganizationId===p.organization_id));
+ let events=[];
+ for(let n=0;n<pubs.length;n+=50){
+  const ids=pubs.slice(n,n+50).map(p=>p.id).join(',');
+  for(let offset=0;offset<100000;offset+=500){
+   const batch=await request('/rest/v1/acr_followup_events?select=id,investigation_id,kind,action_key,result:data->>result,executionId:data->>executionId&investigation_id=in.('+ids+')&kind=in.(execution,effectiveness)&order=id.asc&limit=500&offset='+offset);
+   events.push(...batch.map(e=>({...e,data:{result:e.result,executionId:e.executionId}})));if(batch.length<500)break;
+  }
+ }
+ return personalExecutionUpdates(cases,pubs,events,userId);
+}
+function applyPersonalExecutionUpdates(cases,updates){
+ let changed=0;
+ for(const u of updates){
+  const c=cases.find(c=>c.id===u.caseId&&c.reportOrganizationId===u.organizationId),a=c?.actions?.[u.index];
+  if(!a||actionKey(a,u.index)!==u.key)continue;
+  if(a.status==='Completado'&&a.executionSummary===u.summary&&a.executionId===u.executionId)continue;
+  a.status='Completado';a.executionSummary=u.summary;a.executionId=u.executionId;changed++;
+ }
+ return changed;
+}
+
 function followupType(c){return {electrica:'Eléctrica',mecanica:'Mecánica',operacional:'Operacional'}[norm(c.failureType)]||'Sin clasificar'}
 function followupSector(c){return String(c.area==='Área Húmeda'?c.productionUnit||c.sector||'':c.sector||c.productionUnit||'').trim()||'Sin clasificar'}
 function filterFollowupRows(rows,f){return rows.filter(({c})=>(!f.area||String(c.area||'').trim()===f.area||f.area==='Sin clasificar'&&!String(c.area||'').trim())&&(!f.sector||followupSector(c)===f.sector)&&(!f.type||followupType(c)===f.type))}
 
 function mount(api){
- let mode='auto',rows=[],events=[],scope='',scopeGeneration=0,tab='execution',focus='',busy=false,error='',loadedScope='',filters={from:day(),to:day(),query:'',area:'',sector:'',type:''};
+ let mode='auto',rows=[],events=[],scope='',scopeGeneration=0,tab='execution',focus='',busy=false,error='',feedback='',loadedScope='',filters={from:day(),to:day(),query:'',area:'',sector:'',type:''};
  const el=document.createElement('section');el.id='acrImprovement';el.className='section';
  document.getElementById('mainApp').append(el);
  const nav=document.querySelector('#mainApp>.nav'),btn=document.createElement('button');btn.type='button';btn.textContent='◇ Mejora y seguimiento';btn.dataset.improvementNav='1';const workflow=nav.querySelector('[data-page="registro"]');if(workflow)nav.insertBefore(btn,workflow.previousElementSibling?.classList.contains('workspace-step-label')?workflow.previousElementSibling:workflow);else nav.append(btn);
@@ -91,7 +136,7 @@ function mount(api){
  function stage(r,a,i){const s=executionState(r.c,a,i,rowEvents(r));return !s.execution?'Sin cierre con evidencia':s.verification?'Efectividad: '+s.verification.data.result:'Ejecutada · efectividad pendiente'}
  async function load(force=false){
   const next=scopeKey();if(!force&&next===loadedScope){render();return}
-  technical?.clear();shift?.reset();const gen=++scopeGeneration;scope=next;filters.area='';filters.sector='';filters.type='';loadedScope='';rows=[];events=[];focus='';error='';busy=true;render();
+  technical?.clear();shift?.reset();const gen=++scopeGeneration;scope=next;filters.area='';filters.sector='';filters.type='';loadedScope='';rows=[];events=[];focus='';error='';feedback='';busy=true;render();
   try{
    const uid=api.userId();if(!uid)throw Error('Inicia sesión para consultar el seguimiento.');
    if(isCompany()){
@@ -106,7 +151,7 @@ function mount(api){
      if(gen!==scopeGeneration||next!==scopeKey())return;all.push(...list);if(list.length<500)break;
     }
     events=all;
-   }else rows=api.personalCases().map(c=>({key:c.id,c}));
+   }else{if(api.refreshExecutions)await api.refreshExecutions();if(gen!==scopeGeneration||next!==scopeKey())return;rows=api.personalCases().map(c=>({key:c.id,c}));}
    if(shift)await shift.load();if(gen!==scopeGeneration||next!==scopeKey())return;loadedScope=next;
   }catch(e){if(gen===scopeGeneration)error=e.message}
   finally{if(gen===scopeGeneration){busy=false;render()}}
@@ -117,22 +162,22 @@ function mount(api){
   data.actorLabel=api.userLabel();
   if(r.pub){
    const result=await api.request('/rest/v1/acr_followup_events','POST',{investigation_id:r.pub.id,kind,action_key:key,data},'return=representation');
-   if(scope!==scopeKey())return;events.push(...result);if(api.afterCorporateWrite)await api.afterCorporateWrite();
+   if(scope!==scopeKey())return;events.push(...result);if(kind==='execution')r.c.actions?.forEach((a,i)=>{if(actionKey(a,i)===key)a.status='Completado'});feedback=kind==='execution'?'Ejecución guardada con evidencia. Compromiso actualizado a Completado; efectividad pendiente.':'Registro guardado.';if(api.afterCorporateWrite)try{await api.afterCorporateWrite()}catch(_){feedback+=' No se pudo actualizar otro tablero; vuelve a abrir Compromisos para consultar el estado.'}
   }else{
    const c=api.personalCases().find(c=>c.id===r.c.id);if(!c)throw Error('La investigación ya no está disponible.');
    const actionIndex=Number(key.split(':')[0]),action=c.actions?.[actionIndex],previousStatus=action?.status;if(kind==='execution'&&action)action.status='Completado';const previous=c.followupEvents||[];c.followupEvents=[...previous,{id:crypto.randomUUID(),kind,action_key:key,data,actor_id:api.userId(),created_at:new Date().toISOString()}];
    if(!api.persist()){c.followupEvents=previous;if(action)action.status=previousStatus;throw Error('No se pudo guardar el registro.');}
-   try{await api.flush()}catch(e){throw Error('Guardado en este dispositivo; la sincronización sigue pendiente. '+e.message)}
+   let synced=false;try{synced=await api.flush()}catch(_){}feedback=kind==='execution'?'Ejecución guardada con evidencia. Compromiso actualizado a Completado; efectividad pendiente.':'Registro guardado.';if(synced===false)feedback+=' Guardado en este dispositivo; sincronización con la nube pendiente.'
   }
  }
  function bindForm(selector,handler){const form=el.querySelector(selector);if(!form)return;form.onsubmit=async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;const msg=form.querySelector('[role=status]');msg.textContent='Guardando…';try{await handler(form,new FormData(form));render()}catch(err){msg.textContent=err.message;msg.className='ci-error';button.disabled=false}}}
  function showSnapshot(r){const modal=document.createElement('div');modal.className='ci-modal';modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Antecedente"><button class="secondary" type="button">Cerrar</button><h2>'+E(r.c.title||'Investigación')+'</h2>'+['equipment','description','basicCause','appliedCorrectiveActions','conclusion'].map((k,i)=>'<h3>'+['Equipo','¿Qué ocurrió?','Causa básica','Acciones realizadas','Conclusión'][i]+'</h3><p class="ci-pre">'+E(r.c[k]||'No registrado')+'</p>').join('')+'</div>';modal.querySelector('button').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()};modal.onkeydown=e=>{if(e.key==='Escape')modal.remove()};document.body.append(modal);modal.querySelector('button').focus()}
  function execution(r){
-  if(!(r.c.actions||[]).some(a=>String(a.description||'').trim()))return '<p>Esta investigación no tiene acciones registradas.</p>';return '<p class="help">Registrar ejecución no confirma su efectividad. El historial conserva los registros anteriores.</p>'+(r.c.actions||[]).map((a,i)=>{
+  if(!(r.c.actions||[]).some(a=>String(a.description||'').trim()))return '<p>Esta investigación no tiene acciones registradas.</p>';return '<p class="help">Al guardar la fecha, las acciones realizadas y la evidencia, el compromiso pasa automáticamente a Completado. Su efectividad se verifica después. El historial conserva los registros anteriores.</p>'+(r.c.actions||[]).map((a,i)=>{
    if(!String(a.description||'').trim())return '';const state=executionState(r.c,a,i,rowEvents(r)),ex=state.execution,verification=state.verification;
    return '<div class="ci-row"><h3>'+E(a.description)+'</h3><p>'+E(a.owner||'Sin responsable')+' · Compromiso: '+E(a.due||'Sin fecha')+'</p><span class="ci-state">'+E(stage(r,a,i))+'</span>'+
     (ex?'<p class="ci-pre">'+E(ex.data.performed)+'<br>Ejecutada el '+E(ex.data.date)+'</p>'+files(ex.data):'')+
-    '<details><summary>'+(ex?'Agregar nuevo registro de ejecución':'Registrar ejecución')+'</summary><form data-ex="'+i+'">'+field('Fecha real de ejecución','date',day(),'date')+area('Acciones realizadas','performed')+fileField()+'<p class="help">Describe la intervención y adjunta evidencia para registrar el cierre.</p><button class="primary">Registrar ejecución</button><p role="status"></p></form></details>'+
+    '<details><summary>'+(ex?'Agregar nuevo registro de ejecución':'Registrar ejecución')+'</summary><form data-ex="'+i+'">'+field('Fecha real de ejecución','date',day(),'date')+area('Acciones realizadas','performed')+fileField()+'<p class="help">Describe la intervención y adjunta evidencia. Al guardar, el compromiso se actualizará a Completado.</p><button class="primary">Guardar ejecución y completar compromiso</button><p role="status"></p></form></details>'+
     (ex&&(!r.pub||api.isAdmin())?'<details><summary>Verificar efectividad</summary><form data-verify="'+i+'">'+field('Fecha de revisión','date',day(),'date')+'<label class="field">Resultado<select name="result"><option>Efectiva</option><option>No efectiva</option><option>En observación</option></select></label>'+area('Evidencia del resultado y seguimiento','notes')+fileField()+'<button class="primary">Guardar verificación</button><p role="status"></p></form></details>':'')+
     (verification?'<p><b>'+E(verification.data.result)+'</b> · '+E(verification.data.date)+'</p><p class="ci-pre">'+E(verification.data.notes)+'</p>'+files(verification.data):'')+'</div>';
   }).join('')||'<p>Esta investigación no tiene acciones registradas.</p>';
@@ -146,6 +191,7 @@ function mount(api){
   const r=currentRow();if(r)focus=r.key;
   const titles={execution:'Cierre y efectividad',similar:'Fallas similares',handover:'Entrega de turno',review:'Revisión técnica',lessons:'Lecciones aprendidas'};
   el.innerHTML='<div class="card"><div class="eyebrow">ACR Integrity · Mejora y seguimiento</div><h1>'+titles[tab]+'</h1><p class="notice">'+E(isCompany()?api.companyLabel()+(api.isAdmin()?' · Informes publicados de la compañía':' · Mis informes publicados'):'Mis investigaciones · Espacio personal')+'</p><div class="ci-tabs" role="tablist">'+Object.entries(titles).map(([k,v])=>'<button class="secondary" role="tab" type="button" aria-selected="'+(k===tab)+'" data-ci-tab="'+k+'">'+v+'</button>').join('')+'</div><label class="field">Espacio<select id="ciScope"><option value="personal"'+(!isCompany()?' selected':'')+'>Mis investigaciones</option>'+((api.companyId()&&api.canCompany())?'<option value="company"'+(isCompany()?' selected':'')+'>'+E(api.companyLabel())+'</option>':'')+'</select></label><button class="secondary" id="ciRefresh" type="button">Actualizar</button><p class="ci-error" role="status">'+E(error)+'</p></div>';
+  if(feedback)el.innerHTML+='<p class="notice" role="status">'+E(feedback)+'</p>';
   if(busy)el.innerHTML+='<div class="card">Cargando investigaciones e historial…</div>';
   else if(!error){
    if(tab!=='handover')el.innerHTML+=filterControls();
@@ -186,6 +232,6 @@ function mount(api){
  const voiceExit=new MutationObserver(()=>{if(!el.classList.contains('active')||document.getElementById('mainApp').hidden)shift?.stop()});voiceExit.observe(el,{attributes:true,attributeFilter:['class']});voiceExit.observe(document.getElementById('mainApp'),{attributes:true,attributeFilter:['hidden','data-workspace']});document.addEventListener('visibilitychange',()=>{if(document.hidden)shift?.stop()});
  return {open,refresh:()=>load(true)};
 }
-root.ACRImprovement={resolveReviewNames,fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
-if(typeof module!=='undefined')module.exports={fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState,hydrateCorporate,filterFollowupRows,followupType,followupSector};
+root.ACRImprovement={loadPersonalExecutionUpdates,applyPersonalExecutionUpdates,resolveReviewNames,fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
+if(typeof module!=='undefined')module.exports={personalExecutionUpdates,loadPersonalExecutionUpdates,applyPersonalExecutionUpdates,fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState,hydrateCorporate,filterFollowupRows,followupType,followupSector};
 })(typeof window==='undefined'?globalThis:window);
