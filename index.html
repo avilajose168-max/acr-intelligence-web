@@ -1190,7 +1190,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
 <script src="./continuous-improvement.js?v=20261114-completion"></script>
-<script src="./own-published-reports.js?v=20261114"></script>
+<script src="./own-published-reports.js?v=20261114-edit"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -4598,7 +4598,36 @@ window.acrImprovement=window.ACRImprovement.mount({
  leave:()=>{if(voiceRunning&&voiceRecognition)voiceRecognition.stop()}
 });
 
+
+async function editOwnPublishedReport(record){
+ const uid=activeUser?.id;
+ if(!uid||record.owner_id!==uid)throw Error('Solo puedes editar tus propias investigaciones.');
+ const synced=await personalSync.flush();
+ if(activeUser?.id!==uid)throw Error('La cuenta cambió. Abre nuevamente la investigación.');
+ if(!synced)throw Error('Primero confirma la sincronización de tu espacio personal. Resuelve cualquier aviso de nube antes de recuperar una investigación.');
+ if(!corporateCtx)await loadOrganizations();
+ if(activeUser?.id!==uid)throw Error('La cuenta cambió.');
+ const approved=corporateCtx?.memberships?.some(m=>m.organization_id===record.organization_id&&m.status==='approved');
+ const org=corporateCtx?.organizations?.find(o=>o.id===record.organization_id&&o.active);
+ if(!org||(!approved&&!corporateCtx?.platform))throw Error('Tu afiliación a la compañía debe estar aprobada para editar este informe.');
+ const result=window.ACROwnPublishedReports.editableDraft(record,uid,db.cases,makeCase());
+ if(!result.existing){
+  db.cases.unshift(result.draft);
+  if(!persist(false)){db.cases=db.cases.filter(c=>c!==result.draft);throw Error('No se pudo guardar la versión recuperada. El informe publicado permanece disponible.')}
+  await personalSync.flush();
+  if(activeUser?.id!==uid)return;
+ }
+ selected=result.draft.id;
+ const picker=$('#organizationSelect');
+ if(Array.from(picker.options).some(o=>o.value===record.organization_id)){
+  picker.value=record.organization_id;
+  localStorage.setItem('acr-org-choice-'+uid,record.organization_id);
+ }
+ navigate('registro');
+}
+
 window.acrOwnPublishedReports=window.ACROwnPublishedReports.mount({
+ edit:editOwnPublishedReport,
  userId:()=>activeUser?.id||'',
  request:async path=>{await personalAccessToken();return corporateApi(path)},
  companyName:id=>corporateCtx?.organizations?.find(o=>o.id===id)?.name||'',

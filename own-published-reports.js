@@ -3,6 +3,15 @@
 'use strict';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function owned(rows,user){return (Array.isArray(rows)?rows:[]).filter(r=>r.owner_id===user&&r.id&&r.organization_id)}
+
+function editableDraft(record,userId,cases,defaults={}){
+ if(!userId||record?.owner_id!==userId||!record?.organization_id||!record?.local_case_id||!record?.payload)throw Error('Solo el autor puede abrir esta investigación para editar.');
+ const existing=cases.find(c=>c.id===record.local_case_id);
+ if(existing)return {draft:existing,existing:true};
+ const source=JSON.parse(JSON.stringify(record.payload));
+ return {draft:{...defaults,...source,id:record.local_case_id,reportOrganizationId:record.organization_id,corporateOrgId:record.organization_id},existing:false};
+}
+
 function mount(api){
  const panel=document.createElement('section');panel.className='card own-published-reports';panel.setAttribute('aria-label','Mis informes publicados en compañías');
  document.getElementById('investigationsWorkspace').append(panel);
@@ -45,13 +54,21 @@ function mount(api){
    if(!valid(uid,gen)||view!==viewGeneration)return;
    const source=hydrated[0];if(!source||source.owner_id!==uid||source.id!==id)throw Error('No se pudo verificar el informe.');
    const brand=(Array.isArray(orgs)?orgs:[]).find(o=>o.id===record.organization_id)||{};
-   dialog.innerHTML='<div class="own-report-tools"><strong>Informe publicado · Solo lectura</strong><label>Formato <select aria-label="Formato del informe publicado"><option value="5why">5 Porqués</option><option value="a3">A3 ejecutivo</option><option value="acr">ACR completo</option></select></label><button class="secondary" type="button" data-own-close>Cerrar</button></div><div class="own-report-document"><div data-own-document></div></div>';
+   dialog.innerHTML='<div class="own-report-tools"><strong>Informe publicado · Solo lectura</strong><label>Formato <select aria-label="Formato del informe publicado"><option value="5why">5 Porqués</option><option value="a3">A3 ejecutivo</option><option value="acr">ACR completo</option></select></label>'+(api.edit?'<button class="primary" type="button" data-own-edit>Editar mi investigación</button>':'')+'<button class="secondary" type="button" data-own-close>Cerrar</button></div><p data-own-edit-status role="status"></p><div class="own-report-document"><div data-own-document></div></div>';
    dialog.querySelector('[data-own-close]').onclick=close;const select=dialog.querySelector('select');select.value=['5why','a3','acr'].includes(record.payload.reportFormat||record.payload.format)?record.payload.reportFormat||record.payload.format:'5why';
    const draw=()=>{if(valid(uid,gen)&&view===viewGeneration)api.render(source,dialog.querySelector('[data-own-document]'),select.value,brand)};select.onchange=draw;draw();
+   const edit=dialog.querySelector('[data-own-edit]');
+   if(edit)edit.onclick=async()=>{
+    if(!valid(uid,gen)||view!==viewGeneration)return;
+    edit.disabled=true;const status=dialog.querySelector('[data-own-edit-status]');status.textContent='Abriendo tu versión de trabajo…';
+    try{await api.edit(record);if(valid(uid,gen)&&view===viewGeneration)close()}
+    catch(e){if(valid(uid,gen)&&view===viewGeneration){status.textContent=e.message;edit.disabled=false}}
+   };
+
   }catch(e){if(valid(uid,gen)&&view===viewGeneration){const p=dialog.querySelector('[role=status]')||document.createElement('p');p.setAttribute('role','status');p.textContent='No se pudo abrir el informe: '+e.message;if(!p.parentNode)dialog.append(p)}}
  }
  dialog.addEventListener('cancel',()=>{viewGeneration++});render();return {refresh,reset};
 }
-root.ACROwnPublishedReports={mount};
-if(typeof module!=='undefined'&&module.exports)module.exports={owned,mount};
+root.ACROwnPublishedReports={mount,editableDraft};
+if(typeof module!=='undefined'&&module.exports)module.exports={owned,mount,editableDraft};
 })(typeof window==='undefined'?globalThis:window);
