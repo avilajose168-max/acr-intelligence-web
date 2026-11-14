@@ -1,0 +1,117 @@
+/* Reversible visual treatment. Screen only: reports and application logic are unchanged. */
+@media screen {
+ #corporateReliabilityPanel {
+  --cr-gold:#ffd16a;--cr-line:#34677f;--cr-cyan:#25d5e2;
+  background:radial-gradient(ellipse at 85% 0%,#12324780,transparent 55%),linear-gradient(135deg,#061a29,#082235 65%,#051724);
+  border:1px solid #294d64;border-radius:18px;padding:22px;
+  box-shadow:0 16px 38px #0003,inset 0 1px 0 #91dfff0b;
+  color:#eef5fc;
+ }
+ #corporateReliabilityPanel>.between {align-items:center;gap:18px!important;margin-bottom:20px}
+ #corporateReliabilityPanel>.between>div:first-child {flex:1 1 410px;min-width:0}
+ #corporateReliabilityPanel h2 {font-size:clamp(23px,2.1vw,32px);letter-spacing:-.6px;line-height:1.18;margin:5px 0 8px;color:#f4f7fc}
+ #corporateReliabilityPanel .eyebrow {color:var(--cr-gold);font-size:10px;letter-spacing:1.7px}
+ #corporateReliabilityPanel .muted {font-size:12px;line-height:1.6;color:#bacfdd;margin:0}
+ #corporateReliabilityPanel .toolbar {gap:8px;align-items:center}
+ #corporateReliabilityPanel button {min-height:40px;border-radius:9px;font-size:12px;font-weight:650;padding:10px 14px;white-space:normal;transition:background .16s,border-color .16s}
+ #corporateReliabilityPanel button.secondary {background:linear-gradient(150deg,#122f42,#071c2c);border:1px solid #41657b;color:#f0f6fb;box-shadow:inset 0 1px 0 #d0f6ff09}
+ #corporateReliabilityPanel button.primary {background:linear-gradient(115deg,#ffe39b,#efb532);border:1px solid #ffe59d;color:#14212b;box-shadow:0 3px 15px #e6b94317}
+ #corporateReliabilityPanel button:hover {border-color:#e4bd66}
+ #corporateReliabilityPanel :is(button,select,a):focus-visible {outline:2px solid var(--cr-cyan);outline-offset:3px}
+ #corporateReliabilityPanel #corporateCurrent {border-color:#edc561;box-shadow:0 0 0 1px #f2cd7133,inset 0 0 12px #c9952615}
+ #corporateReliabilityPanel .corporate-toolbar {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:15px 0;padding:14px 16px;border:1px solid #2f566e;border-radius:12px;background:linear-gradient(105deg,#0e2c40,#0b2335);box-shadow:inset 0 1px 0 #c9f5ff06}
+ #corporateReliabilityPanel .corporate-toolbar .field {flex:1 1 150px;min-width:0;margin:0;color:#e0edf6;font-size:12px;font-weight:650}
+ #corporateReliabilityPanel .corporate-toolbar:first-of-type .field:first-child {flex-basis:210px}
+ #corporateReliabilityPanel select {width:100%;min-width:0;min-height:40px;margin-top:7px;padding:9px 31px 9px 12px;background-color:#071e2e;border:1px solid #426a81;border-radius:8px;color:#f2f7fd;font-size:12px;font-weight:600}
+ #corporateReliabilityPanel #corporatePeriodLabel {position:relative;overflow:hidden;isolation:isolate;margin:16px 0;padding:15px 20px 15px 56px;border:1px solid #c7a04c;border-radius:10px;background:linear-gradient(100deg,#ba8e3033,#bd9b4014 65%,#ddba6052);color:#ffda80;font-size:clamp(13px,1.2vw,17px);font-weight:750;line-height:1.5;box-shadow:inset 0 1px 0 #ffdf8f26}
+ #corporateReliabilityPanel #corporatePeriodLabel::after {content:'';position:absolute;z-index:-1;right:35px;top:-20px;width:15px;height:160%;transform:skewX(-37deg);background:#dfb4442b;box-shadow:23px 0 0 #dfb44416;pointer-events:none}
+ #corporateReliabilityPanel .corporate-area-breakdown {gap:14px;margin:17px 0}
+ #corporateReliabilityPanel .kpi-pane {position:relative;min-width:0;background:radial-gradient(ellipse at 5% 0%,#16435b90,transparent 65%),linear-gradient(130deg,#0d3046,#092436);border:1px solid var(--cr-line);border-radius:12px;box-shadow:inset 0 1px 0 #9ae8ff0b,0 5px 16px #0002}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane {padding:19px 17px 19px 104px;min-height:114px;background:radial-gradient(ellipse at 0 0,#184c6590,transparent 65%),linear-gradient(120deg,#0c3148,#0a273a);border-color:#3d7188}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::after {content:'';position:absolute;left:84px;top:19px;bottom:19px;width:1px;background:#55859c}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane span {font-size:12px;letter-spacing:.6px;color:#f1f6fb}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane strong {display:block;font-size:clamp(25px,2.1vw,34px);font-weight:800;color:var(--cr-gold);margin:4px 0;line-height:1.2}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane small {font-size:12px;line-height:1.5;color:#d9e7f0}
+ #corporateReliabilityPanel .corporate-reliability-kpis {gap:12px;grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 13px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane {min-height:120px;padding:17px 12px 17px 66px;background:linear-gradient(135deg,#10394f,#092739);border-color:#3b6f88}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane span {display:block;font-size:11px;color:#e7f1f7;line-height:1.5;letter-spacing:.3px;overflow-wrap:anywhere}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane strong {display:block;font-size:clamp(24px,2.15vw,35px);line-height:1.2;font-weight:800;letter-spacing:-.7px;color:var(--cr-gold);margin:7px 0;overflow-wrap:anywhere}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane small {font-size:11px;color:#c7dbe8;line-height:1.5}
+ #corporateReliabilityPanel #corporateReliabilityNote {position:relative;padding:11px 14px 11px 43px;margin:13px 0;border:1px solid #285c71;border-radius:8px;background:linear-gradient(90deg,#0e3549,#0b2b3e);font-size:11px;line-height:1.65;color:#d6e7f1}
+ #corporateReliabilityPanel #corporateExportPeriod {border-color:#efc663;box-shadow:0 0 0 1px #f2cd7126}
+ #corporateReliabilityPanel>.dashboard-charts {gap:16px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}
+ #corporateReliabilityPanel>.dashboard-charts>.dashboard-chart {border:1px solid #3a718a;border-radius:12px;background:radial-gradient(ellipse at 50% 0,#123b514f,transparent 75%),linear-gradient(135deg,#0b2b40,#092233);box-shadow:inset 0 1px 0 #bcecff08,0 8px 20px #0002;padding:0 16px 16px}
+ #corporateReliabilityPanel>.dashboard-charts>.dashboard-chart h3 {position:relative;margin:0 -16px 17px;padding:14px 16px 14px 51px;font-size:clamp(15px,1.3vw,20px);font-weight:750;line-height:1.35;letter-spacing:-.2px;background:linear-gradient(100deg,#143e54,#0b2a3d);border-bottom:1px solid #3a657c;color:#f3f7fc}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) {min-height:190px;overflow:visible}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) svg {width:100%;height:auto;max-height:320px}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) svg rect[fill="#dbb675"] {fill:#f2c45f;stroke:#ffe18b;stroke-width:.6}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) svg [stroke="#51cfce"] {stroke:var(--cr-cyan)}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) svg [fill="#51cfce"] {fill:var(--cr-cyan)}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) svg text {font-family:inherit}
+ #corporateReliabilityPanel .dashboard-table-wrap {border-color:#2c536a;border-radius:8px}
+ #corporateReliabilityPanel .dashboard-table th {background:#12384c;color:#dcebf5;font-size:11px}
+ #corporateReliabilityPanel .dashboard-table td {color:#d4e4ef;border-color:#284c62}
+ #corporateReliabilityPanel .dashboard-table tbody tr:nth-child(even) {background:#0b2b3e}
+ #corporateReliabilityPanel .dashboard-table tbody tr:hover {background:#19455b}
+ #corporateReliabilityPanel .dashboard-empty {color:#b8d3e3;padding:30px 15px;text-align:center;font-size:13px}
+ #corporateReliabilityPanel :is(.kpi-pane,#corporatePeriodLabel,#corporateReliabilityNote,.dashboard-chart h3)::before {content:'';position:absolute;background:#e0f3fb;mask:var(--cr-icon) center/contain no-repeat;-webkit-mask:var(--cr-icon) center/contain no-repeat;pointer-events:none}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::before {width:40px;height:40px;left:24px;top:32px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane::before {width:31px;height:31px;left:18px;top:21px}
+ #corporateReliabilityPanel #corporatePeriodLabel::before {width:25px;height:25px;left:18px;top:50%;transform:translateY(-50%);background:var(--cr-gold)}
+ #corporateReliabilityPanel #corporateReliabilityNote::before {width:18px;height:18px;left:14px;top:12px;background:var(--cr-cyan)}
+ #corporateReliabilityPanel .dashboard-chart h3::before {width:24px;height:24px;left:16px;top:14px}
+}
+@media screen and (max-width:1250px) {
+ #corporateReliabilityPanel .corporate-reliability-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane {padding-left:78px}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::before {left:18px;width:31px}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::after {left:61px}
+}
+@media screen and (max-width:1000px) {
+ #corporateReliabilityPanel>.dashboard-charts {grid-template-columns:1fr}
+}
+@media screen and (max-width:700px) {
+ #corporateReliabilityPanel {padding:14px;border-radius:13px}
+ #corporateReliabilityPanel>.between>div:first-child {flex-basis:100%}
+ #corporateReliabilityPanel .toolbar {width:100%;display:flex;flex-wrap:wrap}
+ #corporateReliabilityPanel .toolbar button {flex:1 1 120px;min-height:44px}
+ #corporateReliabilityPanel .corporate-toolbar {padding:12px;gap:9px}
+ #corporateReliabilityPanel .corporate-toolbar .field {flex-basis:100%}
+ #corporateReliabilityPanel .corporate-toolbar button {flex:1 1 85px;min-height:44px}
+ #corporateReliabilityPanel select {font-size:16px;min-height:44px}
+ #corporateReliabilityPanel .corporate-area-breakdown {grid-template-columns:1fr!important;gap:10px}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane {min-height:101px;padding:16px 15px 16px 86px}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::before {left:21px;top:29px;width:32px}
+ #corporateReliabilityPanel .corporate-area-breakdown .kpi-pane::after {left:67px;top:17px;bottom:17px}
+ #corporateReliabilityPanel .corporate-reliability-kpis {grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane {padding:47px 12px 14px;min-height:147px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane::before {left:13px;top:12px;width:25px;height:25px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane strong {font-size:26px;letter-spacing:-.6px}
+ #corporateReliabilityPanel #corporatePeriodLabel {padding:13px 14px 13px 46px;font-size:13px}
+ #corporateReliabilityPanel #corporatePeriodLabel::before {left:13px;width:22px}
+ #corporateReliabilityPanel>.dashboard-charts>.dashboard-chart {padding:0 10px 12px}
+ #corporateReliabilityPanel>.dashboard-charts>.dashboard-chart h3 {margin-left:-10px;margin-right:-10px}
+ #corporateReliabilityPanel :is(#corporateParetoChart,#corporateTrendChart) {min-height:145px}
+ #corporateReliabilityPanel .dashboard-table th,#corporateReliabilityPanel .dashboard-table td {padding:10px 8px;font-size:11px}
+}
+@media screen and (max-width:360px) {
+ #corporateReliabilityPanel .corporate-reliability-kpis {grid-template-columns:1fr!important}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane {min-height:105px;padding:16px 14px 16px 59px}
+ #corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane::before {top:20px}
+}
+
+@media screen {
+#corporateReliabilityPanel .corporate-area-breakdown .kpi-pane:nth-child(1) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2028h25M7%2024v-6m7%206V13m7%2011V8m7%2016V3M5%2014l8-8%207%203%209-7%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-area-breakdown .kpi-pane:nth-child(2) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M16%202C13%209%205%2017%205%2022a11%2011%200%200%200%2022%200C27%2017%2019%209%2016%202Z%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-area-breakdown .kpi-pane:nth-child(3) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m12%203-1%205-4%202-4-1-2%206%204%203%201%204-2%204%205%204%204-3%205%201%202%204%206-2-1-5%203-4%204-1-1-6-5-1-3-4V4Z%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2217%22%20r%3D%225%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane:nth-child(1) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane:nth-child(2) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2217%22%20r%3D%2212%22%2F%3E%3Cpath%20d%3D%22M16%209v9l6%204M12%202h8M4%206l3%203m18-3-3%203%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane:nth-child(3) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M28%203a9%209%200%200%201-11%2012L7%2028a4%204%200%200%201-6-5l13-11A9%209%200%200%201%2025%201l-6%206%205%204Z%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane:nth-child(4) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2028h27M6%2027V17h5v10m4%200V10h5v17m4%200V3h5v24%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .corporate-reliability-kpis .kpi-pane:nth-child(5) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m16%202%2012%205v10c0%206-6%2011-12%2014C10%2028%204%2023%204%2017V7Z%22%2F%3E%3Cpath%20d%3D%22m10%2015%204%204%209-10%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel #corporatePeriodLabel {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel #corporateReliabilityNote {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%2F%3E%3Cpath%20d%3D%22M16%2014v10m0-17v3%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .dashboard-chart:nth-child(1) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2028h27M6%2027V17h5v10m4%200V10h5v17m4%200V3h5v24%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .dashboard-chart:nth-child(2) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m3%2025%208-10%207%205L29%205M21%205h8v8%22%2F%3E%3C%2Fsvg%3E")}
+#corporateReliabilityPanel .dashboard-chart:nth-child(3) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+}
