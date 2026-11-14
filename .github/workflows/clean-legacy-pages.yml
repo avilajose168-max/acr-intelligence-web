@@ -1,8 +1,5 @@
 name: Clean legacy Pages artifacts
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/clean-legacy-pages.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,7 +8,6 @@ concurrency:
   cancel-in-progress: false
 jobs:
   cleanup:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[cleanup-legacy-pages]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
