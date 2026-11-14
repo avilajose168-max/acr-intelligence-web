@@ -1,7 +1,5 @@
 name: Publicar ACR Intelligence Web
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -59,6 +57,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+          retention-days: 1
       - name: Confirmar que GitHub registró el artefacto de Pages
         env:
           GH_TOKEN: ${{ github.token }}
