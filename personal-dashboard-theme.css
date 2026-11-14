@@ -1,0 +1,328 @@
+/* Personal dashboards: shared corporate visual language, screen only. Data, permissions, calculations and export templates are unchanged. */
+/* Reversible visual treatment. Screen only: reports and application logic are unchanged. */
+@media screen {
+ #mainApp #reliabilityDashboard {
+  --cr-gold:#ffd16a;--cr-line:#34677f;--cr-cyan:#25d5e2;
+  background:radial-gradient(ellipse at 85% 0%,#12324780,transparent 55%),linear-gradient(135deg,#061a29,#082235 65%,#051724);
+  border:1px solid #294d64;border-radius:18px;padding:22px;
+  box-shadow:0 16px 38px #0003,inset 0 1px 0 #91dfff0b;
+  color:#eef5fc;
+ }
+ #mainApp #reliabilityDashboard>.between {align-items:center;gap:18px!important;margin-bottom:20px}
+ #mainApp #reliabilityDashboard>.between>div:first-child {flex:1 1 410px;min-width:0}
+ #mainApp #reliabilityDashboard h2 {font-size:clamp(23px,2.1vw,32px);letter-spacing:-.6px;line-height:1.18;margin:5px 0 8px;color:#f4f7fc}
+ #mainApp #reliabilityDashboard .eyebrow {color:var(--cr-gold);font-size:10px;letter-spacing:1.7px}
+ #mainApp #reliabilityDashboard .muted {font-size:12px;line-height:1.6;color:#bacfdd;margin:0}
+ #mainApp #reliabilityDashboard .toolbar {gap:8px;align-items:center}
+ #mainApp #reliabilityDashboard button {min-height:40px;border-radius:9px;font-size:12px;font-weight:650;padding:10px 14px;white-space:normal;transition:background .16s,border-color .16s}
+ #mainApp #reliabilityDashboard button.secondary {background:linear-gradient(150deg,#122f42,#071c2c);border:1px solid #41657b;color:#f0f6fb;box-shadow:inset 0 1px 0 #d0f6ff09}
+ #mainApp #reliabilityDashboard button.primary {background:linear-gradient(115deg,#ffe39b,#efb532);border:1px solid #ffe59d;color:#14212b;box-shadow:0 3px 15px #e6b94317}
+ #mainApp #reliabilityDashboard button:hover {border-color:#e4bd66}
+ #mainApp #reliabilityDashboard :is(button,select,a):focus-visible {outline:2px solid var(--cr-cyan);outline-offset:3px}
+ #mainApp #reliabilityDashboard #weekCurrent {border-color:#edc561;box-shadow:0 0 0 1px #f2cd7133,inset 0 0 12px #c9952615}
+ #mainApp #reliabilityDashboard .dashboard-toolbar {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:15px 0;padding:14px 16px;border:1px solid #2f566e;border-radius:12px;background:linear-gradient(105deg,#0e2c40,#0b2335);box-shadow:inset 0 1px 0 #c9f5ff06}
+ #mainApp #reliabilityDashboard .dashboard-toolbar .field {flex:1 1 150px;min-width:0;margin:0;color:#e0edf6;font-size:12px;font-weight:650}
+ #mainApp #reliabilityDashboard .dashboard-toolbar:first-of-type .field:first-child {flex-basis:210px}
+ #mainApp #reliabilityDashboard select {width:100%;min-width:0;min-height:40px;margin-top:7px;padding:9px 31px 9px 12px;background-color:#071e2e;border:1px solid #426a81;border-radius:8px;color:#f2f7fd;font-size:12px;font-weight:600}
+ #mainApp #reliabilityDashboard #weekLabel {position:relative;overflow:hidden;isolation:isolate;margin:16px 0;padding:15px 20px 15px 56px;border:1px solid #c7a04c;border-radius:10px;background:linear-gradient(100deg,#ba8e3033,#bd9b4014 65%,#ddba6052);color:#ffda80;font-size:clamp(13px,1.2vw,17px);font-weight:750;line-height:1.5;box-shadow:inset 0 1px 0 #ffdf8f26}
+ #mainApp #reliabilityDashboard #weekLabel::after {content:'';position:absolute;z-index:-1;right:35px;top:-20px;width:15px;height:160%;transform:skewX(-37deg);background:#dfb4442b;box-shadow:23px 0 0 #dfb44416;pointer-events:none}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown {gap:14px;margin:17px 0}
+ #mainApp #reliabilityDashboard .kpi-pane {position:relative;min-width:0;background:radial-gradient(ellipse at 5% 0%,#16435b90,transparent 65%),linear-gradient(130deg,#0d3046,#092436);border:1px solid var(--cr-line);border-radius:12px;box-shadow:inset 0 1px 0 #9ae8ff0b,0 5px 16px #0002}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane {padding:19px 17px 19px 104px;min-height:114px;background:radial-gradient(ellipse at 0 0,#184c6590,transparent 65%),linear-gradient(120deg,#0c3148,#0a273a);border-color:#3d7188}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::after {content:'';position:absolute;left:84px;top:19px;bottom:19px;width:1px;background:#55859c}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane span {font-size:12px;letter-spacing:.6px;color:#f1f6fb}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane strong {display:block;font-size:clamp(25px,2.1vw,34px);font-weight:800;color:var(--cr-gold);margin:4px 0;line-height:1.2}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane small {font-size:12px;line-height:1.5;color:#d9e7f0}
+ #mainApp #reliabilityDashboard .reliability-kpis {gap:12px;grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 13px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane {min-height:120px;padding:17px 12px 17px 66px;background:linear-gradient(135deg,#10394f,#092739);border-color:#3b6f88}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane span {display:block;font-size:11px;color:#e7f1f7;line-height:1.5;letter-spacing:.3px;overflow-wrap:anywhere}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane strong {display:block;font-size:clamp(24px,2.15vw,35px);line-height:1.2;font-weight:800;letter-spacing:-.7px;color:var(--cr-gold);margin:7px 0;overflow-wrap:anywhere}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane small {font-size:11px;color:#c7dbe8;line-height:1.5}
+ #mainApp #reliabilityDashboard #reliabilityMethod {position:relative;padding:11px 14px 11px 43px;margin:13px 0;border:1px solid #285c71;border-radius:8px;background:linear-gradient(90deg,#0e3549,#0b2b3e);font-size:11px;line-height:1.65;color:#d6e7f1}
+ #mainApp #reliabilityDashboard #corporateExportPeriod {border-color:#efc663;box-shadow:0 0 0 1px #f2cd7126}
+ #mainApp #reliabilityDashboard>.dashboard-charts {gap:16px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}
+ #mainApp #reliabilityDashboard>.dashboard-charts>.dashboard-chart {border:1px solid #3a718a;border-radius:12px;background:radial-gradient(ellipse at 50% 0,#123b514f,transparent 75%),linear-gradient(135deg,#0b2b40,#092233);box-shadow:inset 0 1px 0 #bcecff08,0 8px 20px #0002;padding:0 16px 16px}
+ #mainApp #reliabilityDashboard>.dashboard-charts>.dashboard-chart h3 {position:relative;margin:0 -16px 17px;padding:14px 16px 14px 51px;font-size:clamp(15px,1.3vw,20px);font-weight:750;line-height:1.35;letter-spacing:-.2px;background:linear-gradient(100deg,#143e54,#0b2a3d);border-bottom:1px solid #3a657c;color:#f3f7fc}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) {min-height:190px;overflow:visible}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) svg {width:100%;height:auto;max-height:320px}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) svg rect[fill="#dbb675"] {fill:#f2c45f;stroke:#ffe18b;stroke-width:.6}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) svg [stroke="#51cfce"] {stroke:var(--cr-cyan)}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) svg [fill="#51cfce"] {fill:var(--cr-cyan)}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) svg text {font-family:inherit}
+ #mainApp #reliabilityDashboard .dashboard-table-wrap {border-color:#2c536a;border-radius:8px}
+ #mainApp #reliabilityDashboard .dashboard-table th {background:#12384c;color:#dcebf5;font-size:11px}
+ #mainApp #reliabilityDashboard .dashboard-table td {color:#d4e4ef;border-color:#284c62}
+ #mainApp #reliabilityDashboard .dashboard-table tbody tr:nth-child(even) {background:#0b2b3e}
+ #mainApp #reliabilityDashboard .dashboard-table tbody tr:hover {background:#19455b}
+ #mainApp #reliabilityDashboard .dashboard-empty {color:#b8d3e3;padding:30px 15px;text-align:center;font-size:13px}
+ #mainApp #reliabilityDashboard :is(.kpi-pane,#weekLabel,#reliabilityMethod,.dashboard-chart h3)::before {content:'';position:absolute;background:#e0f3fb;mask:var(--cr-icon) center/contain no-repeat;-webkit-mask:var(--cr-icon) center/contain no-repeat;pointer-events:none}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::before {width:40px;height:40px;left:24px;top:32px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane::before {width:31px;height:31px;left:18px;top:21px}
+ #mainApp #reliabilityDashboard #weekLabel::before {width:25px;height:25px;left:18px;top:50%;transform:translateY(-50%);background:var(--cr-gold)}
+ #mainApp #reliabilityDashboard #reliabilityMethod::before {width:18px;height:18px;left:14px;top:12px;background:var(--cr-cyan)}
+ #mainApp #reliabilityDashboard .dashboard-chart h3::before {width:24px;height:24px;left:16px;top:14px}
+}
+@media screen and (max-width:1250px) {
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane {padding-left:78px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::before {left:18px;width:31px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::after {left:61px}
+}
+@media screen and (max-width:1000px) {
+ #mainApp #reliabilityDashboard>.dashboard-charts {grid-template-columns:1fr}
+}
+@media screen and (max-width:700px) {
+ #mainApp #reliabilityDashboard {padding:14px;border-radius:13px}
+ #mainApp #reliabilityDashboard>.between>div:first-child {flex-basis:100%}
+ #mainApp #reliabilityDashboard .toolbar {width:100%;display:flex;flex-wrap:wrap}
+ #mainApp #reliabilityDashboard .toolbar button {flex:1 1 120px;min-height:44px}
+ #mainApp #reliabilityDashboard .dashboard-toolbar {padding:12px;gap:9px}
+ #mainApp #reliabilityDashboard .dashboard-toolbar .field {flex-basis:100%}
+ #mainApp #reliabilityDashboard .dashboard-toolbar button {flex:1 1 85px;min-height:44px}
+ #mainApp #reliabilityDashboard select {font-size:16px;min-height:44px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown {grid-template-columns:1fr!important;gap:10px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane {min-height:101px;padding:16px 15px 16px 86px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::before {left:21px;top:29px;width:32px}
+ #mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane::after {left:67px;top:17px;bottom:17px}
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane {padding:47px 12px 14px;min-height:147px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane::before {left:13px;top:12px;width:25px;height:25px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane strong {font-size:26px;letter-spacing:-.6px}
+ #mainApp #reliabilityDashboard #weekLabel {padding:13px 14px 13px 46px;font-size:13px}
+ #mainApp #reliabilityDashboard #weekLabel::before {left:13px;width:22px}
+ #mainApp #reliabilityDashboard>.dashboard-charts>.dashboard-chart {padding:0 10px 12px}
+ #mainApp #reliabilityDashboard>.dashboard-charts>.dashboard-chart h3 {margin-left:-10px;margin-right:-10px}
+ #mainApp #reliabilityDashboard :is(#paretoChart,#weeklyTrend) {min-height:145px}
+ #mainApp #reliabilityDashboard .dashboard-table th,#mainApp #reliabilityDashboard .dashboard-table td {padding:10px 8px;font-size:11px}
+}
+@media screen and (max-width:360px) {
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:1fr!important}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane {min-height:105px;padding:16px 14px 16px 59px}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane::before {top:20px}
+}
+
+@media screen {
+#mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane:nth-child(1) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2028h25M7%2024v-6m7%206V13m7%2011V8m7%2016V3M5%2014l8-8%207%203%209-7%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane:nth-child(2) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M16%202C13%209%205%2017%205%2022a11%2011%200%200%200%2022%200C27%2017%2019%209%2016%202Z%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .corporate-area-breakdown .kpi-pane:nth-child(3) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m12%203-1%205-4%202-4-1-2%206%204%203%201%204-2%204%205%204%204-3%205%201%202%204%206-2-1-5%203-4%204-1-1-6-5-1-3-4V4Z%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2217%22%20r%3D%225%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(1) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(2) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2217%22%20r%3D%2212%22%2F%3E%3Cpath%20d%3D%22M16%209v9l6%204M12%202h8M4%206l3%203m18-3-3%203%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(4) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M28%203a9%209%200%200%201-11%2012L7%2028a4%204%200%200%201-6-5l13-11A9%209%200%200%201%2025%201l-6%206%205%204Z%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(5) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2028h27M6%2027V17h5v10m4%200V10h5v17m4%200V3h5v24%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(6) {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m16%202%2012%205v10c0%206-6%2011-12%2014C10%2028%204%2023%204%2017V7Z%22%2F%3E%3Cpath%20d%3D%22m10%2015%204%204%209-10%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard #weekLabel {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard #reliabilityMethod {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%2F%3E%3Cpath%20d%3D%22M16%2014v10m0-17v3%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .dashboard-chart:nth-child(1) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2028h27M6%2027V17h5v10m4%200V10h5v17m4%200V3h5v24%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .dashboard-chart:nth-child(2) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m3%2025%208-10%207%205L29%205M21%205h8v8%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #reliabilityDashboard .dashboard-chart:nth-child(3) h3 {--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2034%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%2224%22%20height%3D%2223%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M10%202v7m12-7v7M4%2012h24M10%2018h2m6%200h2m-10%205h2%22%2F%3E%3C%2Fsvg%3E")}
+}
+
+/* Corporate commitments presentation only. Metrics, deadlines and actions remain unchanged. */
+
+@media screen {
+#mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(1) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%2222%22%20height%3D%2226%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%222%22%20width%3D%2210%22%20height%3D%226%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M11%2015h12m-12%206h12%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(2) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2217%22%20r%3D%2214%22%2F%3E%3Cpath%20d%3D%22m9%2017%206%206L26%2011%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(3) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2217%22%20r%3D%2214%22%2F%3E%3Cpath%20d%3D%22M17%208v10l7%204%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(4) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%204a3%203%200%200%201%206%200l12%2024a2%202%200%200%201-2%203H4a2%202%200%200%201-2-3Z%22%2F%3E%3Cpath%20d%3D%22M17%2012v9m0%204v2%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(5) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%2226%22%20height%3D%2225%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M11%202v8m12-8v8M4%2014h26M10%2020h4m6%200h4m-14%206h4%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commit-detail-card:nth-child(1) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%2222%22%20height%3D%2226%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%222%22%20width%3D%2210%22%20height%3D%226%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M11%2015h12m-12%206h12%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commit-detail-card:nth-child(2) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M29%203a9%209%200%200%201-11%2012L8%2029a4%204%200%200%201-6-5l13-11A9%209%200%200%201%2026%201l-6%206%205%204Z%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #commitmentsDashboard .commit-detail-card:nth-child(3) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2030h28M7%2026V16h5v10m5%200V9h5v17m5%200V2h5v24%22%2F%3E%3C%2Fsvg%3E")}
+}
+
+@media screen {
+ #mainApp #commitmentsDashboard {--cc-cyan:#23cce7;--cc-gold:#ffd058;padding:21px;border:1px solid #32748f;border-radius:17px;background:radial-gradient(ellipse at 95% 0,#10486435,transparent 65%),linear-gradient(130deg,#07273c,#061c2d);box-shadow:inset 0 1px 0 #6bd7ed21,0 10px 28px #0003;min-width:0}
+ #mainApp #commitmentsDashboard>.between {position:relative;isolation:isolate;align-items:center;gap:17px!important;padding:18px 17px;margin:-4px -4px 17px;border:1px solid #2b647e;border-radius:12px;background:linear-gradient(115deg,#0c3046,#062235);overflow:hidden}
+ #mainApp #commitmentsDashboard>.between::after {content:'';position:absolute;z-index:-1;top:-45px;bottom:-45px;right:36%;width:2px;transform:rotate(40deg);background:linear-gradient(transparent,#ffd357,#d2a12a,transparent);box-shadow:0 0 13px #ebbf3845;pointer-events:none}
+ #mainApp #commitmentsDashboard>.between>div:first-child {flex:1 1 470px;min-width:0}
+ #mainApp #commitmentsDashboard .eyebrow {color:#f3cc68;font-size:10px;font-weight:800;letter-spacing:1.3px}
+ #mainApp #commitmentsDashboard h2 {font-size:clamp(22px,1.9vw,30px);letter-spacing:-.5px;line-height:1.25;margin:5px 0 9px;color:#f3f7fc}
+ #mainApp #commitmentsDashboard>.between .muted {font-size:12px;line-height:1.6;color:#b7d0e1;margin:0}
+ #mainApp #commitmentsDashboard .toolbar {gap:8px;align-items:center}
+ #mainApp #commitmentsDashboard button {min-height:39px;padding:9px 12px;font-size:12px;font-weight:650;border-radius:8px}
+ #mainApp #commitmentsDashboard button.primary {border:1px solid #ffe58e;color:#142333;background:linear-gradient(110deg,#ffe18a,#efb62f);box-shadow:0 3px 14px #e9b62d17}
+ #mainApp #commitmentsDashboard button.secondary {border:1px solid #407e98;background:linear-gradient(110deg,#11394e,#08273a);color:#e4f3fc;box-shadow:inset 0 1px 0 #b0edff0b}
+ #mainApp #commitmentsDashboard button:focus-visible,#mainApp #commitmentsDashboard select:focus-visible,#mainApp #commitmentsDashboard input:focus-visible {outline:2px solid #72dfe9;outline-offset:3px}
+ #mainApp #commitmentsDashboard #commitCurrent {border-color:#e8c262;color:#ffe092;box-shadow:0 0 0 1px #f1c65416}
+ #mainApp #commitmentsDashboard .dashboard-toolbar {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px 13px;border:1px solid #2c617b;border-radius:10px;background:linear-gradient(115deg,#0e3045,#0a2639)}
+ #mainApp #commitmentsDashboard .dashboard-toolbar>.field {flex:1 1 200px;min-width:0;margin:0;color:#d0e9f5;font-size:11px;line-height:1.5}
+ #mainApp #commitmentsDashboard :is(select,input) {width:100%;min-width:0;min-height:41px;margin-top:6px;padding:9px 12px;background:#071f30;color:#eff6fc;border:1px solid #427c97;border-radius:8px;font-size:12px;font-weight:450;line-height:1.5}
+ #mainApp #commitmentsDashboard select option {background:#0b273b;color:#eff6fc}
+ #mainApp #commitmentsDashboard #commitPeriodLabel {padding:11px 14px;border:1px solid #987f3b;border-radius:9px;background:linear-gradient(105deg,#c69a2323,#0b2a3d);color:#f8d27c;font-size:12px;font-weight:700;line-height:1.6;margin:12px 0 15px}
+ #mainApp #commitmentsDashboard .commitments-kpis {grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:15px}
+ #mainApp #commitmentsDashboard .commitments-kpis>div {--cc-accent:#18bbef;position:relative;isolation:isolate;min-width:0;min-height:108px;padding:17px 12px 15px 66px;border:1px solid var(--cc-accent);border-radius:12px;background:radial-gradient(ellipse at 0 0,color-mix(in srgb,var(--cc-accent),transparent 82%),transparent 80%),linear-gradient(125deg,#0d3046,#082438);box-shadow:inset 0 1px 0 #b0eaff16,0 4px 15px #0002}
+ #mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(2) {--cc-accent:#17c77d;background:linear-gradient(120deg,#0b382f,#082d2c)}
+ #mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(3) {--cc-accent:#32bde2}
+ #mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(4) {--cc-accent:#eda83b;background:linear-gradient(125deg,#3e2b25,#222932)}
+ #mainApp #commitmentsDashboard .commitments-kpis>div:nth-child(5) {--cc-accent:#b56ce7;background:linear-gradient(125deg,#2d2447,#17263e)}
+ #mainApp #commitmentsDashboard .commitments-kpis>div span {display:block;font-size:10px;letter-spacing:.3px;line-height:1.45;color:#d8eaf5;font-weight:700;overflow-wrap:anywhere}
+ #mainApp #commitmentsDashboard .commitments-kpis>div strong {display:block;font-size:clamp(25px,2.1vw,33px);line-height:1.2;letter-spacing:-.5px;color:#ffd574;font-weight:800;margin:5px 0}
+ #mainApp #commitmentsDashboard .commitments-kpis>div small {font-size:10px;color:#bdd6e6;line-height:1.5}
+ #mainApp #commitmentsDashboard .commitments-kpis>div::before {content:'';position:absolute;left:16px;top:20px;width:32px;height:34px;background:var(--cc-accent);mask:var(--cc-icon) center/contain no-repeat;-webkit-mask:var(--cc-icon) center/contain no-repeat;pointer-events:none}
+ #mainApp #commitmentsDashboard .commitment-filterbar>.field {flex:1 1 165px}
+ #mainApp #commitmentsDashboard .commitment-filterbar>.field:last-child {flex-basis:250px}
+ #mainApp #commitmentsDashboard .commitments-scroll {max-height:480px;border:1px solid #3a7a95;border-radius:10px;background:#082438;overflow:auto;scrollbar-color:#39748c #092438}
+ #mainApp #commitmentsDashboard .commitments-table {width:100%;min-width:930px;border-collapse:separate;border-spacing:0;font-size:12px}
+ #mainApp #commitmentsDashboard .commitments-table th {position:sticky;top:0;z-index:1;padding:11px 12px;font-size:11px;background:linear-gradient(100deg,#154a65,#10364e);color:#e0f0fa;font-weight:750;letter-spacing:.05px;border-bottom:1px solid #3984a2}
+ #mainApp #commitmentsDashboard .commitments-table td {padding:12px;border-bottom:1px solid #28566f;vertical-align:middle;color:#dcebf5;line-height:1.5;overflow-wrap:anywhere}
+ #mainApp #commitmentsDashboard .commitments-table td:first-child {min-width:200px}
+ #mainApp #commitmentsDashboard .commitments-table td:first-child strong {font-size:12px;color:#e6f3fb;line-height:1.4}
+ #mainApp #commitmentsDashboard .commitments-table .small {font-size:10px;color:#a9c9db;line-height:1.5;margin-top:3px}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(2) {min-width:180px}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(5) {min-width:135px}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr {background:#08283d;cursor:pointer}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr:nth-child(even) {background:#0a2d43}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr:hover {background:#123f56}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr.commit-selected {background:#14475e;box-shadow:inset 3px 0 #27d2ec}
+ #mainApp #commitmentsDashboard .commitments-table button[data-commit-open] {padding:7px 10px;min-height:35px;border-color:#9771bb;color:#f0dcff;font-size:11px;white-space:nowrap}
+ #mainApp #commitmentsDashboard .commit-priority {padding:4px 9px;border:1px solid #3d6177;border-radius:6px;font-size:10px;background:#25475b;color:#e1edf5;white-space:nowrap}
+ #mainApp #commitmentsDashboard .commit-priority-high {background:#602732;border-color:#d15c68;color:#ffd3d8}
+ #mainApp #commitmentsDashboard .commit-priority-medium {background:#56441c;border-color:#b99c3e;color:#ffe7a0}
+ #mainApp #commitmentsDashboard .commit-priority-low {background:#124b41;border-color:#349780;color:#bbf2dc}
+ #mainApp #commitmentsDashboard .commit-state {font-size:10px;padding:5px 9px;border-radius:7px;line-height:1.35}
+ #mainApp #commitmentsDashboard .commit-state-progress {color:#a8ebfa;background:#103f5b;border:1px solid #2cabc7}
+ #mainApp #commitmentsDashboard .commit-state-complete {color:#acf0ce;background:#104331;border:1px solid #37a56d}
+ #mainApp #commitmentsDashboard .commit-state-pending {color:#ffe1a1;background:#4b3e1f;border:1px solid #af9545}
+ #mainApp #commitmentsDashboard .commit-state-overdue {color:#ffbfca;background:#522936;border:1px solid #d06980}
+ #mainApp #commitmentsDashboard .deadline-badge {font-size:10px;line-height:1.4;padding:4px 8px;margin-top:6px;border-radius:6px}
+ #mainApp #commitmentsDashboard .deadline-urgent {color:#ffe194;background:#654218;border-color:#e5aa3f}
+ #mainApp #commitmentsDashboard .deadline-soon {color:#f7dd8b;background:#4b4020;border-color:#bba04b}
+ #mainApp #commitmentsDashboard .deadline-overdue {color:#ffc2ce;background:#5b2638;border-color:#dc637c}
+ #mainApp #commitmentsDashboard .deadline-complete {color:#b5edcf;background:#134536;border-color:#3c9670}
+ #mainApp #commitmentsDashboard .commit-detail-layout {grid-template-columns:1.05fr 1.1fr .95fr;gap:14px;margin-top:18px}
+ #mainApp #commitmentsDashboard .commit-detail-card {border:1px solid #3397b8;border-radius:12px;background:linear-gradient(130deg,#0d3148,#09263a);box-shadow:inset 0 1px 0 #90eaff0c,0 6px 17px #0002}
+ #mainApp #commitmentsDashboard .commit-detail-card h3 {position:relative;padding:13px 14px 13px 44px;font-size:14px;line-height:1.4;margin:0;background:linear-gradient(100deg,#16465f,#0c3048);border-bottom:1px solid #377f9b;color:#edf7ff}
+ #mainApp #commitmentsDashboard .commit-detail-card h3::before {content:'';position:absolute;left:14px;top:13px;width:20px;height:21px;background:#82d5ec;mask:var(--cc-icon) center/contain no-repeat;-webkit-mask:var(--cc-icon) center/contain no-repeat}
+ #mainApp #commitmentsDashboard .commit-detail-body {padding:14px;font-size:12px;line-height:1.6;color:#c8dfed;overflow-wrap:anywhere}
+ #mainApp #commitmentsDashboard .commit-selected-title {border:1px solid #3a738d;border-radius:8px;background:#123b51;color:#ecf7fc;padding:10px;font-size:12px;font-weight:750}
+ #mainApp #commitmentsDashboard .commit-action-item {padding:10px 0;border-bottom-color:#315f77}
+ #mainApp #commitmentsDashboard .commit-donut {width:min(164px,80%);margin:8px auto 15px;box-shadow:0 0 16px #139dc51a}
+ #mainApp #commitmentsDashboard .commit-donut-inner {background:#082438}
+ #mainApp #commitmentsDashboard .commit-donut-inner strong {font-size:30px;color:#f2f8fc}
+ #mainApp #commitmentsDashboard .commit-legend {gap:8px;font-size:11px;line-height:1.6}
+ #mainApp #commitmentsDashboard>.help {color:#9fc6dc;font-size:11px;line-height:1.7;margin-bottom:0}
+}
+@media screen and (max-width:1250px) {
+ #mainApp #commitmentsDashboard .commitments-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #mainApp #commitmentsDashboard .commit-detail-layout {grid-template-columns:1fr 1fr}
+ #mainApp #commitmentsDashboard .commit-detail-card:last-child {grid-column:1/-1}
+}
+@media screen and (max-width:700px) {
+ #mainApp #commitmentsDashboard {padding:14px;border-radius:13px}
+ #mainApp #commitmentsDashboard>.between {padding:15px;margin:0 0 15px}
+ #mainApp #commitmentsDashboard>.between>div:first-child {flex-basis:100%}
+ #mainApp #commitmentsDashboard .toolbar {width:100%;display:flex;flex-wrap:wrap}
+ #mainApp #commitmentsDashboard .toolbar button {flex:1 1 125px;min-height:44px}
+ #mainApp #commitmentsDashboard .dashboard-toolbar>.field {flex-basis:100%}
+ #mainApp #commitmentsDashboard .dashboard-toolbar>button {flex:1 1 80px;min-height:44px}
+ #mainApp #commitmentsDashboard :is(input,select) {font-size:16px;min-height:44px}
+ #mainApp #commitmentsDashboard .commitments-kpis {grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+ #mainApp #commitmentsDashboard .commitments-kpis>div {padding:49px 12px 14px;min-height:140px}
+ #mainApp #commitmentsDashboard .commitments-kpis>div::before {top:13px;left:13px;width:26px;height:26px}
+ #mainApp #commitmentsDashboard .commit-detail-layout {grid-template-columns:1fr}
+ #mainApp #commitmentsDashboard .commit-detail-card:last-child {grid-column:auto}
+ #mainApp #commitmentsDashboard .commitments-scroll {max-height:none;overflow:visible;border:0;background:transparent}
+ #mainApp #commitmentsDashboard .commitments-table {display:block;min-width:0;width:100%;border:0;background:transparent}
+ #mainApp #commitmentsDashboard .commitments-table thead {display:none}
+ #mainApp #commitmentsDashboard .commitments-table tbody {display:block;width:100%}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr {display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #39748d;border-radius:11px;margin-bottom:12px;overflow:hidden}
+ #mainApp #commitmentsDashboard .commitments-table td {display:block;min-width:0!important;width:auto;padding:10px 12px;font-size:12px;border-bottom:1px solid #2b536c;overflow-wrap:anywhere}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(1),#mainApp #commitmentsDashboard .commitments-table td:nth-child(2),#mainApp #commitmentsDashboard .commitments-table td:nth-child(7),#mainApp #commitmentsDashboard .commitments-table td[colspan] {grid-column:1/-1}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(7) {border-bottom:0}
+ #mainApp #commitmentsDashboard .commitments-table td::before {display:block;color:#8cbdd4;font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(1)::before {content:'Investigación / equipo'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(2)::before {content:'Compromiso / acción'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(3)::before {content:'Responsable'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(4)::before {content:'Prioridad'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(5)::before {content:'Vencimiento'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(6)::before {content:'Estado'}
+ #mainApp #commitmentsDashboard .commitments-table td:nth-child(7)::before,#mainApp #commitmentsDashboard .commitments-table td[colspan]::before {content:none}
+ #mainApp #commitmentsDashboard .commitments-table button[data-commit-open] {min-height:44px;width:100%;font-size:13px}
+ #mainApp #commitmentsDashboard .deadline-badge {white-space:normal;overflow-wrap:anywhere}
+}
+@media screen and (max-width:360px) {
+ #mainApp #commitmentsDashboard .commitments-kpis {grid-template-columns:1fr!important}
+ #mainApp #commitmentsDashboard .commitments-kpis>div {min-height:105px;padding:17px 14px 17px 60px}
+ #mainApp #commitmentsDashboard .commitments-kpis>div::before {top:20px}
+ #mainApp #commitmentsDashboard .commitments-table tbody tr {grid-template-columns:minmax(0,1fr)}
+ #mainApp #commitmentsDashboard .commitments-table td {grid-column:1/-1}
+}
+
+
+@media screen {
+ #mainApp #reliabilityDashboard {min-width:0}
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard>.between {padding:18px 17px;border:1px solid #2b647e;border-radius:12px;background:linear-gradient(115deg,#0c3046,#062235)}
+ #mainApp #reliabilityDashboard>.between .dashboard-toolbar {flex:1 1 370px;margin:0}
+ #mainApp #reliabilityDashboard .dashboard-toolbar {min-width:0}
+ #mainApp #reliabilityDashboard .reliability-controls {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0;padding:16px;border:1px solid #2f566e;border-radius:12px;background:linear-gradient(105deg,#0e2c40,#0b2335)}
+ #mainApp #reliabilityDashboard .reliability-controls>.field {min-width:0;margin:0}
+ #mainApp #reliabilityDashboard .reliability-controls>[hidden] {display:none!important}
+ #mainApp #reliabilityDashboard .reliability-auto-period {grid-column:1/3;min-width:0;padding:15px 18px;border:1px solid #3d7188;border-radius:10px;background:linear-gradient(120deg,#10364b,#082235);margin:0}
+ #mainApp #reliabilityDashboard .reliability-auto-period span {font-size:10px;color:#bad6e8;letter-spacing:1px}
+ #mainApp #reliabilityDashboard .reliability-auto-period strong {display:block;font-size:30px;color:#ffd16a;margin:5px 0;line-height:1.2}
+ #mainApp #reliabilityDashboard .reliability-auto-period small {font-size:11px;color:#bdd4e4;line-height:1.6}
+ #mainApp #reliabilityDashboard .reliability-base-note {grid-column:3/-1;align-self:center;max-width:none;margin:0;padding:10px 4px;font-size:12px;line-height:1.7;color:#bdd4e4}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane::after {content:none}
+ #mainApp #reliabilityDashboard .reliability-kpis .kpi-pane span {display:block}
+ #mainApp #reliabilityDashboard .availability-track {margin-top:12px;max-width:100%;height:5px;border-radius:8px}
+ #mainApp #reliabilityDashboard #availabilityFill {background:#25d5e2;height:100%}
+ #mainApp #reliabilityDashboard #weekLabel {display:block}
+ #mainApp #reliabilityDashboard #reliabilityMethod {font-size:12px}
+ #mainApp #reliabilityDashboard .trend-analysis {min-width:0}
+ #mainApp #reliabilityDashboard>.help {font-size:12px;line-height:1.7;color:#abc9dc}
+ #mainApp #commitmentsDashboard #commitPeriodLabel {flex:1 1 100%;margin:4px 0 0}
+ #mainApp #commitmentsDashboard .commitments-kpis>div>span.small {font-size:11px;font-weight:450;letter-spacing:0}
+ #mainApp #commitmentsDashboard .commitments-progress {height:5px;margin:0 0 16px;border-radius:8px;background:#123e54}
+ #mainApp #commitmentsDashboard #commitProgressFill {height:100%;background:linear-gradient(90deg,#22d2e6,#e8c06a)}
+ #mainApp #commitmentsDashboard .commitments-table select {width:100%;min-width:100px;min-height:40px;margin-top:7px}
+ #mainApp #commitmentsDashboard .commitments-table .commit-name {font-size:12px;color:#e6f3fb}
+ #mainApp #commitmentsDashboard .commitments-table button[data-commit-open] {min-height:40px;border:1px solid #9771bb;color:#f0dcff}
+}
+@media screen and (max-width:1000px) {
+ #mainApp #reliabilityDashboard .reliability-controls {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard .reliability-auto-period {grid-column:1/2}
+ #mainApp #reliabilityDashboard .reliability-base-note {grid-column:2/3}
+}
+@media screen and (max-width:700px) {
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard>.between {padding:14px}
+ #mainApp #reliabilityDashboard>.between .dashboard-toolbar {flex-basis:100%;width:100%;padding:0;border:0;background:transparent;gap:8px}
+ #mainApp #reliabilityDashboard>.between .dashboard-toolbar .field {flex-basis:100%}
+ #mainApp #reliabilityDashboard>.between .dashboard-toolbar button {flex:1 1 80px;min-height:46px}
+ #mainApp #reliabilityDashboard .reliability-controls {grid-template-columns:minmax(0,1fr);padding:12px}
+ #mainApp #reliabilityDashboard .reliability-auto-period,#mainApp #reliabilityDashboard .reliability-base-note {grid-column:auto}
+ #mainApp #reliabilityDashboard .dashboard-toolbar .field {flex-basis:100%}
+ #mainApp #reliabilityDashboard :is(select,button) {min-height:46px}
+ #mainApp #reliabilityDashboard .dashboard-charts {grid-template-columns:minmax(0,1fr)}
+ #mainApp #reliabilityDashboard .dashboard-chart :is(svg,table) {max-width:100%}
+ #mainApp #reliabilityDashboard .dashboard-table-wrap {overflow-x:auto}
+ #mainApp #commitmentsDashboard .dashboard-toolbar {gap:10px}
+ #mainApp #commitmentsDashboard .dashboard-toolbar>.field {flex-basis:100%}
+ #mainApp #commitmentsDashboard .dashboard-toolbar>button {flex:1 1 80px;min-height:46px}
+ #mainApp #commitmentsDashboard .commitments-table select {min-height:46px;min-width:0;font-size:16px}
+ #mainApp #commitmentsDashboard .commitments-table button[data-commit-open] {width:100%;min-height:46px}
+}
+@media screen and (max-width:360px) {
+ #mainApp #reliabilityDashboard .reliability-kpis {grid-template-columns:minmax(0,1fr)!important}
+}
+
+@media screen{#mainApp #reliabilityDashboard .reliability-kpis .kpi-pane:nth-child(3){--cr-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2034%2034%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.7%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2717%27%20cy%3D%2717%27%20r%3D%2712%27%2F%3E%3Cpath%20d%3D%27M17%209v9l6%204M28%203l3%203-5%205%27%2F%3E%3C%2Fsvg%3E")}}
+
+@media screen and (min-width:1001px) {
+ #mainApp #reliabilityDashboard .reliability-controls {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard .reliability-auto-period {grid-column:1/2}
+ #mainApp #reliabilityDashboard .reliability-base-note {grid-column:2/-1}
+ #mainApp #reliabilityDashboard .reliability-controls:has(>#reliabilitySubareaWrap:not([hidden])) {grid-template-columns:repeat(4,minmax(0,1fr))}
+ #mainApp #reliabilityDashboard .reliability-controls:has(>#reliabilitySubareaWrap:not([hidden])) .reliability-auto-period {grid-column:1/3}
+ #mainApp #reliabilityDashboard .reliability-controls:has(>#reliabilitySubareaWrap:not([hidden])) .reliability-base-note {grid-column:3/-1}
+}
+
+@media screen and (max-width:700px) {
+ #mainApp #commitmentsDashboard .commitments-table tbody tr {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #mainApp #commitmentsDashboard .commitments-table td {white-space:normal;text-align:left;overflow-wrap:anywhere;word-break:normal}
+ #mainApp #commitmentsDashboard .commitments-table td :is(strong,.small,span) {white-space:normal;overflow-wrap:anywhere}
+}
+@media screen and (max-width:360px) {
+ #mainApp #commitmentsDashboard .commitments-table tbody tr {grid-template-columns:minmax(0,1fr)}
+}
