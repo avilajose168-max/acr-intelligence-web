@@ -1,0 +1,91 @@
+/* Visual layer for step 1 only. Field types, keys, values and handlers remain unchanged. */
+
+@media screen {
+#registro #reportBrandPanel>h2 {--event-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8%202h12l6%206v22H8ZM20%202v7h6M3%207v21M12%2015h10m-10%206h10%22%2F%3E%3C%2Fsvg%3E")}
+#registro .downtimeCard>h3 {--event-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%2F%3E%3Cpath%20d%3D%22M16%207v10l7%204%22%2F%3E%3C%2Fsvg%3E")}
+}
+
+@media screen {
+ #registro {--event-line:#2e718c;--event-gold:#ffd04d;--event-cyan:#23d2e6;color:#eaf5fc}
+ #registro>.bar {padding:18px 23px;border:1px solid #3687a2;border-radius:12px;background:linear-gradient(115deg,#0c354b,#061d2d);box-shadow:inset 0 1px 0 #b0efff12;gap:14px}
+ #registro>.bar .eyebrow {color:var(--event-gold);font-size:11px;letter-spacing:1.8px;font-weight:850}
+ #registro h1 {font-size:clamp(23px,2vw,30px);margin:4px 0;line-height:1.25;letter-spacing:-.5px;color:#f2f7fc}
+ #registro h2 {font-size:21px;font-weight:750;letter-spacing:-.3px;margin:0 0 14px;color:#f2f7fc}
+ #registro h3 {line-height:1.4}
+ #registro>.card {padding:22px 24px;border:1px solid var(--event-line);border-radius:14px;background:radial-gradient(ellipse at 95% 0,#164b641f,transparent 65%),linear-gradient(130deg,#0c2d40,#071f30);box-shadow:inset 0 1px 0 #9adfff0d,0 8px 22px #0002;margin-bottom:17px}
+ #registro #reportBrandPanel {border-color:#3a8ba4;background:linear-gradient(110deg,#10374b,#082538)}
+ #registro #reportBrandPanel>h2 {position:relative;padding-left:37px}
+ #registro #reportBrandPanel>h2::before,#registro .downtimeCard>h3::before {content:'';position:absolute;left:0;top:0;width:26px;height:28px;background:var(--event-cyan);mask:var(--event-icon) center/contain no-repeat;-webkit-mask:var(--event-icon) center/contain no-repeat;pointer-events:none}
+ #registro .grid {gap:16px 22px}
+ #registro .field {display:flex;flex-direction:column;gap:7px;min-width:0;color:#e4eff7;font-size:12px;font-weight:650;line-height:1.5}
+ #registro input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),#registro select,#registro textarea {width:100%;min-width:0;min-height:44px;margin:0;border:1px solid #4c839c;border-radius:9px;padding:11px 13px;background:linear-gradient(110deg,#061d2d,#09273a);box-shadow:inset 0 1px 3px #0002;color:#f0f6fb;font-size:13px;font-weight:450;line-height:1.4}
+ #registro textarea {min-height:135px;resize:vertical;line-height:1.7}
+ #registro input::placeholder,#registro textarea::placeholder {color:#9fb8cb;opacity:1}
+ #registro select {padding-right:32px;cursor:pointer}
+ #registro select option {background:#0b273a;color:#f0f6fb}
+ #registro input:focus-visible,#registro select:focus-visible,#registro textarea:focus-visible,#registro button:focus-visible {outline:2px solid var(--event-gold);outline-offset:3px}
+ #registro input:focus,#registro select:focus,#registro textarea:focus {border-color:#d9c26f}
+ #registro input:disabled,#registro select:disabled {opacity:.7;cursor:not-allowed}
+ #registro .field input[readonly][data-k] {background:linear-gradient(110deg,#11384c,#0c2e42);color:#c9deeb;border-color:#416c83}
+ #registro input[type="file"] {width:100%;min-width:0;min-height:44px;padding:6px 8px;border:1px solid #4c839c;border-radius:9px;background:#071f30;color:#c8ddea;font-size:12px;font-weight:400}
+ #registro input[type="file"]::file-selector-button {margin-right:12px;padding:7px 12px;border:1px solid #79a6ba;border-radius:6px;background:#d4e8f1;color:#102332;font-size:12px;font-weight:700;cursor:pointer}
+ #registro #reportBrandHelp {margin:9px 0 18px;color:#bdd5e5;font-size:12px;line-height:1.65;font-weight:400}
+ #registro .logoPreview {padding:4px 0;gap:15px}
+ #registro .logoPreview img {width:126px;max-height:77px;padding:8px;background:#fff;border:1px solid #76a8ba;border-radius:9px;object-fit:contain}
+ #registro .downtimeCard {margin:7px 0 6px;padding:20px;border:2px solid #e2b947;border-radius:14px;background:radial-gradient(ellipse at 10% 0,#13496255,transparent 70%),linear-gradient(110deg,#0b2e42,#062135);box-shadow:0 0 0 1px #f1c7520a,inset 0 1px 0 #fff2}
+ #registro .downtimeCard>h3 {position:relative;margin:0 0 17px;padding-left:35px;color:var(--event-gold);font-size:20px;letter-spacing:-.3px}
+ #registro .downtimeCard>h3::before {background:var(--event-gold);height:27px}
+ #registro .field input[type="datetime-local"][data-k] {color-scheme:dark;display:block;min-width:0;max-width:100%;min-height:48px;padding:9px 10px 9px 13px;border:2px solid #b5a35e;background:#061e2f;color:#f3f7fc;font-weight:600;font-size:14px;letter-spacing:.1px;cursor:pointer}
+ #registro .downtimeCard .field input[type="datetime-local"][data-k] {border-color:#4f93aa}
+ #registro .field input[type="datetime-local"][data-k]:focus {border-color:#ffda55;box-shadow:0 0 0 2px #efbe3a25}
+ #registro .field input[type="datetime-local"][data-k]::-webkit-calendar-picker-indicator {opacity:1;cursor:pointer;width:21px;height:21px;padding:6px;margin-left:7px;background-color:#164559;border:1px solid #69d6e6;border-radius:6px;filter:none}
+ #registro .field input[type="datetime-local"][data-k]::-webkit-datetime-edit {padding:3px 0;min-width:0}
+ #registro .event-date-hint {color:#a9d3e4;font-size:11px;font-weight:400;line-height:1.4}
+ #registro #downtime {font-weight:650;color:#e6f4fc;min-height:46px}
+ #registro .durationHint {margin-top:13px;color:#add4c4;font-size:11px;line-height:1.6}
+ #registro button {border-radius:9px;min-height:42px;padding:10px 16px;font-size:13px;font-weight:650;line-height:1.35}
+ #registro button.primary {border:1px solid #ffe497;background:linear-gradient(115deg,#ffe18a,#eab633);color:#122331;box-shadow:0 3px 13px #e4b73117;font-weight:800}
+ #registro button.secondary {border:1px solid #4696ae;background:linear-gradient(115deg,#0d354a,#082539);color:#e1f2fa;box-shadow:inset 0 1px 0 #bcecff0d}
+ #registro button:disabled {opacity:.5;cursor:not-allowed;box-shadow:none}
+ #registro .toolbar {flex-wrap:wrap;gap:10px;max-width:100%}
+ #registro .assist-panel,#registro .safety-panel {border:1px solid #3d7185;border-radius:11px;padding:18px;background:linear-gradient(125deg,#103446,#0b293c)}
+ #registro .safety-panel {border-left:3px solid #e1bd63}
+ #registro .safety-panel .safety-options {gap:12px;flex-wrap:wrap}
+ #registro .safety-options label {min-height:44px;background:#092335;border-color:#426e83;color:#d9eaf4}
+ #registro .notice {background:#103447;border-color:#c7ac62;color:#d0e6f3;line-height:1.6}
+ #registro .voicebar {gap:10px;flex-wrap:wrap}
+ #registro .voice-tip,#registro .help {font-weight:400;color:#adc8da;line-height:1.65}
+}
+@media screen and (max-width:850px) {
+ #registro>.bar {padding:16px}
+ #registro>.card {padding:18px}
+ #registro .grid {gap:14px}
+ #registro .downtimeCard {padding:17px}
+}
+@media screen and (max-width:700px) {
+ #registro>.bar {gap:14px;padding:16px 15px}
+ #registro>.bar>div:first-child {width:100%}
+ #registro>.bar .toolbar {width:100%;display:flex}
+ #registro>.bar .toolbar button {flex:1 1 130px;min-height:46px}
+ #registro>.card {padding:18px 14px;border-radius:12px}
+ #registro h1 {font-size:25px}
+ #registro h2 {font-size:20px}
+ #registro .grid {grid-template-columns:minmax(0,1fr)!important;gap:16px}
+ #registro .field {font-size:13px;gap:8px}
+ #registro input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),#registro select,#registro textarea {font-size:16px;min-height:47px}
+ #registro .field input[type="datetime-local"][data-k] {font-size:16px;min-height:52px;appearance:auto;-webkit-appearance:auto}
+ #registro .field input[type="datetime-local"][data-k]::-webkit-calendar-picker-indicator {width:20px;height:20px;padding:5px}
+ #registro input[type="file"] {font-size:11px}
+ #registro .downtimeCard {padding:17px 13px;margin-top:3px}
+ #registro .downtimeCard>h3 {font-size:20px;padding-left:32px}
+ #registro button {min-height:46px;padding:11px 14px}
+ #registro .voicebar button,#registro .assist-panel .toolbar button {flex:1 1 130px}
+ #registro .safety-options {flex-direction:column}
+ #registro .safety-options label {width:100%;margin:0}
+ #registro>.between {flex-wrap:wrap;gap:12px}
+ #registro>.between button {flex:1 1 130px}
+ #registro .event-date-hint {font-size:11px}
+}
+@media print {
+ #registro .event-date-hint {display:none!important}
+}
