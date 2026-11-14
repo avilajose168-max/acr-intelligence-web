@@ -1,0 +1,130 @@
+/* Corporate commitments presentation only. Metrics, deadlines and actions remain unchanged. */
+
+@media screen {
+#mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(1) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%2222%22%20height%3D%2226%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%222%22%20width%3D%2210%22%20height%3D%226%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M11%2015h12m-12%206h12%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(2) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2217%22%20r%3D%2214%22%2F%3E%3Cpath%20d%3D%22m9%2017%206%206L26%2011%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(3) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2217%22%20r%3D%2214%22%2F%3E%3Cpath%20d%3D%22M17%208v10l7%204%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(4) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%204a3%203%200%200%201%206%200l12%2024a2%202%200%200%201-2%203H4a2%202%200%200%201-2-3Z%22%2F%3E%3Cpath%20d%3D%22M17%2012v9m0%204v2%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(5) {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%2226%22%20height%3D%2225%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M11%202v8m12-8v8M4%2014h26M10%2020h4m6%200h4m-14%206h4%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commit-detail-card:nth-child(1) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%2222%22%20height%3D%2226%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%222%22%20width%3D%2210%22%20height%3D%226%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M11%2015h12m-12%206h12%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commit-detail-card:nth-child(2) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M29%203a9%209%200%200%201-11%2012L8%2029a4%204%200%200%201-6-5l13-11A9%209%200%200%201%2026%201l-6%206%205%204Z%22%2F%3E%3C%2Fsvg%3E")}
+#mainApp #corporateCommitmentsPanel .commit-detail-card:nth-child(3) h3 {--cc-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2030h28M7%2026V16h5v10m5%200V9h5v17m5%200V2h5v24%22%2F%3E%3C%2Fsvg%3E")}
+}
+
+@media screen {
+ #mainApp #corporateCommitmentsPanel {--cc-cyan:#23cce7;--cc-gold:#ffd058;padding:21px;border:1px solid #32748f;border-radius:17px;background:radial-gradient(ellipse at 95% 0,#10486435,transparent 65%),linear-gradient(130deg,#07273c,#061c2d);box-shadow:inset 0 1px 0 #6bd7ed21,0 10px 28px #0003;min-width:0}
+ #mainApp #corporateCommitmentsPanel>.between {position:relative;isolation:isolate;align-items:center;gap:17px!important;padding:18px 17px;margin:-4px -4px 17px;border:1px solid #2b647e;border-radius:12px;background:linear-gradient(115deg,#0c3046,#062235);overflow:hidden}
+ #mainApp #corporateCommitmentsPanel>.between::after {content:'';position:absolute;z-index:-1;top:-45px;bottom:-45px;right:36%;width:2px;transform:rotate(40deg);background:linear-gradient(transparent,#ffd357,#d2a12a,transparent);box-shadow:0 0 13px #ebbf3845;pointer-events:none}
+ #mainApp #corporateCommitmentsPanel>.between>div:first-child {flex:1 1 470px;min-width:0}
+ #mainApp #corporateCommitmentsPanel .eyebrow {color:#f3cc68;font-size:10px;font-weight:800;letter-spacing:1.3px}
+ #mainApp #corporateCommitmentsPanel h2 {font-size:clamp(22px,1.9vw,30px);letter-spacing:-.5px;line-height:1.25;margin:5px 0 9px;color:#f3f7fc}
+ #mainApp #corporateCommitmentsPanel>.between .muted {font-size:12px;line-height:1.6;color:#b7d0e1;margin:0}
+ #mainApp #corporateCommitmentsPanel .toolbar {gap:8px;align-items:center}
+ #mainApp #corporateCommitmentsPanel button {min-height:39px;padding:9px 12px;font-size:12px;font-weight:650;border-radius:8px}
+ #mainApp #corporateCommitmentsPanel button.primary {border:1px solid #ffe58e;color:#142333;background:linear-gradient(110deg,#ffe18a,#efb62f);box-shadow:0 3px 14px #e9b62d17}
+ #mainApp #corporateCommitmentsPanel button.secondary {border:1px solid #407e98;background:linear-gradient(110deg,#11394e,#08273a);color:#e4f3fc;box-shadow:inset 0 1px 0 #b0edff0b}
+ #mainApp #corporateCommitmentsPanel button:focus-visible,#mainApp #corporateCommitmentsPanel select:focus-visible,#mainApp #corporateCommitmentsPanel input:focus-visible {outline:2px solid #72dfe9;outline-offset:3px}
+ #mainApp #corporateCommitmentsPanel #corpCommitCurrent {border-color:#e8c262;color:#ffe092;box-shadow:0 0 0 1px #f1c65416}
+ #mainApp #corporateCommitmentsPanel .corporate-toolbar {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px 13px;border:1px solid #2c617b;border-radius:10px;background:linear-gradient(115deg,#0e3045,#0a2639)}
+ #mainApp #corporateCommitmentsPanel .corporate-toolbar>.field {flex:1 1 200px;min-width:0;margin:0;color:#d0e9f5;font-size:11px;line-height:1.5}
+ #mainApp #corporateCommitmentsPanel :is(select,input) {width:100%;min-width:0;min-height:41px;margin-top:6px;padding:9px 12px;background:#071f30;color:#eff6fc;border:1px solid #427c97;border-radius:8px;font-size:12px;font-weight:450;line-height:1.5}
+ #mainApp #corporateCommitmentsPanel select option {background:#0b273b;color:#eff6fc}
+ #mainApp #corporateCommitmentsPanel #corpCommitPeriodLabel {padding:11px 14px;border:1px solid #987f3b;border-radius:9px;background:linear-gradient(105deg,#c69a2323,#0b2a3d);color:#f8d27c;font-size:12px;font-weight:700;line-height:1.6;margin:12px 0 15px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis {grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:15px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane {--cc-accent:#18bbef;position:relative;isolation:isolate;min-width:0;min-height:108px;padding:17px 12px 15px 66px;border:1px solid var(--cc-accent);border-radius:12px;background:radial-gradient(ellipse at 0 0,color-mix(in srgb,var(--cc-accent),transparent 82%),transparent 80%),linear-gradient(125deg,#0d3046,#082438);box-shadow:inset 0 1px 0 #b0eaff16,0 4px 15px #0002}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(2) {--cc-accent:#17c77d;background:linear-gradient(120deg,#0b382f,#082d2c)}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(3) {--cc-accent:#32bde2}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(4) {--cc-accent:#eda83b;background:linear-gradient(125deg,#3e2b25,#222932)}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane:nth-child(5) {--cc-accent:#b56ce7;background:linear-gradient(125deg,#2d2447,#17263e)}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane span {display:block;font-size:10px;letter-spacing:.3px;line-height:1.45;color:#d8eaf5;font-weight:700;overflow-wrap:anywhere}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane strong {display:block;font-size:clamp(25px,2.1vw,33px);line-height:1.2;letter-spacing:-.5px;color:#ffd574;font-weight:800;margin:5px 0}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane small {font-size:10px;color:#bdd6e6;line-height:1.5}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane::before {content:'';position:absolute;left:16px;top:20px;width:32px;height:34px;background:var(--cc-accent);mask:var(--cc-icon) center/contain no-repeat;-webkit-mask:var(--cc-icon) center/contain no-repeat;pointer-events:none}
+ #mainApp #corporateCommitmentsPanel .commitment-filterbar>.field {flex:1 1 165px}
+ #mainApp #corporateCommitmentsPanel .commitment-filterbar>.field:last-child {flex-basis:250px}
+ #mainApp #corporateCommitmentsPanel .commitments-scroll {max-height:480px;border:1px solid #3a7a95;border-radius:10px;background:#082438;overflow:auto;scrollbar-color:#39748c #092438}
+ #mainApp #corporateCommitmentsPanel .commitments-table {width:100%;min-width:930px;border-collapse:separate;border-spacing:0;font-size:12px}
+ #mainApp #corporateCommitmentsPanel .commitments-table th {position:sticky;top:0;z-index:1;padding:11px 12px;font-size:11px;background:linear-gradient(100deg,#154a65,#10364e);color:#e0f0fa;font-weight:750;letter-spacing:.05px;border-bottom:1px solid #3984a2}
+ #mainApp #corporateCommitmentsPanel .commitments-table td {padding:12px;border-bottom:1px solid #28566f;vertical-align:middle;color:#dcebf5;line-height:1.5;overflow-wrap:anywhere}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:first-child {min-width:200px}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:first-child strong {font-size:12px;color:#e6f3fb;line-height:1.4}
+ #mainApp #corporateCommitmentsPanel .commitments-table .small {font-size:10px;color:#a9c9db;line-height:1.5;margin-top:3px}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(2) {min-width:180px}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(5) {min-width:135px}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr {background:#08283d;cursor:pointer}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr:nth-child(even) {background:#0a2d43}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr:hover {background:#123f56}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr.commit-selected {background:#14475e;box-shadow:inset 3px 0 #27d2ec}
+ #mainApp #corporateCommitmentsPanel .commitments-table button[data-corp-commit-case] {padding:7px 10px;min-height:35px;border-color:#9771bb;color:#f0dcff;font-size:11px;white-space:nowrap}
+ #mainApp #corporateCommitmentsPanel .commit-priority {padding:4px 9px;border:1px solid #3d6177;border-radius:6px;font-size:10px;background:#25475b;color:#e1edf5;white-space:nowrap}
+ #mainApp #corporateCommitmentsPanel .commit-priority-high {background:#602732;border-color:#d15c68;color:#ffd3d8}
+ #mainApp #corporateCommitmentsPanel .commit-priority-medium {background:#56441c;border-color:#b99c3e;color:#ffe7a0}
+ #mainApp #corporateCommitmentsPanel .commit-priority-low {background:#124b41;border-color:#349780;color:#bbf2dc}
+ #mainApp #corporateCommitmentsPanel .commit-state {font-size:10px;padding:5px 9px;border-radius:7px;line-height:1.35}
+ #mainApp #corporateCommitmentsPanel .commit-state-progress {color:#a8ebfa;background:#103f5b;border:1px solid #2cabc7}
+ #mainApp #corporateCommitmentsPanel .commit-state-complete {color:#acf0ce;background:#104331;border:1px solid #37a56d}
+ #mainApp #corporateCommitmentsPanel .commit-state-pending {color:#ffe1a1;background:#4b3e1f;border:1px solid #af9545}
+ #mainApp #corporateCommitmentsPanel .commit-state-overdue {color:#ffbfca;background:#522936;border:1px solid #d06980}
+ #mainApp #corporateCommitmentsPanel .deadline-badge {font-size:10px;line-height:1.4;padding:4px 8px;margin-top:6px;border-radius:6px}
+ #mainApp #corporateCommitmentsPanel .deadline-urgent {color:#ffe194;background:#654218;border-color:#e5aa3f}
+ #mainApp #corporateCommitmentsPanel .deadline-soon {color:#f7dd8b;background:#4b4020;border-color:#bba04b}
+ #mainApp #corporateCommitmentsPanel .deadline-overdue {color:#ffc2ce;background:#5b2638;border-color:#dc637c}
+ #mainApp #corporateCommitmentsPanel .deadline-complete {color:#b5edcf;background:#134536;border-color:#3c9670}
+ #mainApp #corporateCommitmentsPanel .commit-detail-layout {grid-template-columns:1.05fr 1.1fr .95fr;gap:14px;margin-top:18px}
+ #mainApp #corporateCommitmentsPanel .commit-detail-card {border:1px solid #3397b8;border-radius:12px;background:linear-gradient(130deg,#0d3148,#09263a);box-shadow:inset 0 1px 0 #90eaff0c,0 6px 17px #0002}
+ #mainApp #corporateCommitmentsPanel .commit-detail-card h3 {position:relative;padding:13px 14px 13px 44px;font-size:14px;line-height:1.4;margin:0;background:linear-gradient(100deg,#16465f,#0c3048);border-bottom:1px solid #377f9b;color:#edf7ff}
+ #mainApp #corporateCommitmentsPanel .commit-detail-card h3::before {content:'';position:absolute;left:14px;top:13px;width:20px;height:21px;background:#82d5ec;mask:var(--cc-icon) center/contain no-repeat;-webkit-mask:var(--cc-icon) center/contain no-repeat}
+ #mainApp #corporateCommitmentsPanel .commit-detail-body {padding:14px;font-size:12px;line-height:1.6;color:#c8dfed;overflow-wrap:anywhere}
+ #mainApp #corporateCommitmentsPanel .commit-selected-title {border:1px solid #3a738d;border-radius:8px;background:#123b51;color:#ecf7fc;padding:10px;font-size:12px;font-weight:750}
+ #mainApp #corporateCommitmentsPanel .commit-action-item {padding:10px 0;border-bottom-color:#315f77}
+ #mainApp #corporateCommitmentsPanel .commit-donut {width:min(164px,80%);margin:8px auto 15px;box-shadow:0 0 16px #139dc51a}
+ #mainApp #corporateCommitmentsPanel .commit-donut-inner {background:#082438}
+ #mainApp #corporateCommitmentsPanel .commit-donut-inner strong {font-size:30px;color:#f2f8fc}
+ #mainApp #corporateCommitmentsPanel .commit-legend {gap:8px;font-size:11px;line-height:1.6}
+ #mainApp #corporateCommitmentsPanel>.help {color:#9fc6dc;font-size:11px;line-height:1.7;margin-bottom:0}
+}
+@media screen and (max-width:1250px) {
+ #mainApp #corporateCommitmentsPanel .commitments-kpis {grid-template-columns:repeat(3,minmax(0,1fr))}
+ #mainApp #corporateCommitmentsPanel .commit-detail-layout {grid-template-columns:1fr 1fr}
+ #mainApp #corporateCommitmentsPanel .commit-detail-card:last-child {grid-column:1/-1}
+}
+@media screen and (max-width:700px) {
+ #mainApp #corporateCommitmentsPanel {padding:14px;border-radius:13px}
+ #mainApp #corporateCommitmentsPanel>.between {padding:15px;margin:0 0 15px}
+ #mainApp #corporateCommitmentsPanel>.between>div:first-child {flex-basis:100%}
+ #mainApp #corporateCommitmentsPanel .toolbar {width:100%;display:flex;flex-wrap:wrap}
+ #mainApp #corporateCommitmentsPanel .toolbar button {flex:1 1 125px;min-height:44px}
+ #mainApp #corporateCommitmentsPanel .corporate-toolbar>.field {flex-basis:100%}
+ #mainApp #corporateCommitmentsPanel .corporate-toolbar>button {flex:1 1 80px;min-height:44px}
+ #mainApp #corporateCommitmentsPanel :is(input,select) {font-size:16px;min-height:44px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis {grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane {padding:49px 12px 14px;min-height:140px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane::before {top:13px;left:13px;width:26px;height:26px}
+ #mainApp #corporateCommitmentsPanel .commit-detail-layout {grid-template-columns:1fr}
+ #mainApp #corporateCommitmentsPanel .commit-detail-card:last-child {grid-column:auto}
+ #mainApp #corporateCommitmentsPanel .commitments-scroll {max-height:none;overflow:visible;border:0;background:transparent}
+ #mainApp #corporateCommitmentsPanel .commitments-table {display:block;min-width:0;width:100%;border:0;background:transparent}
+ #mainApp #corporateCommitmentsPanel .commitments-table thead {display:none}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody {display:block;width:100%}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr {display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #39748d;border-radius:11px;margin-bottom:12px;overflow:hidden}
+ #mainApp #corporateCommitmentsPanel .commitments-table td {display:block;min-width:0!important;width:auto;padding:10px 12px;font-size:12px;border-bottom:1px solid #2b536c;overflow-wrap:anywhere}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(1),#mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(2),#mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(7),#mainApp #corporateCommitmentsPanel .commitments-table td[colspan] {grid-column:1/-1}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(7) {border-bottom:0}
+ #mainApp #corporateCommitmentsPanel .commitments-table td::before {display:block;color:#8cbdd4;font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(1)::before {content:'Investigación / equipo'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(2)::before {content:'Compromiso / acción'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(3)::before {content:'Responsable'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(4)::before {content:'Prioridad'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(5)::before {content:'Vencimiento'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(6)::before {content:'Estado'}
+ #mainApp #corporateCommitmentsPanel .commitments-table td:nth-child(7)::before,#mainApp #corporateCommitmentsPanel .commitments-table td[colspan]::before {content:none}
+ #mainApp #corporateCommitmentsPanel .commitments-table button[data-corp-commit-case] {min-height:44px;width:100%;font-size:13px}
+ #mainApp #corporateCommitmentsPanel .deadline-badge {white-space:normal;overflow-wrap:anywhere}
+}
+@media screen and (max-width:360px) {
+ #mainApp #corporateCommitmentsPanel .commitments-kpis {grid-template-columns:1fr!important}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane {min-height:105px;padding:17px 14px 17px 60px}
+ #mainApp #corporateCommitmentsPanel .commitments-kpis .kpi-pane::before {top:20px}
+ #mainApp #corporateCommitmentsPanel .commitments-table tbody tr {grid-template-columns:minmax(0,1fr)}
+ #mainApp #corporateCommitmentsPanel .commitments-table td {grid-column:1/-1}
+}
