@@ -18,9 +18,9 @@ function server(){
   return {ok:true,json:async()=>({revision:saved.revision})};
  }};
 }
-function device(api,store=storage(),clientId='tab'){
+function device(api,store=storage(),clientId='tab',recoveryStore=null){
  let value=empty(),owner='a';const statuses=[];
- const engine=new WorkspaceSync({clientId,storage:store,fetch:api.fetch.bind(api),url:'https://test.invalid',publicKey:'public',read:()=>value,apply:v=>value=v,getToken:async()=>owner,onStatus:(kind,message)=>statuses.push({kind,message})});
+ const engine=new WorkspaceSync({clientId,recoveryStore,storage:store,fetch:api.fetch.bind(api),url:'https://test.invalid',publicKey:'public',read:()=>value,apply:v=>value=v,getToken:async()=>owner,onStatus:(kind,message)=>statuses.push({kind,message})});
  return {engine,store,statuses,get value(){return value},set value(v){value=v},async start(user='a'){owner=user;await engine.start(user,'workspace-'+user)},edit(cases){value.cases=cases;engine.persist()}};
 }
 test('Legacy investigations and photographs migrate and reopen on a second device',async()=>{
@@ -55,4 +55,43 @@ test('Confirmed deletion synchronizes and does not reappear on another clean dev
 test('Separate tabs retain separate unconfirmed recovery copies',async()=>{
  const api=server(),s=storage(),a=device(api,s,'tab-a'),b=device(api,s,'tab-b');
  try{await a.start();await b.start();api.offline=true;a.edit([{id:'tab-a'}]);b.edit([{id:'tab-b'}]);assert.equal(JSON.parse(s.getItem('workspace-a-cloud-pending-tab-a')).cases[0].id,'tab-a');assert.equal(JSON.parse(s.getItem('workspace-a-cloud-pending-tab-b')).cases[0].id,'tab-b')}finally{a.engine.stop();b.engine.stop()}
+});
+
+
+function recovery(){
+ const map=new Map();return {map,async load(key,pending){return map.get(pending)||map.get(key)||null},async save(key,pending,value,dirty){map.set(key,value);if(dirty)map.set(pending,value);else map.delete(pending)},async backup(key,value){map.set(key,value)}};
+}
+function fullStorage(){const s=storage();s.setItem=()=>{throw Object.assign(Error('quota'),{name:'QuotaExceededError'})};return s}
+test('Commitment status and photographs survive full localStorage, offline restart and reconnection',async()=>{
+ const api=server(),s=fullStorage(),r=recovery();let a=device(api,s,'tab',r);
+ api.rows.set('a',{revision:1,payload:{...empty(),cases:[{id:'case',photos:['original-photo'],actions:[{status:'En curso'}]}]}});
+ try{
+  await a.start();api.offline=true;a.value.cases[0].actions[0].status='Completado';a.engine.persist();await a.engine.flush();
+  assert.equal(a.statuses.at(-1).kind,'offline');a.engine.stop();a=device(api,s,'new-tab',r);await a.start();
+  assert.equal(a.value.cases[0].actions[0].status,'Completado');assert.deepEqual(a.value.cases[0].photos,['original-photo']);
+  api.offline=false;await a.engine.flush();assert.equal(api.rows.get('a').payload.cases[0].actions[0].status,'Completado');assert.equal(a.statuses.at(-1).kind,'synced');
+ }finally{a.engine.stop()}
+});
+test('Failed replacement keeps the previous cache and reports unavailable local recovery honestly',async()=>{
+ const api=server(),s=fullStorage(),r=recovery();const previous=JSON.stringify({...empty(),_cloudSync:{revision:0,dirty:false}});s.map.set('workspace-a',previous);
+ r.save=async()=>{throw Error('disk full')};const a=device(api,s,'tab',r);
+ try{await a.start();api.offline=true;a.edit([{id:'unsaved'}]);await a.engine.flush();assert.equal(s.getItem('workspace-a'),previous);assert.equal(a.statuses.at(-1).kind,'storage');api.offline=false;await a.engine.flush();assert.equal(api.rows.get('a').payload.cases[0].id,'unsaved');assert.equal(a.statuses.at(-1).kind,'synced')}finally{a.engine.stop()}
+});
+test('Successful recovery replacement removes only this account cache and this tab outbox',async()=>{
+ const api=server(),s=fullStorage(),r=recovery();s.map.set('workspace-b','other-user');s.map.set('workspace-a-cloud-pending-other','other-tab');const a=device(api,s,'tab',r);
+ try{await a.start();a.edit([{id:'saved'}]);await a.engine.flush();assert.equal(s.getItem('workspace-b'),'other-user');assert.equal(s.getItem('workspace-a-cloud-pending-other'),'other-tab');assert.equal(s.getItem('workspace-a'),null);assert.ok(r.map.has('workspace-a'))}finally{a.engine.stop()}
+});
+test('A delayed recovery read from a previous account cannot replace the active account',async()=>{
+ const api=server(),r=recovery();let release;r.load=key=>key==='workspace-a'?new Promise(resolve=>release=()=>resolve(JSON.stringify({...empty(),cases:[{id:'private'}]}))):Promise.resolve(null);const a=device(api,storage(),'tab',r);
+ try{const old=a.start('a');await a.start('b');release();await old;assert.equal(a.engine.context.owner,'b');assert.deepEqual(a.value,empty())}finally{a.engine.stop()}
+});
+test('An edit during recovery acknowledgement stays dirty and survives restart',async()=>{
+ const api=server(),r=recovery(),s=fullStorage(),a=device(api,s,'tab',r);let release,entered;
+ try{
+  await a.start();const original=r.save;let block=true;const reached=new Promise(resolve=>entered=resolve);
+  r.save=async function(key,pending,value,dirty){if(!dirty&&block){block=false;entered();await new Promise(resolve=>release=resolve)}return original.call(this,key,pending,value,dirty)};
+  a.edit([{id:'one',title:'first'}]);const saving=a.engine.flush();await reached;a.edit([{id:'one',title:'second'}]);release();await saving;await a.engine.context.cacheFlight;
+  assert.equal(a.engine.context.dirty,true);assert.equal(JSON.parse(r.map.get('workspace-a')).cases[0].title,'second');
+  assert.equal(JSON.parse(r.map.get('workspace-a'))._cloudSync.dirty,true);await a.engine.flush();assert.equal(api.rows.get('a').payload.cases[0].title,'second');
+ }finally{a.engine.stop()}
 });

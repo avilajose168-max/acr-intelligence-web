@@ -1186,7 +1186,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./access-console.js?v=20261111"></script><script src="./account-settings.js?v=20261113"></script>
 <script src="./trial-extensions.js?v=20261112"></script>
 <script src="./independent-clients.js?v=20261112"></script>
-<script src="./cloud-workspace.js"></script>
+<script src="./cloud-workspace.js?v=20261114-recovery"></script>
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
 <script src="./continuous-improvement.js?v=20261112-3"></script>
@@ -1246,7 +1246,7 @@ const personalSync=new ACRWorkspaceSync({
  onStatus:(kind,message)=>{
   document.getElementById('saveStatus').textContent=message;
   const panel=document.getElementById('cloudSyncNotice');
-  panel.hidden=!['conflict','offline'].includes(kind);
+  panel.hidden=!['conflict','offline','storage'].includes(kind);
   document.getElementById('cloudSyncMessage').textContent=message;
   document.getElementById('cloudMergeCopies').hidden=kind!=='conflict';
  }
@@ -1413,7 +1413,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   finally{btn.disabled=false}
 });
 setAuthMode('login');showAuth();void validateSession();
-let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{personalSync.persist();if(schedule)scheduleCorporateSync();return true}catch(e){$('#saveStatus').textContent='⚠ Almacenamiento lleno: exporta respaldo';alert('No se pudo guardar. Es posible que el almacenamiento de fotos esté lleno. Exporta un respaldo y reduce las fotos.');return false}}
+let selected=null,format='5why',page='inicio';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const text=s=>esc(s||'Sin registrar').replace(/\n/g,'<br>');const stamp=()=>new Date().toISOString().slice(0,16);const id=()=>crypto?.randomUUID?.()||('acr-'+Date.now()+Math.random().toString(16).slice(2));const current=()=>db.cases.find(c=>c.id===selected);function persist(schedule=true){try{personalSync.persist();if(schedule)scheduleCorporateSync();return true}catch(e){const quota=['QuotaExceededError','NS_ERROR_DOM_QUOTA_REACHED'].includes(e?.name)||[22,1014].includes(e?.code);const message=quota?'No se pudo guardar en el almacenamiento de este navegador. Descarga un respaldo pendiente y reintenta la sincronización. Esto es independiente del espacio contratado en Supabase.':e?.name==='SecurityError'?'El navegador bloqueó el almacenamiento local. Revisa sus permisos y descarga un respaldo pendiente.':'No se pudo guardar el cambio: '+(e?.message||'error inesperado')+'. Descarga un respaldo pendiente y vuelve a intentarlo.';$('#saveStatus').textContent='⚠ No se pudo guardar';$('#cloudSyncNotice').hidden=false;$('#cloudSyncMessage').textContent=message;$('#cloudMergeCopies').hidden=true;alert(message);return false}}
 // Dictado de voz opcional: inserta texto en el evento y utiliza el guardado existente.
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let voiceRecognition=null,voiceRunning=false,voiceBase='',voiceFinal='',voiceTarget='description',voiceCaseId=null;
