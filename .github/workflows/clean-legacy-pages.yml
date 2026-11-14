@@ -1,0 +1,45 @@
+name: Clean legacy Pages artifacts
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/clean-legacy-pages.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: clean-legacy-pages
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[cleanup-legacy-pages]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Remove only legacy GitHub Pages publication packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "github-pages") | [.id,.size_in_bytes] | @tsv' > /tmp/legacy-pages-artifacts.tsv
+          count=0
+          bytes=0
+          while IFS=$'\t' read -r artifact_id artifact_bytes; do
+            [ -n "$artifact_id" ] || continue
+            [[ "$artifact_id" =~ ^[0-9]+$ ]] && [[ "$artifact_bytes" =~ ^[0-9]+$ ]]
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
+            count=$((count+1))
+            bytes=$((bytes+artifact_bytes))
+          done < /tmp/legacy-pages-artifacts.tsv
+          remaining=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "github-pages") | .id' | wc -l)
+          echo "Removed legacy Pages artifacts: $count"
+          echo "Removed bytes: $bytes"
+          echo "Remaining legacy Pages artifacts: $remaining"
+          echo "## Legacy Pages cleanup" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Removed artifacts: $count" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Removed bytes: $bytes" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Remaining legacy Pages artifacts: $remaining" >> "$GITHUB_STEP_SUMMARY"
+          test "$remaining" -eq 0
