@@ -1,0 +1,24 @@
+/* Workspace brand hierarchy. Screen-only; login, company/report logos and exports retain their identity. */
+@media screen {
+ #mainApp #homeFailureStart h1 {max-width:100%}
+ #mainApp>.bar .app-heading {min-width:0;flex:1 1 260px}
+ #mainApp>.bar .workspace-context {display:none}
+}
+@media screen and (min-width:1000px) {
+ #mainApp>.bar {gap:18px;align-items:center;flex-wrap:wrap}
+ #mainApp>.bar .app-heading>.brand,#mainApp>.bar .app-heading>.small {display:none}
+ #mainApp>.bar .workspace-context {display:flex;flex-direction:column;gap:5px;min-width:0;padding:2px 0}
+ #mainApp>.bar .workspace-context strong {display:block;font-size:18px;line-height:1.35;font-weight:750;color:#edf6fc;overflow-wrap:anywhere}
+ #mainApp>.bar .workspace-context span {display:block;font-size:12px;line-height:1.5;color:#a9c9dc}
+ #mainApp>.bar .account-chip {flex:0 1 auto;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+ #mainApp>.bar .account-chip strong {overflow-wrap:anywhere;min-width:0}
+ #mainApp>#companyScopeBanner {display:none}
+ #mainApp>.nav .workspace-logo {padding-bottom:25px}
+}
+@media screen and (max-width:999px) {
+ #mainApp>.bar .app-heading {flex:1 1 100%}
+ #mainApp>.bar .app-heading>.brand {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+ #mainApp>.bar .account-chip {max-width:100%;min-width:0}
+ #mainApp>.bar .account-chip strong {overflow-wrap:anywhere;min-width:0}
+ #mainApp>#companyScopeBanner {font-size:12px;line-height:1.6}
+}
