@@ -1190,6 +1190,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
 <script src="./continuous-improvement.js?v=20261114-completion"></script>
+<script src="./own-published-reports.js?v=20261114"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -1490,7 +1491,7 @@ function refreshPersonalExecutionsNotice(){
  });
 }
 
-function navigate(name){if(name==='clientes'&&!corporateCtx?.platform)name='inicio';if(name==='clientes')void loadClientSubscriptions();if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if(name==='compromisos')refreshPersonalExecutionsNotice();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion','clientes'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
+function navigate(name){if(name==='clientes'&&!corporateCtx?.platform)name='inicio';if(name==='investigaciones')void window.acrOwnPublishedReports?.refresh();if(name==='clientes')void loadClientSubscriptions();if(voiceRunning&&voiceRecognition){voiceRecognition.stop()}page=name;document.getElementById('mainApp').dataset.workspace=name;const homeViews=['inicio','investigaciones','confiabilidad','compromisos'];$$('.section').forEach(x=>x.classList.toggle('active',x.id===(homeViews.includes(name)?'inicio':name)));$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===name));if(homeViews.includes(name)){drawList();if(name==='compromisos')refreshPersonalExecutionsNotice();if($('#commitScope')?.value==='company')void refreshCompanyCommitments()}if(name==='organizaciones'&&!corporateCtx)void loadOrganizations();if(name==='registro'||name==='analisis')drawForm();if(name==='analisis')paintQuality(current());if(name==='reporte')drawReport();companyWorkspace(name);window.scrollTo({top:0,behavior:'instant'})}$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(!['inicio','investigaciones','confiabilidad','compromisos','organizaciones','administracion','clientes'].includes(b.dataset.page)&&!current()){alert('Primero crea o selecciona una investigación');return}navigate(b.dataset.page)}));function create(){const c=makeCase();db.cases.unshift(c);selected=c.id;persist();navigate('registro')};$$('[data-format]').forEach(b=>b.onclick=()=>{format=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('selected',x===b))});$('#start').onclick=create;
 // Semanas ISO: lunes a domingo sin desfase horario ni dependencia del huso del navegador.
 function dateKeyUTC(date){return date.getUTCFullYear()+'-'+String(date.getUTCMonth()+1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0')}
 function parseDateKey(value){
@@ -4596,6 +4597,22 @@ window.acrImprovement=window.ACRImprovement.mount({
  persist:()=>persist(),flush:()=>personalSync.flush(),download,
  leave:()=>{if(voiceRunning&&voiceRecognition)voiceRecognition.stop()}
 });
+
+window.acrOwnPublishedReports=window.ACROwnPublishedReports.mount({
+ userId:()=>activeUser?.id||'',
+ request:async path=>{await personalAccessToken();return corporateApi(path)},
+ companyName:id=>corporateCtx?.organizations?.find(o=>o.id===id)?.name||'',
+ hydrate:records=>window.ACRImprovement.hydrateCorporate(records,async path=>{await personalAccessToken();return corporateApi(path)}),
+ render:(record,box,format,org)=>{
+  const c=record.payload;c.id=String(c.id||record.local_case_id||record.id);
+  c.whys=Array.isArray(c.whys)?c.whys.map(x=>String(x||'')):['','','','',''];
+  c.photos=(Array.isArray(c.photos)?c.photos:[]).map(p=>({...p,data:safeSharedPicture(p?.data)})).filter(p=>p.data);
+  c.safetyPhotos=(Array.isArray(c.safetyPhotos)?c.safetyPhotos:[]).map(p=>({...p,data:safeSharedPicture(p?.data)})).filter(p=>p.data);
+  c.actions=Array.isArray(c.actions)?c.actions:[];
+  renderCaseReport(c,box,format,{name:org.name||'Informe publicado de compañía',logo:safeSharedPicture(org.logo_data)},false);
+ }
+});
+document.getElementById('logoutButton').addEventListener('click',()=>window.acrOwnPublishedReports.reset());
 drawList();})();
 
 </script><script src="./login-motion.js?v=20261113"></script></body></html>
