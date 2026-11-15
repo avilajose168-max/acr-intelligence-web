@@ -1191,6 +1191,7 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./technical-review.js?v=20261112-2"></script>
 <script src="./continuous-improvement.js?v=20261114-completion"></script>
 <script src="./own-published-reports.js?v=20261114-edit"></script>
+<script src="./company-local-storage.js?v=20261115-pilot"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -1294,7 +1295,7 @@ async function validateSession(){
 function logout(){
   const token=session?.access_token;
   personalSync.stop();
-  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();
+  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();window.ACRLocalStorage?.reset();
   accountSettings.reset();localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
 }
@@ -2594,6 +2595,7 @@ function drawOrganizationStatus(){
  const membership=currentCorporateMembership();
  const platform=!!corporateCtx?.platform;
  configureCorporateRoleLayout();
+ window.ACRLocalStorage?.configure({allowed:!!activeUser&&!!oid&&corporateIsAdmin(),orgId:oid,userId:activeUser?.id,rpc:async(name,body)=>{await personalAccessToken();return corporateApi('/rest/v1/rpc/'+name,'POST',body);}});
  $('#platformAdminPanel').hidden=!platform;
  window.ACRAccessConsole?.configure({platform,allowed:corporateIsAdmin(),orgId:corporateSelection(),userId:activeUser?.id,organizations:(corporateCtx?.organizations||[]).map(o=>({id:o.id,name:o.name}))},corporateApi);
  $('#platformBillingModule').hidden=!platform;$('#clientsNav').hidden=!platform;

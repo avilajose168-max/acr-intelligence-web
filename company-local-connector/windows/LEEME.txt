@@ -1,0 +1,40 @@
+ACR INTEGRITY - CONECTOR LOCAL DE PRUEBA
+
+Esta primera version conecta una carpeta de Windows con el panel Empresas.
+Procesa solo informes ficticios de conexion. No archiva automaticamente las
+investigaciones reales y no elimina archivos de la nube ni del disco.
+
+1. En ACR Integrity, entra como administrador y selecciona la empresa.
+2. En Almacenamiento y servidor local, guarda un nombre y una carpeta absoluta.
+   La carpeta ya debe existir en tu PC o unidad compartida. Tu cuenta de Windows
+   necesita permiso de lectura y escritura en ella.
+3. Extrae TODOS los archivos de este ZIP en una carpeta de tu PC.
+4. Necesitas Python 3.10 o posterior, de https://www.python.org/downloads/windows/
+5. En la plataforma pulsa Generar codigo de vinculacion. Dura 10 minutos y sirve
+   una sola vez. Generar otro codigo revoca la vinculacion anterior.
+6. Abre INICIAR_CONECTOR.cmd, pega el codigo cuando lo pida y pulsa Enter.
+   El codigo no se muestra al pegarlo. Confirma con S la carpeta que aparece.
+7. Deja la ventana abierta. En la plataforma pulsa Probar conexion.
+8. Cuando indique Guardado verificado, pulsa Recuperar desde el servidor.
+   El conector LEE el archivo del disco y la plataforma verifica la respuesta.
+
+ARCHIVOS DE PRUEBA
+Se crean dentro de la carpeta autorizada:
+ACR_Conexion_Prueba / anio / mes / identificador / informe.html
+No se reemplazan archivos existentes con contenido distinto.
+
+CONEXION Y SEGURIDAD
+El conector realiza conexiones HTTPS salientes; no abre un servidor ni puertos.
+No necesita tu contrasena de ACR Integrity ni una clave de administrador.
+La credencial queda cifrada con Windows DPAPI para tu cuenta de Windows en
+LocalAppData\ACRIntegrityConnector\prueba. No compartas ese directorio.
+La vinculacion de este piloto dura 7 dias. Puedes revocarla desde Empresas.
+Si vence o la revocas, usa VINCULAR_DE_NUEVO.cmd con un codigo nuevo.
+
+SI NO FUNCIONA
+Mantén tu PC encendido, la ventana del conector abierta y la carpeta disponible.
+Comprueba Python con py --version. Si Python no esta instalado, instalalo desde
+su sitio oficial. No cambies politicas de seguridad ni desactives el antivirus.
+Si la empresa bloquea Python o el acceso a internet, solicita apoyo a su TI.
+El panel solo marca exito cuando el archivo leido coincide con el original.
+Ctrl+C detiene el conector. No se instala como servicio de Windows en este piloto.
