@@ -232,6 +232,10 @@ function mount(api){
  const voiceExit=new MutationObserver(()=>{if(!el.classList.contains('active')||document.getElementById('mainApp').hidden)shift?.stop()});voiceExit.observe(el,{attributes:true,attributeFilter:['class']});voiceExit.observe(document.getElementById('mainApp'),{attributes:true,attributeFilter:['hidden','data-workspace']});document.addEventListener('visibilitychange',()=>{if(document.hidden)shift?.stop()});
  return {open,refresh:()=>load(true)};
 }
-root.ACRImprovement={loadPersonalExecutionUpdates,applyPersonalExecutionUpdates,resolveReviewNames,fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
+function hydrateSnapshot(record,events){
+ const payload={...record.payload,actions:(record.payload.actions||[]).map((a,i)=>{const s=executionState(record.payload,a,i,events);return s.execution?{...a,status:'Completado'}:{...a}})};
+ const e=activeReview(payload,events);if(e)verifiedReviews.set(payload,e);return {...record,payload};
+}
+root.ACRImprovement={hydrateSnapshot,loadPersonalExecutionUpdates,applyPersonalExecutionUpdates,resolveReviewNames,fingerprint,reviewFor,loadCaseReview,mount,hydrateCorporate};
 if(typeof module!=='undefined')module.exports={personalExecutionUpdates,loadPersonalExecutionUpdates,applyPersonalExecutionUpdates,fingerprint,actionKey,latest,hours,similar,inRange,activeReview,executionState,hydrateCorporate,filterFollowupRows,followupType,followupSector};
 })(typeof window==='undefined'?globalThis:window);

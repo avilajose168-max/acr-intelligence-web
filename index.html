@@ -1189,9 +1189,10 @@ body{background:radial-gradient(ellipse at 82% -7%,#19394d 0,transparent 38%),ra
 <script src="./cloud-workspace.js?v=20261114-recovery"></script>
 <script src="./shift-handover.js?v=20261112-3"></script>
 <script src="./technical-review.js?v=20261112-2"></script>
-<script src="./continuous-improvement.js?v=20261114-completion"></script>
+<script src="./continuous-improvement.js?v=20261115-archive"></script>
 <script src="./own-published-reports.js?v=20261114-edit"></script>
-<script src="./company-local-storage.js?v=20261115-pilot"></script>
+<script src="./company-local-storage.js?v=20261115-real"></script>
+<script src="./real-archives.js?v=20261115-v2"></script>
 <script src="./vendor/jspdf.umd.min.js" defer></script>
 <script src="./vendor/pptxgen.bundle.js" defer></script>
 <script>
@@ -1295,7 +1296,7 @@ async function validateSession(){
 function logout(){
   const token=session?.access_token;
   personalSync.stop();
-  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();window.ACRLocalStorage?.reset();
+  session=null;activeUser=null;db={cases:[],settings:{companyName:'',logo:''}};selected=null;KEY='acr-v12-locked';corporateCtx=null;window.ACRAccessConsole?.reset();window.ACRLocalStorage?.reset();window.ACRRealArchives?.reset();
   accountSettings.reset();localStorage.removeItem(SESSION_KEY);showAuth();
   if(token)requestAuth('logout',{},token).catch(()=>{});
 }
@@ -2596,6 +2597,8 @@ function drawOrganizationStatus(){
  const platform=!!corporateCtx?.platform;
  configureCorporateRoleLayout();
  window.ACRLocalStorage?.configure({allowed:!!activeUser&&!!oid&&corporateIsAdmin(),orgId:oid,userId:activeUser?.id,rpc:async(name,body)=>{await personalAccessToken();return corporateApi('/rest/v1/rpc/'+name,'POST',body);}});
+ window.ACRRealArchives?.configure({allowed:!!activeUser&&(!!corporateCtx?.platform||corporateAllowed()),admin:!!oid&&corporateIsAdmin(),orgId:oid,userId:activeUser?.id,rpc:async(name,body)=>{await personalAccessToken();return corporateApi('/rest/v1/rpc/'+name,'POST',body);},render:(pack,box)=>{const record=window.ACRImprovement.hydrateSnapshot(pack.report,pack.events||[]),c=record.payload;c.id=String(c.id||record.local_case_id||record.id);c.photos=(c.photos||[]).map(p=>({...p,data:safeSharedPicture(p.data)})).filter(p=>p.data);c.safetyPhotos=(c.safetyPhotos||[]).map(p=>({...p,data:safeSharedPicture(p.data)})).filter(p=>p.data);renderCaseReport(c,box,c.reportFormat||c.format||'acr',{name:pack.company?.name||'Compañía',logo:safeSharedPicture(pack.company?.logo_data)},false);}});
+
  $('#platformAdminPanel').hidden=!platform;
  window.ACRAccessConsole?.configure({platform,allowed:corporateIsAdmin(),orgId:corporateSelection(),userId:activeUser?.id,organizations:(corporateCtx?.organizations||[]).map(o=>({id:o.id,name:o.name}))},corporateApi);
  $('#platformBillingModule').hidden=!platform;$('#clientsNav').hidden=!platform;

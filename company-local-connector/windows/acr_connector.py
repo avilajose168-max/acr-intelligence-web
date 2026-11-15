@@ -1,6 +1,7 @@
 """ACR local connector pilot: outbound HTTPS, fixed probe files, Windows DPAPI."""
 from __future__ import annotations
 import argparse,base64,ctypes,ctypes.wintypes,getpass,hashlib,hmac,json,os,pathlib,re,stat,sys,time,urllib.error,urllib.request
+import archive_runtime
 
 API_URL='https://tfrgnqcspdlimdzluxds.supabase.co'
 PUBLIC_KEY='sb_publishable_nP1O2b8Wjd2yJWNglfecXg_HPgrouuq'
@@ -11,13 +12,13 @@ class APIError(Exception):
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args,**kwargs):return None
 def rpc(name,body):
- allowed={'acr_local_connector_pair','acr_local_connector_poll','acr_local_connector_complete','acr_local_connector_fail'}
+ allowed={'acr_local_connector_pair','acr_local_connector_poll','acr_local_connector_complete','acr_local_connector_fail','acr_archive_worker'}
  if name not in allowed:raise ValueError('Operacion no permitida.')
  req=urllib.request.Request(API_URL+'/rest/v1/rpc/'+name,data=json.dumps(body,ensure_ascii=False).encode('utf-8'),headers={'apikey':PUBLIC_KEY,'Content-Type':'application/json'},method='POST')
  try:
   with urllib.request.build_opener(NoRedirect()).open(req,timeout=25) as response:
-   raw=response.read(262145)
-   if len(raw)>262144:raise APIError('Respuesta demasiado grande.')
+   raw=response.read(600001)
+   if len(raw)>600000:raise APIError('Respuesta demasiado grande.')
    return json.loads(raw)
  except urllib.error.HTTPError as error:
   try:info=json.loads(error.read(16384));message=info.get('message','El servidor rechazo la solicitud.');code=info.get('code','')
@@ -45,7 +46,7 @@ def verified_root(path)->pathlib.Path:
  if is_reparse(p):raise OSError('La carpeta de prueba no debe ser un enlace o una redireccion del sistema.')
  return p.resolve(strict=True)
 def target_file(root,relative,create=False):
- if not isinstance(relative,str) or not PATH_PATTERN.fullmatch(relative):raise ValueError('Ruta rechazada: solo se admiten documentos de conexion de prueba.')
+ if not isinstance(relative,str) or not (PATH_PATTERN.fullmatch(relative) or archive_runtime.PATTERN.fullmatch(relative)):raise ValueError('Ruta rechazada: solo se admiten documentos autorizados de ACR Integrity.')
  base=verified_root(root);parts=relative.split('/');parent=base
  for part in parts[:-1]:
   parent=parent/part
@@ -106,6 +107,13 @@ def loop(binding,once=False,call=rpc,sleep=time.sleep):
      call('acr_local_connector_fail',{**credentials,**lease,'p_reason':str(error)[:300]});print('No se completo la prueba. Revisa el mensaje en la plataforma.',flush=True)
     else:
      call('acr_local_connector_complete',{**credentials,**lease,**result});print(('Guardado' if job['kind']=='write_probe' else 'Lectura')+' verificado: '+job['id'],flush=True)
+   archived=call('acr_archive_worker',{**credentials,'p_op':'poll'}).get('job')
+   if archived:
+    try:archive_runtime.process(binding,archived,call,sys.modules[__name__])
+    except (OSError,ValueError) as error:
+     reason='No se pudo acceder al archivo local. Comprueba la carpeta y sus permisos.' if isinstance(error,OSError) else str(error)
+     call('acr_archive_worker',{**credentials,'p_op':'fail','p_job':archived['id'],'p_lease':archived['lease_id'],'p_data':reason[:300]});print('Respaldo no completado. Revisa su estado en la plataforma.',flush=True)
+    else:print('Respaldo real verificado: '+archived['id'],flush=True)
    if once:return
   except APIError as error:
    if error.code=='28000':raise
@@ -128,7 +136,7 @@ def main():
  print('\nEmpresa: '+binding['company_name']+'\nServidor: '+binding['server_name']+'\nCarpeta autorizada: '+binding['root_path'])
  verified_root(binding['root_path'])
  if input('Confirma que esta es la carpeta de la empresa para la prueba [S/N]: ').strip().lower() not in ('s','si','sí'):return
- print('\nConector en ejecucion. Deja esta ventana abierta durante la prueba.\nVuelve a la plataforma y pulsa Probar conexion. Ctrl+C detiene el conector.\nSolo se procesan documentos ficticios de conexion; no se borran informes.\n')
+ print('\nConector VERSION 2 en ejecucion. Deja esta ventana abierta.\nProcesa las pruebas y respaldos reales autorizados por la empresa.\nNo se eliminan informes de la nube ni del disco. Ctrl+C detiene el conector.\n')
  loop(binding,args.once)
 if __name__=='__main__':
  try:

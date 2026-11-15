@@ -1,0 +1,3 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');const root={};vm.runInNewContext(fs.readFileSync(process.argv[2]||'continuous-improvement.js','utf8'),{window:root});const c={id:'report',actions:[{description:'Cambiar rodamiento',status:'Pendiente'}]};
+const record={id:'archive',payload:c},event={id:3,kind:'execution',action_key:'0:cambiar rodamiento',data:{performed:'Cambio ejecutado'}};
+const hydrated=root.ACRImprovement.hydrateSnapshot(record,[event]);assert.equal(hydrated.payload.actions[0].status,'Completado');assert.equal(c.actions[0].status,'Pendiente');console.log('PASS: archived execution reflected without changing original snapshot');
