@@ -1,13 +1,46 @@
-# Work document library
+# Company work documents linked to local storage
 
-Two application navigation entries, Protocolos and Procedimientos, share a company-scoped library. The platform administrator uploads and publishes files; approved company members (including supervisors and company administrators) consult current documents in their own companies. Independent accounts with no approved company membership do not receive company files. Area/sector/equipment/plant are discovery filters, not additional role grants or plant-specific access assignments.
+Protocolos and Procedimientos share a company-scoped catalog with area, sector,
+plant and equipment/SAP filters. Only the platform administrator uploads or
+manages versions. Approved company members and company administrators consult
+current documents in their own companies. Discovery filters do not assign new
+plant-specific permissions. Independent accounts have no company files.
 
-Metadata is in `public.acr_work_documents`, protected by SELECT RLS and management RPCs restricted to the existing platform-admin table. A private `acr-work-documents` Storage bucket holds binaries separately from GitHub and from report JSON. Exact object reservations control uploads; there is no object overwrite policy, no direct metadata write grant, no public download link and no third-party Office viewer. Authenticated downloads recheck current membership. The browser validates SHA-256 and byte size before creating a temporary preview URL; logout/company changes revoke that URL and clear the UI.
+Install database.sql first, then local-database.sql once. Existing cloud metadata
+keeps storage_backend=cloud; new reservations default to local and require a live
+V3 company connector. The existing cloud bucket remains private for legacy rows,
+while its policies reject binary uploads for local rows.
 
-Allowed files: PDF, DOC/DOCX, XLS/XLSX, PNG, JPEG and WEBP, maximum 10 MiB per file. PDF/images have in-app preview; Office files download to open locally. A new revision with the same company/category/code retires the previous current revision atomically. Retiring a document is reversible and preserves its file/history. Draft reservations support finishing an interrupted upload/publication with the exact original file. No destructive deletion, local-connector transfer or retention cleanup is implemented for this library.
+A local upload is staged in private database chunks, then queued. The connector
+writes the original PDF/Word/Excel/image file and a manifest into the company's
+configured root under ACR_Documentos/{Protocolos|Procedimientos}/YYYY/MM/id/hash/.
+Only a complete disk readback matching the reserved byte size and SHA-256
+publishes a draft. This atomically retires the previous current revision.
+The verified write clears source and readback bytes from the temporary relay.
 
-The UI reuses the existing Lomas Bayas dry-area, wet-area, sector/unit and SAP equipment catalog. Other companies can enter their own area/sector/equipment text. Filters include General documents that apply across a selected area, plant or equipment. Company scope is enforced in the database and Storage, regardless of filters or hidden controls.
+A reader requests a company-authorized job; the connector reads the disk file and
+manifest, verifies them, and relays original binary chunks. The requester alone
+can retrieve that job and the browser verifies SHA-256 and length before preview.
+Consumption clears relay bytes. Scheduled pg_cron cleanup every five minutes
+expires abandoned uploads after 24 hours and verified unread downloads after
+15 minutes. The catalog, document versions and disk files are retained. Cleanup
+never deletes original report archives or report cloud records. Normal PostgreSQL
+backups/WAL retention applies to transient database writes.
 
-`database.sql` is a one-time schema/bucket/policy installation. `security-test-body.sql` contains only disposable QA fixtures, ending with rollback; run inside `begin;` against the installed schema, or append it to the installation with its final commit removed. Tests cover actual authenticated/anonymous database roles, platform-only publishing, company-admin read-only management, company/file isolation, membership revocation, draft visibility, complete-file validation, revision replacement/restore and upload limits. `ui.test.cjs` uses jsdom and Node WebCrypto for uploads/downloads, checksum rejection, catalog/SAP selection, area filters, interrupted drafts, supervisor consultation and privacy cleanup.
+The connector must remain online with folder permissions and a current pairing.
+It uses outbound HTTPS, Windows DPAPI and the previous pairing profile; no inbound
+port or browser access to filesystem paths. V3 also retains probes and real report
+backups. Folder browsing and arbitrary paths are not exposed. File limit 10 MiB;
+PDF/images preview in the app; Word/Excel download to the user's application.
 
-Production usage starts with an empty library; no user documents are seeded or copied from unrelated sources. Files remain in private company cloud storage in this release. Moving this new document class to a company connector is a separate extension; existing report-archive behavior is unchanged.
+Tests: local-security-test-body.sql runs only disposable fixtures and ends with
+ROLLBACK, covering actual database roles, verified writes/reads, company/requester
+isolation, no cloud fallback, membership revocation, staging cleanup and expiry.
+ui.test.cjs checks local chunks, checksum rejection, consumption, offline notices,
+catalog filters, interrupted drafts and logout cleanup. Connector tests exercise
+actual disk files, original Office/PDF bytes, multichunk transfers, manifests,
+missing/modified files, retries and path/symlink rejection.
+
+Deployment does not upload user files. The company must start the extracted V3
+connector on its own Windows server, then send and open a first actual document
+to confirm that PC end to end. Existing report cloud originals remain unchanged.

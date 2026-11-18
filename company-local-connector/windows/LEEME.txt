@@ -1,4 +1,4 @@
-ACR INTEGRITY - CONECTOR LOCAL VERSION 2
+ACR INTEGRITY - CONECTOR LOCAL VERSION 3
 
 Conecta una carpeta de Windows con el panel Empresas. Admite las pruebas
 de conexion y los respaldos reales autorizados por el administrador.
@@ -56,3 +56,17 @@ como sustitutos de evidencias guardadas. Maximo 32 MB por version.
 Los usuarios recuperan solo sus informes autorizados. El administrador consulta
 los de su empresa. Nadie recibe acceso para explorar carpetas desde la aplicacion.
 La nube conserva los originales durante esta etapa; no se libera almacenamiento.
+
+PROTOCOLOS Y PROCEDIMIENTOS
+El administrador general envia el documento original desde Protocolos o
+Procedimientos. El conector guarda PDF, Word, Excel o imagen dentro de:
+ACR_Documentos / Protocolos o Procedimientos / anio / mes / documento / version.
+Solo se publica despues de escribir el archivo y leerlo de nuevo con su huella.
+Cada consulta lee el archivo original del disco y su manifest.json. La plataforma
+verifica el contenido y retira la copia temporal de transferencia al entregarlo.
+No hay una copia permanente de estos nuevos documentos en Storage. Las cargas
+interrumpidas vencen a las 24 horas; las lecturas temporales, a los 15 minutos.
+La limpieza de transferencias se ejecuta cada 5 minutos. El catalogo permanece.
+Los miembros autorizados consultan mediante la aplicacion; no exploran carpetas.
+El servidor debe estar encendido, conectado y con este conector abierto.
+Si ya hay vinculacion vigente, se reutiliza. Deten primero el conector anterior.
